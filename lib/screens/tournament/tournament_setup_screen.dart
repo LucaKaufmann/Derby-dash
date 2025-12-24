@@ -149,7 +149,7 @@ class _TournamentSetupScreenState extends ConsumerState<TournamentSetupScreen> {
                         ),
                         const SizedBox(height: 16),
                         Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 32),
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
                           child: ElevatedButton(
                             onPressed: () => context.push('/garage'),
                             child: const Text('GO TO GARAGE'),
