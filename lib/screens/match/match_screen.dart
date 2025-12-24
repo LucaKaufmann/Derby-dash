@@ -34,7 +34,7 @@ class _MatchScreenState extends ConsumerState<MatchScreen>
       duration: const Duration(milliseconds: 500),
       vsync: this,
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.15).animate(
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.05).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.elasticOut),
     );
   }
@@ -222,7 +222,7 @@ class _CarPanel extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
-        margin: const EdgeInsets.all(16),
+        margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
         decoration: BoxDecoration(
           color: isSelected
               ? AppTheme.successColor.withOpacity(0.3)
@@ -269,9 +269,8 @@ class _CarPanel extends StatelessWidget {
                             File(car.photoPath),
                             fit: BoxFit.contain,
                           )
-                        : Container(
-                            color: AppTheme.backgroundColor,
-                            child: const Icon(
+                        : const Center(
+                            child: Icon(
                               Icons.directions_car,
                               size: 100,
                               color: AppTheme.textSecondary,
