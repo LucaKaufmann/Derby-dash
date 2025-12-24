@@ -147,10 +147,13 @@ class _TournamentSetupScreenState extends ConsumerState<TournamentSetupScreen> {
                           'No cars in garage!',
                           style: Theme.of(context).textTheme.headlineMedium,
                         ),
-                        const SizedBox(height: 8),
-                        ElevatedButton(
-                          onPressed: () => context.push('/garage'),
-                          child: const Text('GO TO GARAGE'),
+                        const SizedBox(height: 16),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 32),
+                          child: ElevatedButton(
+                            onPressed: () => context.push('/garage'),
+                            child: const Text('GO TO GARAGE'),
+                          ),
                         ),
                       ],
                     ),
@@ -192,22 +195,24 @@ class _TournamentSetupScreenState extends ConsumerState<TournamentSetupScreen> {
           ),
 
           // Start Button
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: ElevatedButton(
-              onPressed: _selectedCarIds.length >= 2 && !_isCreating
-                  ? _startTournament
-                  : null,
-              child: _isCreating
-                  ? const SizedBox(
-                      height: 24,
-                      width: 24,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 3,
-                        color: Colors.white,
-                      ),
-                    )
-                  : const Text('START TOURNAMENT'),
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: ElevatedButton(
+                onPressed: _selectedCarIds.length >= 2 && !_isCreating
+                    ? _startTournament
+                    : null,
+                child: _isCreating
+                    ? const SizedBox(
+                        height: 24,
+                        width: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 3,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text('START TOURNAMENT'),
+              ),
             ),
           ),
         ],
