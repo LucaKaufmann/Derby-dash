@@ -829,5 +829,155 @@ final activeTournamentsProvider =
 );
 
 typedef ActiveTournamentsRef = AutoDisposeFutureProviderRef<List<Tournament>>;
+String _$completedTournamentsHash() =>
+    r'2b97a002b9a9c25f3a20758f1927780524c2306c';
+
+/// See also [completedTournaments].
+@ProviderFor(completedTournaments)
+final completedTournamentsProvider =
+    AutoDisposeFutureProvider<List<Tournament>>.internal(
+  completedTournaments,
+  name: r'completedTournamentsProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$completedTournamentsHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef CompletedTournamentsRef
+    = AutoDisposeFutureProviderRef<List<Tournament>>;
+String _$tournamentParticipantCountHash() =>
+    r'3be1e3c15f1e3a88559440683470605f1b555ade';
+
+/// See also [tournamentParticipantCount].
+@ProviderFor(tournamentParticipantCount)
+const tournamentParticipantCountProvider = TournamentParticipantCountFamily();
+
+/// See also [tournamentParticipantCount].
+class TournamentParticipantCountFamily extends Family<AsyncValue<int>> {
+  /// See also [tournamentParticipantCount].
+  const TournamentParticipantCountFamily();
+
+  /// See also [tournamentParticipantCount].
+  TournamentParticipantCountProvider call(
+    int tournamentId,
+  ) {
+    return TournamentParticipantCountProvider(
+      tournamentId,
+    );
+  }
+
+  @override
+  TournamentParticipantCountProvider getProviderOverride(
+    covariant TournamentParticipantCountProvider provider,
+  ) {
+    return call(
+      provider.tournamentId,
+    );
+  }
+
+  static const Iterable<ProviderOrFamily>? _dependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get dependencies => _dependencies;
+
+  static const Iterable<ProviderOrFamily>? _allTransitiveDependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get allTransitiveDependencies =>
+      _allTransitiveDependencies;
+
+  @override
+  String? get name => r'tournamentParticipantCountProvider';
+}
+
+/// See also [tournamentParticipantCount].
+class TournamentParticipantCountProvider
+    extends AutoDisposeFutureProvider<int> {
+  /// See also [tournamentParticipantCount].
+  TournamentParticipantCountProvider(
+    int tournamentId,
+  ) : this._internal(
+          (ref) => tournamentParticipantCount(
+            ref as TournamentParticipantCountRef,
+            tournamentId,
+          ),
+          from: tournamentParticipantCountProvider,
+          name: r'tournamentParticipantCountProvider',
+          debugGetCreateSourceHash:
+              const bool.fromEnvironment('dart.vm.product')
+                  ? null
+                  : _$tournamentParticipantCountHash,
+          dependencies: TournamentParticipantCountFamily._dependencies,
+          allTransitiveDependencies:
+              TournamentParticipantCountFamily._allTransitiveDependencies,
+          tournamentId: tournamentId,
+        );
+
+  TournamentParticipantCountProvider._internal(
+    super._createNotifier, {
+    required super.name,
+    required super.dependencies,
+    required super.allTransitiveDependencies,
+    required super.debugGetCreateSourceHash,
+    required super.from,
+    required this.tournamentId,
+  }) : super.internal();
+
+  final int tournamentId;
+
+  @override
+  Override overrideWith(
+    FutureOr<int> Function(TournamentParticipantCountRef provider) create,
+  ) {
+    return ProviderOverride(
+      origin: this,
+      override: TournamentParticipantCountProvider._internal(
+        (ref) => create(ref as TournamentParticipantCountRef),
+        from: from,
+        name: null,
+        dependencies: null,
+        allTransitiveDependencies: null,
+        debugGetCreateSourceHash: null,
+        tournamentId: tournamentId,
+      ),
+    );
+  }
+
+  @override
+  AutoDisposeFutureProviderElement<int> createElement() {
+    return _TournamentParticipantCountProviderElement(this);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is TournamentParticipantCountProvider &&
+        other.tournamentId == tournamentId;
+  }
+
+  @override
+  int get hashCode {
+    var hash = _SystemHash.combine(0, runtimeType.hashCode);
+    hash = _SystemHash.combine(hash, tournamentId.hashCode);
+
+    return _SystemHash.finish(hash);
+  }
+}
+
+mixin TournamentParticipantCountRef on AutoDisposeFutureProviderRef<int> {
+  /// The parameter `tournamentId` of this provider.
+  int get tournamentId;
+}
+
+class _TournamentParticipantCountProviderElement
+    extends AutoDisposeFutureProviderElement<int>
+    with TournamentParticipantCountRef {
+  _TournamentParticipantCountProviderElement(super.provider);
+
+  @override
+  int get tournamentId =>
+      (origin as TournamentParticipantCountProvider).tournamentId;
+}
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member

@@ -52,3 +52,15 @@ Future<List<Tournament>> activeTournaments(ActiveTournamentsRef ref) async {
   final service = ref.watch(tournamentServiceProvider);
   return await service.getActiveTournaments();
 }
+
+@riverpod
+Future<List<Tournament>> completedTournaments(CompletedTournamentsRef ref) async {
+  final service = ref.watch(tournamentServiceProvider);
+  return await service.getCompletedTournaments();
+}
+
+@riverpod
+Future<int> tournamentParticipantCount(TournamentParticipantCountRef ref, int tournamentId) async {
+  final service = ref.watch(tournamentServiceProvider);
+  return await service.getParticipantCount(tournamentId);
+}

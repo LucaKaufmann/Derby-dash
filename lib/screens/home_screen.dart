@@ -47,6 +47,13 @@ class HomeScreen extends StatelessWidget {
                 color: AppTheme.primaryColor,
                 onTap: () => context.push('/tournament/setup'),
               ),
+              const SizedBox(height: 24),
+              _MenuButton(
+                icon: Icons.history,
+                label: 'HISTORY',
+                color: AppTheme.surfaceColor,
+                onTap: () => context.push('/tournament/history'),
+              ),
             ],
           ),
         ),

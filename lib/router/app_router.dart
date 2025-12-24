@@ -4,6 +4,7 @@ import '../screens/garage/garage_screen.dart';
 import '../screens/garage/add_car_screen.dart';
 import '../screens/tournament/tournament_setup_screen.dart';
 import '../screens/tournament/tournament_dashboard_screen.dart';
+import '../screens/tournament/tournament_history_screen.dart';
 import '../screens/match/match_screen.dart';
 import '../screens/match/bye_screen.dart';
 import '../screens/home_screen.dart';
@@ -32,6 +33,11 @@ final appRouter = GoRouter(
       path: '/tournament/setup',
       name: 'tournamentSetup',
       builder: (context, state) => const TournamentSetupScreen(),
+    ),
+    GoRoute(
+      path: '/tournament/history',
+      name: 'tournamentHistory',
+      builder: (context, state) => const TournamentHistoryScreen(),
     ),
     GoRoute(
       path: '/tournament/:id',

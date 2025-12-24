@@ -333,4 +333,31 @@ class TournamentService {
         .statusEqualTo(TournamentStatus.active)
         .findAll();
   }
+
+  /// Get completed tournaments ordered by date (newest first)
+  Future<List<Tournament>> getCompletedTournaments() async {
+    return await _isar.tournaments
+        .filter()
+        .statusEqualTo(TournamentStatus.completed)
+        .sortByDateDesc()
+        .findAll();
+  }
+
+  /// Get participant count for a tournament
+  Future<int> getParticipantCount(int tournamentId) async {
+    final rounds = await getRounds(tournamentId);
+    if (rounds.isEmpty) return 0;
+
+    final firstRound = rounds.first;
+    final matches = await getMatches(firstRound.id);
+
+    final carIds = <int>{};
+    for (final match in matches) {
+      await match.carA.load();
+      await match.carB.load();
+      if (match.carA.value != null) carIds.add(match.carA.value!.id);
+      if (match.carB.value != null) carIds.add(match.carB.value!.id);
+    }
+    return carIds.length;
+  }
 }
