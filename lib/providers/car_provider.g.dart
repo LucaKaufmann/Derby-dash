@@ -169,7 +169,7 @@ class _CarStatsProviderElement
   int get carId => (origin as CarStatsProvider).carId;
 }
 
-String _$carsHash() => r'5bc48f5e1f5c8683c6db6e468a0d4f3a35ff70a3';
+String _$carsHash() => r'86ee550ad600bc5675e153f834501df12d1d1adc';
 
 /// See also [Cars].
 @ProviderFor(Cars)

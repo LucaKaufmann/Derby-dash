@@ -20,15 +20,6 @@ class _AddCarScreenState extends ConsumerState<AddCarScreen> {
   bool _isLoading = false;
 
   @override
-  void initState() {
-    super.initState();
-    // Open camera immediately when screen loads
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _takePhoto();
-    });
-  }
-
-  @override
   void dispose() {
     _nameController.dispose();
     super.dispose();
@@ -43,12 +34,7 @@ class _AddCarScreenState extends ConsumerState<AddCarScreen> {
         preferredCameraDevice: CameraDevice.rear,
       );
 
-      if (image == null) {
-        if (mounted) {
-          context.pop();
-        }
-        return;
-      }
+      if (image == null) return;
 
       // Crop to square
       final croppedFile = await ImageCropper().cropImage(
@@ -79,29 +65,17 @@ class _AddCarScreenState extends ConsumerState<AddCarScreen> {
         setState(() {
           _photoPath = croppedFile.path;
         });
-      } else {
-        if (mounted) {
-          context.pop();
-        }
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error taking photo: $e')),
         );
-        context.pop();
       }
     }
   }
 
   Future<void> _saveCar() async {
-    if (_photoPath == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please take a photo first')),
-      );
-      return;
-    }
-
     if (_nameController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter a name for your car')),
@@ -116,7 +90,7 @@ class _AddCarScreenState extends ConsumerState<AddCarScreen> {
     try {
       await ref.read(carsProvider.notifier).addCar(
             name: _nameController.text.trim(),
-            tempPhotoPath: _photoPath!,
+            tempPhotoPath: _photoPath,
           );
 
       if (mounted) {
@@ -144,88 +118,112 @@ class _AddCarScreenState extends ConsumerState<AddCarScreen> {
           onPressed: () => context.pop(),
         ),
       ),
-      body: _photoPath == null
-          ? const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 24),
-                  Text('Opening camera...'),
-                ],
-              ),
-            )
-          : SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  children: [
-                    // Photo preview
-                    Expanded(
-                      child: Container(
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: AppTheme.primaryColor,
-                            width: 3,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            children: [
+              // Photo area (optional)
+              Expanded(
+                child: GestureDetector(
+                  onTap: _takePhoto,
+                  child: Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: AppTheme.surfaceColor,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: _photoPath != null
+                            ? AppTheme.primaryColor
+                            : AppTheme.textSecondary.withValues(alpha: 0.3),
+                        width: 3,
+                      ),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: _photoPath != null
+                        ? Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              Image.file(
+                                File(_photoPath!),
+                                fit: BoxFit.cover,
+                              ),
+                              Positioned(
+                                bottom: 12,
+                                right: 12,
+                                child: FloatingActionButton.small(
+                                  onPressed: _takePhoto,
+                                  backgroundColor: AppTheme.surfaceColor,
+                                  child: const Icon(Icons.camera_alt),
+                                ),
+                              ),
+                            ],
+                          )
+                        : Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.add_a_photo,
+                                size: 64,
+                                color: AppTheme.textSecondary.withValues(alpha: 0.5),
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'TAP TO ADD PHOTO',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppTheme.textSecondary.withValues(alpha: 0.5),
+                                  letterSpacing: 1,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                '(optional)',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: AppTheme.textSecondary.withValues(alpha: 0.4),
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                        clipBehavior: Clip.antiAlias,
-                        child: Stack(
-                          fit: StackFit.expand,
-                          children: [
-                            Image.file(
-                              File(_photoPath!),
-                              fit: BoxFit.cover,
-                            ),
-                            Positioned(
-                              bottom: 12,
-                              right: 12,
-                              child: FloatingActionButton.small(
-                                onPressed: _takePhoto,
-                                backgroundColor: AppTheme.surfaceColor,
-                                child: const Icon(Icons.camera_alt),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Name input
-                    TextField(
-                      controller: _nameController,
-                      autofocus: true,
-                      textCapitalization: TextCapitalization.words,
-                      style: const TextStyle(fontSize: 24),
-                      decoration: const InputDecoration(
-                        hintText: 'Enter car name',
-                        prefixIcon: Icon(Icons.edit, size: 28),
-                      ),
-                      onSubmitted: (_) => _saveCar(),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Save button
-                    ElevatedButton(
-                      onPressed: _isLoading ? null : _saveCar,
-                      child: _isLoading
-                          ? const SizedBox(
-                              height: 24,
-                              width: 24,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 3,
-                                color: Colors.white,
-                              ),
-                            )
-                          : const Text('SAVE CAR'),
-                    ),
-                  ],
+                  ),
                 ),
               ),
-            ),
+              const SizedBox(height: 24),
+
+              // Name input
+              TextField(
+                controller: _nameController,
+                autofocus: true,
+                textCapitalization: TextCapitalization.words,
+                style: const TextStyle(fontSize: 24),
+                decoration: const InputDecoration(
+                  hintText: 'Enter car name',
+                  prefixIcon: Icon(Icons.edit, size: 28),
+                ),
+                onSubmitted: (_) => _saveCar(),
+              ),
+              const SizedBox(height: 24),
+
+              // Save button
+              ElevatedButton(
+                onPressed: _isLoading ? null : _saveCar,
+                child: _isLoading
+                    ? const SizedBox(
+                        height: 24,
+                        width: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 3,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text('SAVE CAR'),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

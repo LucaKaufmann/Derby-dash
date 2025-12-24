@@ -24,12 +24,15 @@ class Cars extends _$Cars {
 
   Future<void> addCar({
     required String name,
-    required String tempPhotoPath,
+    String? tempPhotoPath,
   }) async {
     final repository = ref.read(carRepositoryProvider);
 
-    // Copy photo to permanent storage
-    final permanentPath = await _savePhoto(tempPhotoPath);
+    // Copy photo to permanent storage if provided
+    String permanentPath = '';
+    if (tempPhotoPath != null) {
+      permanentPath = await _savePhoto(tempPhotoPath);
+    }
 
     final car = Car()
       ..uuid = const Uuid().v4()
