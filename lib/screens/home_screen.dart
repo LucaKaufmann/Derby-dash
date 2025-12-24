@@ -84,17 +84,20 @@ class _MenuButton extends StatelessWidget {
             children: [
               Icon(
                 icon,
-                size: 48,
+                size: 40,
                 color: Colors.white,
               ),
-              const SizedBox(width: 16),
-              Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                  letterSpacing: 2,
+              const SizedBox(width: 12),
+              Flexible(
+                child: Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    letterSpacing: 1,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
               ),
             ],
