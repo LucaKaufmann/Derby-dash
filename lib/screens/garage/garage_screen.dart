@@ -133,21 +133,18 @@ class _CarCard extends ConsumerWidget {
           children: [
             Expanded(
               flex: 3,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: AppTheme.backgroundColor,
-                ),
-                child: photoPath.isNotEmpty && File(photoPath).existsSync()
-                    ? Image.file(
-                        File(photoPath),
-                        fit: BoxFit.cover,
-                      )
-                    : const Icon(
+              child: photoPath.isNotEmpty && File(photoPath).existsSync()
+                  ? Image.file(
+                      File(photoPath),
+                      fit: BoxFit.cover,
+                    )
+                  : const Center(
+                      child: Icon(
                         Icons.directions_car,
                         size: 64,
                         color: AppTheme.textSecondary,
                       ),
-              ),
+                    ),
             ),
             Expanded(
               flex: 2,

@@ -309,9 +309,8 @@ class _SelectableCarCard extends StatelessWidget {
                             fit: BoxFit.cover,
                             width: double.infinity,
                           )
-                        : Container(
-                            color: AppTheme.backgroundColor,
-                            child: const Icon(
+                        : const Center(
+                            child: Icon(
                               Icons.directions_car,
                               size: 40,
                               color: AppTheme.textSecondary,
