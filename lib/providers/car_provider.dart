@@ -8,6 +8,71 @@ import 'database_provider.dart';
 
 part 'car_provider.g.dart';
 
+enum GarageSortOption {
+  wins,
+  losses,
+  winRate,
+  name,
+  newest,
+  oldest,
+}
+
+@Riverpod(keepAlive: true)
+class GarageSort extends _$GarageSort {
+  @override
+  GarageSortOption build() => GarageSortOption.wins;
+
+  void setSort(GarageSortOption option) {
+    state = option;
+  }
+}
+
+class CarWithStats {
+  final Car car;
+  final CarStats stats;
+
+  CarWithStats({required this.car, required this.stats});
+}
+
+@riverpod
+Future<List<CarWithStats>> sortedCars(SortedCarsRef ref) async {
+  final cars = await ref.watch(carsProvider.future);
+  final sortOption = ref.watch(garageSortProvider);
+  final repository = ref.watch(carRepositoryProvider);
+
+  // Fetch stats for all cars
+  final carsWithStats = await Future.wait(
+    cars.map((car) async {
+      final wins = await repository.getWinCount(car.id);
+      final losses = await repository.getLossCount(car.id);
+      final matches = await repository.getMatchCount(car.id);
+      return CarWithStats(
+        car: car,
+        stats: CarStats(wins: wins, losses: losses, totalMatches: matches),
+      );
+    }),
+  );
+
+  // Sort based on selected option
+  switch (sortOption) {
+    case GarageSortOption.wins:
+      carsWithStats.sort((a, b) => b.stats.wins.compareTo(a.stats.wins));
+    case GarageSortOption.losses:
+      carsWithStats.sort((a, b) => b.stats.losses.compareTo(a.stats.losses));
+    case GarageSortOption.winRate:
+      carsWithStats.sort((a, b) => b.stats.winRate.compareTo(a.stats.winRate));
+    case GarageSortOption.name:
+      carsWithStats.sort(
+          (a, b) => a.car.name.toLowerCase().compareTo(b.car.name.toLowerCase()));
+    case GarageSortOption.newest:
+      carsWithStats.sort((a, b) => b.car.createdAt.compareTo(a.car.createdAt));
+    case GarageSortOption.oldest:
+      carsWithStats.sort((a, b) => a.car.createdAt.compareTo(b.car.createdAt));
+  }
+
+  return carsWithStats;
+}
+
 @Riverpod(keepAlive: true)
 CarRepository carRepository(CarRepositoryRef ref) {
   final isar = ref.watch(databaseProvider).requireValue;

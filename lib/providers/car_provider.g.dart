@@ -6,6 +6,21 @@ part of 'car_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
+String _$sortedCarsHash() => r'b54e263c2945da24bd3078acb1766497edeb3396';
+
+/// See also [sortedCars].
+@ProviderFor(sortedCars)
+final sortedCarsProvider =
+    AutoDisposeFutureProvider<List<CarWithStats>>.internal(
+  sortedCars,
+  name: r'sortedCarsProvider',
+  debugGetCreateSourceHash:
+      const bool.fromEnvironment('dart.vm.product') ? null : _$sortedCarsHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef SortedCarsRef = AutoDisposeFutureProviderRef<List<CarWithStats>>;
 String _$carRepositoryHash() => r'1316fc29febc14503547fd526391805203d4d462';
 
 /// See also [carRepository].
@@ -169,7 +184,22 @@ class _CarStatsProviderElement extends FutureProviderElement<CarStats>
   int get carId => (origin as CarStatsProvider).carId;
 }
 
-String _$carsHash() => r'86ee550ad600bc5675e153f834501df12d1d1adc';
+String _$garageSortHash() => r'c7b3c21533721784c8d25ef1bb84fdb29c1c9046';
+
+/// See also [GarageSort].
+@ProviderFor(GarageSort)
+final garageSortProvider =
+    NotifierProvider<GarageSort, GarageSortOption>.internal(
+  GarageSort.new,
+  name: r'garageSortProvider',
+  debugGetCreateSourceHash:
+      const bool.fromEnvironment('dart.vm.product') ? null : _$garageSortHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef _$GarageSort = Notifier<GarageSortOption>;
+String _$carsHash() => r'1a0bb41e3038adf3ec502e2512f2c0530216ab1d';
 
 /// See also [Cars].
 @ProviderFor(Cars)

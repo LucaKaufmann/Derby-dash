@@ -22,13 +22,25 @@ class _GarageScreenState extends ConsumerState<GarageScreen> {
     super.dispose();
   }
 
+  String _getSortLabel(GarageSortOption option) {
+    return switch (option) {
+      GarageSortOption.wins => 'Most Wins',
+      GarageSortOption.losses => 'Most Losses',
+      GarageSortOption.winRate => 'Win Rate',
+      GarageSortOption.name => 'Name',
+      GarageSortOption.newest => 'Newest',
+      GarageSortOption.oldest => 'Oldest',
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
-    final carsAsync = ref.watch(carsProvider);
+    final sortedCarsAsync = ref.watch(sortedCarsProvider);
+    final currentSort = ref.watch(garageSortProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: carsAsync.when(
+        title: sortedCarsAsync.when(
           data: (cars) => Text('GARAGE (${cars.length})'),
           loading: () => const Text('GARAGE'),
           error: (_, __) => const Text('GARAGE'),
@@ -38,9 +50,9 @@ class _GarageScreenState extends ConsumerState<GarageScreen> {
           onPressed: () => context.pop(),
         ),
       ),
-      body: carsAsync.when(
-        data: (cars) {
-          if (cars.isEmpty) {
+      body: sortedCarsAsync.when(
+        data: (carsWithStats) {
+          if (carsWithStats.isEmpty) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -67,39 +79,92 @@ class _GarageScreenState extends ConsumerState<GarageScreen> {
 
           // Filter cars based on search query
           final filteredCars = _searchQuery.isEmpty
-              ? cars
-              : cars
-                  .where((car) => car.name
+              ? carsWithStats
+              : carsWithStats
+                  .where((item) => item.car.name
                       .toLowerCase()
                       .contains(_searchQuery.toLowerCase()))
                   .toList();
 
           return Column(
             children: [
-              // Search bar
+              // Search and sort row
               Padding(
                 padding: const EdgeInsets.all(16.0),
-                child: TextField(
-                  controller: _searchController,
-                  decoration: InputDecoration(
-                    hintText: 'Search cars...',
-                    prefixIcon: const Icon(Icons.search),
-                    suffixIcon: _searchQuery.isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(Icons.clear),
-                            onPressed: () {
-                              _searchController.clear();
-                              setState(() => _searchQuery = '');
-                            },
-                          )
-                        : null,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+                child: Row(
+                  children: [
+                    // Search bar
+                    Expanded(
+                      child: TextField(
+                        controller: _searchController,
+                        decoration: InputDecoration(
+                          hintText: 'Search cars...',
+                          prefixIcon: const Icon(Icons.search),
+                          suffixIcon: _searchQuery.isNotEmpty
+                              ? IconButton(
+                                  icon: const Icon(Icons.clear),
+                                  onPressed: () {
+                                    _searchController.clear();
+                                    setState(() => _searchQuery = '');
+                                  },
+                                )
+                              : null,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          filled: true,
+                          fillColor: AppTheme.surfaceColor,
+                        ),
+                        onChanged: (value) =>
+                            setState(() => _searchQuery = value),
+                      ),
                     ),
-                    filled: true,
-                    fillColor: AppTheme.surfaceColor,
-                  ),
-                  onChanged: (value) => setState(() => _searchQuery = value),
+                    const SizedBox(width: 12),
+                    // Sort dropdown
+                    PopupMenuButton<GarageSortOption>(
+                      initialValue: currentSort,
+                      onSelected: (option) {
+                        ref.read(garageSortProvider.notifier).setSort(option);
+                      },
+                      itemBuilder: (context) => GarageSortOption.values
+                          .map((option) => PopupMenuItem(
+                                value: option,
+                                child: Row(
+                                  children: [
+                                    if (option == currentSort)
+                                      const Icon(Icons.check, size: 20)
+                                    else
+                                      const SizedBox(width: 20),
+                                    const SizedBox(width: 8),
+                                    Text(_getSortLabel(option)),
+                                  ],
+                                ),
+                              ))
+                          .toList(),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 14,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppTheme.surfaceColor,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppTheme.textSecondary),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.sort, size: 20),
+                            const SizedBox(width: 4),
+                            Text(
+                              _getSortLabel(currentSort),
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               // Results
@@ -122,19 +187,20 @@ class _GarageScreenState extends ConsumerState<GarageScreen> {
                         ),
                         itemCount: filteredCars.length,
                         itemBuilder: (context, index) {
-                          final car = filteredCars[index];
+                          final item = filteredCars[index];
                           return _CarCard(
-                            name: car.name,
-                            photoPath: car.photoPath,
-                            carId: car.id,
-                            onTap: () => context.push('/garage/car/${car.id}'),
+                            name: item.car.name,
+                            photoPath: item.car.photoPath,
+                            stats: item.stats,
+                            onTap: () =>
+                                context.push('/garage/car/${item.car.id}'),
                             onDelete: () async {
                               final confirmed = await showDialog<bool>(
                                 context: context,
                                 builder: (context) => AlertDialog(
                                   title: const Text('Delete Car?'),
                                   content: Text(
-                                      'Remove ${car.name} from your garage?'),
+                                      'Remove ${item.car.name} from your garage?'),
                                   actions: [
                                     TextButton(
                                       onPressed: () =>
@@ -156,7 +222,7 @@ class _GarageScreenState extends ConsumerState<GarageScreen> {
                               if (confirmed == true) {
                                 ref
                                     .read(carsProvider.notifier)
-                                    .deleteCar(car.id);
+                                    .deleteCar(item.car.id);
                               }
                             },
                           );
@@ -181,25 +247,23 @@ class _GarageScreenState extends ConsumerState<GarageScreen> {
   }
 }
 
-class _CarCard extends ConsumerWidget {
+class _CarCard extends StatelessWidget {
   final String name;
   final String photoPath;
-  final int carId;
+  final CarStats stats;
   final VoidCallback onTap;
   final VoidCallback onDelete;
 
   const _CarCard({
     required this.name,
     required this.photoPath,
-    required this.carId,
+    required this.stats,
     required this.onTap,
     required this.onDelete,
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final statsAsync = ref.watch(carStatsProvider(carId));
-
+  Widget build(BuildContext context) {
     return Card(
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -238,19 +302,15 @@ class _CarCard extends ConsumerWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
-                    statsAsync.when(
-                      data: (stats) => Text(
-                        '${stats.wins}W - ${stats.losses}L',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: stats.wins > stats.losses
-                                  ? AppTheme.successColor
-                                  : stats.losses > stats.wins
-                                      ? AppTheme.errorColor
-                                      : AppTheme.textSecondary,
-                            ),
-                      ),
-                      loading: () => const Text('-'),
-                      error: (_, __) => const Text('-'),
+                    Text(
+                      '${stats.wins}W - ${stats.losses}L',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: stats.wins > stats.losses
+                                ? AppTheme.successColor
+                                : stats.losses > stats.wins
+                                    ? AppTheme.errorColor
+                                    : AppTheme.textSecondary,
+                          ),
                     ),
                   ],
                 ),
