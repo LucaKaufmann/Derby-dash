@@ -5,11 +5,25 @@ import 'package:go_router/go_router.dart';
 import '../../providers/car_provider.dart';
 import '../../theme/app_theme.dart';
 
-class GarageScreen extends ConsumerWidget {
+class GarageScreen extends ConsumerStatefulWidget {
   const GarageScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<GarageScreen> createState() => _GarageScreenState();
+}
+
+class _GarageScreenState extends ConsumerState<GarageScreen> {
+  final _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final carsAsync = ref.watch(carsProvider);
 
     return Scaffold(
@@ -51,49 +65,104 @@ class GarageScreen extends ConsumerWidget {
             );
           }
 
-          return GridView.builder(
-            padding: const EdgeInsets.all(16),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-              childAspectRatio: 0.8,
-            ),
-            itemCount: cars.length,
-            itemBuilder: (context, index) {
-              final car = cars[index];
-              return _CarCard(
-                name: car.name,
-                photoPath: car.photoPath,
-                carId: car.id,
-                onDelete: () async {
-                  final confirmed = await showDialog<bool>(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: const Text('Delete Car?'),
-                      content: Text('Remove ${car.name} from your garage?'),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context, false),
-                          child: const Text('CANCEL'),
-                        ),
-                        TextButton(
-                          onPressed: () => Navigator.pop(context, true),
-                          style: TextButton.styleFrom(
-                            foregroundColor: AppTheme.errorColor,
-                          ),
-                          child: const Text('DELETE'),
-                        ),
-                      ],
-                    ),
-                  );
+          // Filter cars based on search query
+          final filteredCars = _searchQuery.isEmpty
+              ? cars
+              : cars
+                  .where((car) => car.name
+                      .toLowerCase()
+                      .contains(_searchQuery.toLowerCase()))
+                  .toList();
 
-                  if (confirmed == true) {
-                    ref.read(carsProvider.notifier).deleteCar(car.id);
-                  }
-                },
-              );
-            },
+          return Column(
+            children: [
+              // Search bar
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: 'Search cars...',
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: _searchQuery.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: () {
+                              _searchController.clear();
+                              setState(() => _searchQuery = '');
+                            },
+                          )
+                        : null,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    filled: true,
+                    fillColor: AppTheme.surfaceColor,
+                  ),
+                  onChanged: (value) => setState(() => _searchQuery = value),
+                ),
+              ),
+              // Results
+              Expanded(
+                child: filteredCars.isEmpty
+                    ? Center(
+                        child: Text(
+                          'No cars match "$_searchQuery"',
+                          style: Theme.of(context).textTheme.bodyLarge,
+                        ),
+                      )
+                    : GridView.builder(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 16,
+                          mainAxisSpacing: 16,
+                          childAspectRatio: 0.8,
+                        ),
+                        itemCount: filteredCars.length,
+                        itemBuilder: (context, index) {
+                          final car = filteredCars[index];
+                          return _CarCard(
+                            name: car.name,
+                            photoPath: car.photoPath,
+                            carId: car.id,
+                            onDelete: () async {
+                              final confirmed = await showDialog<bool>(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  title: const Text('Delete Car?'),
+                                  content: Text(
+                                      'Remove ${car.name} from your garage?'),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.pop(context, false),
+                                      child: const Text('CANCEL'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.pop(context, true),
+                                      style: TextButton.styleFrom(
+                                        foregroundColor: AppTheme.errorColor,
+                                      ),
+                                      child: const Text('DELETE'),
+                                    ),
+                                  ],
+                                ),
+                              );
+
+                              if (confirmed == true) {
+                                ref
+                                    .read(carsProvider.notifier)
+                                    .deleteCar(car.id);
+                              }
+                            },
+                          );
+                        },
+                      ),
+              ),
+            ],
           );
         },
         loading: () => const Center(
