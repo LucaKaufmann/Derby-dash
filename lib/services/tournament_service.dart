@@ -548,8 +548,34 @@ class TournamentService {
 
     await tournament.rounds.load();
     final rounds = tournament.rounds.toList();
-    rounds.sort((a, b) => a.roundNumber.compareTo(b.roundNumber));
+
+    // For double elimination, sort by bracket type then round number
+    // Order: Winners -> Losers -> Grand Finals
+    if (tournament.type == TournamentType.doubleElimination) {
+      rounds.sort((a, b) {
+        // First sort by bracket type
+        final bracketOrder = _bracketTypeOrder(a.bracketType)
+            .compareTo(_bracketTypeOrder(b.bracketType));
+        if (bracketOrder != 0) return bracketOrder;
+        // Then by round number within the bracket
+        return a.roundNumber.compareTo(b.roundNumber);
+      });
+    } else {
+      rounds.sort((a, b) => a.roundNumber.compareTo(b.roundNumber));
+    }
     return rounds;
+  }
+
+  /// Get sort order for bracket types
+  int _bracketTypeOrder(BracketType type) {
+    switch (type) {
+      case BracketType.winners:
+        return 0;
+      case BracketType.losers:
+        return 1;
+      case BracketType.grandFinals:
+        return 2;
+    }
   }
 
   /// Get all matches for a round

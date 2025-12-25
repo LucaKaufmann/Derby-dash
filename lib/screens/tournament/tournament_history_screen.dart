@@ -79,6 +79,28 @@ class _TournamentHistoryCard extends ConsumerWidget {
     required this.onTap,
   });
 
+  String _getTournamentTypeLabel(TournamentType type) {
+    switch (type) {
+      case TournamentType.knockout:
+        return 'KNOCKOUT';
+      case TournamentType.doubleElimination:
+        return 'DOUBLE ELIM';
+      case TournamentType.roundRobin:
+        return 'ROUND ROBIN';
+    }
+  }
+
+  Color _getTournamentTypeColor(TournamentType type) {
+    switch (type) {
+      case TournamentType.knockout:
+        return AppTheme.primaryColor;
+      case TournamentType.doubleElimination:
+        return AppTheme.primaryColor;
+      case TournamentType.roundRobin:
+        return AppTheme.secondaryColor;
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final winnerAsync = ref.watch(tournamentWinnerProvider(tournament.id));
@@ -107,8 +129,9 @@ class _TournamentHistoryCard extends ConsumerWidget {
                   ),
                   Row(
                     children: [
-                      // Bracket button for knockout tournaments
-                      if (tournament.type == TournamentType.knockout)
+                      // Bracket button for knockout and double elimination tournaments
+                      if (tournament.type == TournamentType.knockout ||
+                          tournament.type == TournamentType.doubleElimination)
                         IconButton(
                           icon: const Icon(Icons.account_tree),
                           iconSize: 24,
@@ -123,21 +146,16 @@ class _TournamentHistoryCard extends ConsumerWidget {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: tournament.type == TournamentType.knockout
-                              ? AppTheme.primaryColor.withValues(alpha: 0.2)
-                              : AppTheme.secondaryColor.withValues(alpha: 0.2),
+                          color: _getTournamentTypeColor(tournament.type)
+                              .withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
-                          tournament.type == TournamentType.knockout
-                              ? 'KNOCKOUT'
-                              : 'ROUND ROBIN',
+                          _getTournamentTypeLabel(tournament.type),
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
-                            color: tournament.type == TournamentType.knockout
-                                ? AppTheme.primaryColor
-                                : AppTheme.secondaryColor,
+                            color: _getTournamentTypeColor(tournament.type),
                           ),
                         ),
                       ),
