@@ -55,6 +55,28 @@ class Cars extends _$Cars {
     ref.invalidateSelf();
   }
 
+  Future<void> updateCarDetails({
+    required int carId,
+    String? name,
+    String? tempPhotoPath,
+  }) async {
+    final repository = ref.read(carRepositoryProvider);
+    final car = await repository.getCarById(carId);
+    if (car == null) return;
+
+    if (name != null) {
+      car.name = name;
+    }
+
+    if (tempPhotoPath != null) {
+      final permanentPath = await _savePhoto(tempPhotoPath);
+      car.photoPath = permanentPath;
+    }
+
+    await repository.updateCar(car);
+    ref.invalidateSelf();
+  }
+
   Future<String> _savePhoto(String tempPath) async {
     final appDir = await getApplicationDocumentsDirectory();
     final carPhotosDir = Directory('${appDir.path}/car_photos');
