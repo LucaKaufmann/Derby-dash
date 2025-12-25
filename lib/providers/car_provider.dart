@@ -72,7 +72,7 @@ class Cars extends _$Cars {
   }
 }
 
-@riverpod
+@Riverpod(keepAlive: true)
 Future<CarStats> carStats(CarStatsRef ref, int carId) async {
   final repository = ref.watch(carRepositoryProvider);
   final wins = await repository.getWinCount(carId);

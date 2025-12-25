@@ -57,51 +57,31 @@ class CarRepository {
 
   // Get loss count for a car (dynamically calculated)
   Future<int> getLossCount(Id carId) async {
-    // Get all completed matches where car participated
-    final allMatches = await _isar.matchs.where().findAll();
-
-    int losses = 0;
-    for (final match in allMatches) {
-      await match.carA.load();
-      await match.carB.load();
-      await match.winner.load();
-
-      // Check if car participated and lost
-      final carAId = match.carA.value?.id;
-      final carBId = match.carB.value?.id;
-      final winnerId = match.winner.value?.id;
-
-      if (winnerId != null) {
-        if ((carAId == carId || carBId == carId) && winnerId != carId) {
-          losses++;
-        }
-      }
-    }
-
-    return losses;
+    // Losses = completed matches participated in - wins
+    final matchCount = await getMatchCount(carId);
+    final winCount = await getWinCount(carId);
+    return matchCount - winCount;
   }
 
-  // Get total match count for a car
+  // Get total match count for a car (completed matches only)
   Future<int> getMatchCount(Id carId) async {
-    final allMatches = await _isar.matchs.where().findAll();
+    // Count completed matches where car was carA
+    final asCarA = await _isar.matchs
+        .filter()
+        .carA((q) => q.idEqualTo(carId))
+        .and()
+        .winner((q) => q.idGreaterThan(0))
+        .count();
 
-    int count = 0;
-    for (final match in allMatches) {
-      await match.carA.load();
-      await match.carB.load();
-      await match.winner.load();
+    // Count completed matches where car was carB
+    final asCarB = await _isar.matchs
+        .filter()
+        .carB((q) => q.idEqualTo(carId))
+        .and()
+        .winner((q) => q.idGreaterThan(0))
+        .count();
 
-      final carAId = match.carA.value?.id;
-      final carBId = match.carB.value?.id;
-      final winnerId = match.winner.value?.id;
-
-      // Count if car participated and match is completed
-      if (winnerId != null && (carAId == carId || carBId == carId)) {
-        count++;
-      }
-    }
-
-    return count;
+    return asCarA + asCarB;
   }
 
   // Watch cars stream for real-time updates

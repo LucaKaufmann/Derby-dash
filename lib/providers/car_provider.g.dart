@@ -21,7 +21,7 @@ final carRepositoryProvider = Provider<CarRepository>.internal(
 );
 
 typedef CarRepositoryRef = ProviderRef<CarRepository>;
-String _$carStatsHash() => r'f65f14fd77154cd0cad5535e5d350c4583195b10';
+String _$carStatsHash() => r'403f4bd10ca2c8bad6b029b8e6ac9368a0f3d2f6';
 
 /// Copied from Dart SDK
 class _SystemHash {
@@ -87,7 +87,7 @@ class CarStatsFamily extends Family<AsyncValue<CarStats>> {
 }
 
 /// See also [carStats].
-class CarStatsProvider extends AutoDisposeFutureProvider<CarStats> {
+class CarStatsProvider extends FutureProvider<CarStats> {
   /// See also [carStats].
   CarStatsProvider(
     int carId,
@@ -138,7 +138,7 @@ class CarStatsProvider extends AutoDisposeFutureProvider<CarStats> {
   }
 
   @override
-  AutoDisposeFutureProviderElement<CarStats> createElement() {
+  FutureProviderElement<CarStats> createElement() {
     return _CarStatsProviderElement(this);
   }
 
@@ -156,13 +156,13 @@ class CarStatsProvider extends AutoDisposeFutureProvider<CarStats> {
   }
 }
 
-mixin CarStatsRef on AutoDisposeFutureProviderRef<CarStats> {
+mixin CarStatsRef on FutureProviderRef<CarStats> {
   /// The parameter `carId` of this provider.
   int get carId;
 }
 
-class _CarStatsProviderElement
-    extends AutoDisposeFutureProviderElement<CarStats> with CarStatsRef {
+class _CarStatsProviderElement extends FutureProviderElement<CarStats>
+    with CarStatsRef {
   _CarStatsProviderElement(super.provider);
 
   @override
