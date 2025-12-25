@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:isar/isar.dart';
 import '../data/models/models.dart';
 
@@ -358,81 +359,36 @@ class TournamentService {
     List<Car> winners,
     List<Car> losers,
   ) async {
-    // Get all existing rounds to determine state
-    await tournament.rounds.load();
-    final allRounds = tournament.rounds.toList();
+    final isFirstWinnersRound = completedRound.roundNumber == 1;
+    final isWinnersFinal = winners.length == 1;
 
-    final losersRounds = allRounds
-        .where((r) => r.bracketType == BracketType.losers)
-        .toList()
-      ..sort((a, b) => a.roundNumber.compareTo(b.roundNumber));
-
-    // Calculate next loser's bracket round number
-    final nextLosersRoundNum = losersRounds.isEmpty ? 1 : losersRounds.last.roundNumber + 1;
-
-    if (winners.length > 1) {
-      // Create next winner's bracket round
+    // Create next winners bracket round if not final
+    if (!isWinnersFinal) {
       await _createKnockoutRound(
         tournament,
         winners,
         completedRound.roundNumber + 1,
         BracketType.winners,
       );
+    }
 
-      // Create loser's bracket round with losers from this round
-      if (losers.isNotEmpty) {
-        await _createKnockoutRound(
-          tournament,
-          losers,
-          nextLosersRoundNum,
-          BracketType.losers,
-        );
+    // Handle losers dropping to losers bracket
+    if (losers.isEmpty) {
+      if (isWinnersFinal) {
+        await _checkAndCreateGrandFinals(tournament);
       }
-    } else if (winners.length == 1) {
-      // Winner's bracket complete - winner goes to grand finals
-      // But first, loser from this final match needs to go to loser's bracket
+      return;
+    }
 
-      if (losers.isNotEmpty) {
-        final loserFromWinnersFinal = losers.first;
+    if (isFirstWinnersRound) {
+      // WR1: Create LR1 with internal matchups (losers play each other)
+      await _createKnockoutRound(tournament, losers, 1, BracketType.losers);
+    } else {
+      // WR2+ or WF: Losers need to join with losers bracket survivors (cross-bracket)
+      await _tryCreateCrossBracketRound(tournament, losers);
+    }
 
-        // Check if there's an active (incomplete) loser's bracket round
-        final incompleteLosersRounds = losersRounds.where((r) => !r.isCompleted).toList();
-
-        if (incompleteLosersRounds.isNotEmpty) {
-          // Loser's bracket still has incomplete rounds - wait for them to finish
-          // The loser from winners final will be paired when losers bracket round completes
-        } else if (losersRounds.isNotEmpty) {
-          // Loser's bracket rounds are all complete - get the survivor
-          final lastLosersRound = losersRounds.last;
-          await lastLosersRound.matches.load();
-          final losersMatches = lastLosersRound.matches.toList();
-
-          if (losersMatches.isNotEmpty) {
-            await losersMatches.first.winner.load();
-            final losersBracketSurvivor = losersMatches.first.winner.value;
-
-            if (losersBracketSurvivor != null) {
-              // Create next losers round: survivor vs loser from winners final
-              await _createKnockoutRound(
-                tournament,
-                [losersBracketSurvivor, loserFromWinnersFinal],
-                nextLosersRoundNum,
-                BracketType.losers,
-              );
-            }
-          }
-        } else {
-          // No loser's bracket yet - create it with the loser
-          await _createKnockoutRound(
-            tournament,
-            losers,
-            1,
-            BracketType.losers,
-          );
-        }
-      }
-
-      // Check if we can create grand finals
+    if (isWinnersFinal) {
       await _checkAndCreateGrandFinals(tournament);
     }
   }
@@ -443,87 +399,135 @@ class TournamentService {
     Round completedRound,
     List<Car> winners,
   ) async {
-    if (winners.length > 1) {
-      // Create next loser's bracket round
-      await _createKnockoutRound(
-        tournament,
-        winners,
-        completedRound.roundNumber + 1,
-        BracketType.losers,
-      );
-    } else if (winners.length == 1) {
-      // Only one survivor in losers bracket
-      // Check if winners bracket is complete - if so, we may need to pair this
-      // survivor with the loser from the winners bracket final
+    if (winners.isEmpty) return;
 
-      await tournament.rounds.load();
-      final allRounds = tournament.rounds.toList();
+    // Check if there are pending winners bracket losers that need to drop
+    final pendingLosers = await _getPendingWinnersLosers(tournament);
 
-      // Get winners bracket rounds
-      final winnersRounds = allRounds
-          .where((r) => r.bracketType == BracketType.winners)
-          .toList()
-        ..sort((a, b) => a.roundNumber.compareTo(b.roundNumber));
+    if (pendingLosers.isNotEmpty) {
+      // Cross-bracket: pair survivors with pending winners losers
+      await _tryCreateCrossBracketRound(tournament, pendingLosers);
+    } else if (winners.length > 1) {
+      // Internal: survivors play each other
+      final nextRoundNum = completedRound.roundNumber + 1;
+      await _createKnockoutRound(tournament, winners, nextRoundNum, BracketType.losers);
+    } else {
+      // Single survivor, no pending losers - check for grand finals
+      await _checkAndCreateGrandFinals(tournament);
+    }
+  }
 
-      if (winnersRounds.isNotEmpty) {
-        final lastWinnersRound = winnersRounds.last;
+  /// Get losers from completed winners rounds that haven't joined losers bracket yet
+  Future<List<Car>> _getPendingWinnersLosers(Tournament tournament) async {
+    await tournament.rounds.load();
+    final allRounds = tournament.rounds.toList();
 
-        if (lastWinnersRound.isCompleted) {
-          // Winners bracket is complete - get the loser from the final match
-          await lastWinnersRound.matches.load();
-          final winnersMatches = lastWinnersRound.matches.toList();
+    final winnersRounds = allRounds
+        .where((r) => r.bracketType == BracketType.winners)
+        .toList()
+      ..sort((a, b) => a.roundNumber.compareTo(b.roundNumber));
 
-          if (winnersMatches.isNotEmpty && winnersMatches.length == 1) {
-            // This is the winners bracket final
-            final winnersFinalMatch = winnersMatches.first;
-            await winnersFinalMatch.winner.load();
-            await winnersFinalMatch.carA.load();
-            await winnersFinalMatch.carB.load();
+    final losersRounds = allRounds
+        .where((r) => r.bracketType == BracketType.losers)
+        .toList()
+      ..sort((a, b) => a.roundNumber.compareTo(b.roundNumber));
 
-            if (winnersFinalMatch.winner.value != null &&
-                winnersFinalMatch.carA.value != null &&
-                winnersFinalMatch.carB.value != null) {
-              // Get the loser from winners final
-              final loserFromWinnersFinal =
-                  winnersFinalMatch.winner.value!.id == winnersFinalMatch.carA.value!.id
-                      ? winnersFinalMatch.carB.value!
-                      : winnersFinalMatch.carA.value!;
+    // Find completed winners rounds after WR1 (WR1 losers go to LR1 internally)
+    final completedWRsAfterFirst = winnersRounds.skip(1).where((r) => r.isCompleted).toList();
+    if (completedWRsAfterFirst.isEmpty) return [];
 
-              // Check if this completed round already included the loser from winners final
-              // If so, we're done with losers bracket and should proceed to grand finals
-              await completedRound.matches.load();
-              final completedMatches = completedRound.matches.toList();
-              bool loserAlreadyIncluded = false;
+    // Get losers from the latest completed winners round (after WR1)
+    final latestCompletedWR = completedWRsAfterFirst.last;
+    await latestCompletedWR.matches.load();
 
-              for (final match in completedMatches) {
-                await match.carA.load();
-                await match.carB.load();
-                if (match.carA.value?.id == loserFromWinnersFinal.id ||
-                    match.carB.value?.id == loserFromWinnersFinal.id) {
-                  loserAlreadyIncluded = true;
-                  break;
-                }
-              }
+    final losersFromLatestWR = <Car>[];
+    for (final match in latestCompletedWR.matches) {
+      await match.winner.load();
+      await match.carA.load();
+      await match.carB.load();
+      if (match.winner.value != null && match.carA.value != null && match.carB.value != null) {
+        final loser = match.winner.value!.id == match.carA.value!.id
+            ? match.carB.value!
+            : match.carA.value!;
+        losersFromLatestWR.add(loser);
+      }
+    }
 
-              if (!loserAlreadyIncluded) {
-                // Loser from winners final hasn't been added yet - create next losers round
-                await _createKnockoutRound(
-                  tournament,
-                  [winners.first, loserFromWinnersFinal],
-                  completedRound.roundNumber + 1,
-                  BracketType.losers,
-                );
-                return;
-              }
-              // If loser was already included, fall through to grand finals check
-            }
+    if (losersFromLatestWR.isEmpty) return [];
+
+    // Check if these losers are already in any losers round
+    for (final losersRound in losersRounds) {
+      await losersRound.matches.load();
+      for (final match in losersRound.matches) {
+        await match.carA.load();
+        await match.carB.load();
+        for (final loser in losersFromLatestWR) {
+          if (match.carA.value?.id == loser.id || match.carB.value?.id == loser.id) {
+            return []; // Already processed
           }
         }
       }
+    }
 
-      // If we get here, either winners bracket isn't complete yet,
-      // or we're at the actual end of losers bracket - check for grand finals
-      await _checkAndCreateGrandFinals(tournament);
+    // Losers from latest winners round haven't been processed yet
+    return losersFromLatestWR;
+  }
+
+  /// Try to create a cross-bracket losers round pairing survivors with new losers
+  Future<void> _tryCreateCrossBracketRound(
+    Tournament tournament,
+    List<Car> newLosers,
+  ) async {
+    await tournament.rounds.load();
+    final allRounds = tournament.rounds.toList();
+
+    final losersRounds = allRounds
+        .where((r) => r.bracketType == BracketType.losers)
+        .toList()
+      ..sort((a, b) => a.roundNumber.compareTo(b.roundNumber));
+
+    // Need losers bracket survivors to pair with
+    if (losersRounds.isEmpty) return;
+
+    // Check that all current losers rounds are complete
+    if (losersRounds.any((r) => !r.isCompleted)) return;
+
+    // Get survivors from last losers round
+    final lastLosersRound = losersRounds.last;
+    await lastLosersRound.matches.load();
+
+    final survivors = <Car>[];
+    for (final match in lastLosersRound.matches) {
+      await match.winner.load();
+      if (match.winner.value != null) {
+        survivors.add(match.winner.value!);
+      }
+    }
+
+    if (survivors.isEmpty) return;
+
+    // Create cross-bracket round: pair survivors with new losers
+    // Interleave: survivor[0], loser[0], survivor[1], loser[1], ...
+    // This ensures _createKnockoutRound pairs survivor vs loser in each match
+    final nextRoundNum = lastLosersRound.roundNumber + 1;
+    final participants = <Car>[];
+    final pairCount = min(survivors.length, newLosers.length);
+
+    for (int i = 0; i < pairCount; i++) {
+      participants.add(survivors[i]);
+      participants.add(newLosers[i]);
+    }
+
+    // Handle any extras (shouldn't happen in proper bracket)
+    if (survivors.length > pairCount) {
+      participants.addAll(survivors.skip(pairCount));
+    }
+    if (newLosers.length > pairCount) {
+      participants.addAll(newLosers.skip(pairCount));
+    }
+
+    if (participants.length >= 2) {
+      await _createKnockoutRound(tournament, participants, nextRoundNum, BracketType.losers);
     }
   }
 
