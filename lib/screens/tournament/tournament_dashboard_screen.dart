@@ -27,6 +27,22 @@ class TournamentDashboardScreen extends ConsumerWidget {
           icon: const Icon(Icons.home),
           onPressed: () => context.go('/'),
         ),
+        actions: [
+          // Only show bracket button for knockout tournaments
+          tournamentAsync.maybeWhen(
+            data: (tournament) {
+              if (tournament?.type == TournamentType.knockout) {
+                return IconButton(
+                  icon: const Icon(Icons.account_tree),
+                  tooltip: 'View Bracket',
+                  onPressed: () => context.push('/tournament/$tournamentId/bracket'),
+                );
+              }
+              return const SizedBox.shrink();
+            },
+            orElse: () => const SizedBox.shrink(),
+          ),
+        ],
       ),
       body: tournamentAsync.when(
         data: (tournament) {

@@ -8,6 +8,7 @@ import '../screens/tournament/tournament_history_screen.dart';
 import '../screens/match/match_screen.dart';
 import '../screens/match/bye_screen.dart';
 import '../screens/home_screen.dart';
+import '../screens/tournament/bracket_screen.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/',
@@ -69,6 +70,14 @@ final appRouter = GoRouter(
               tournamentId: tournamentId,
               matchId: matchId,
             );
+          },
+        ),
+        GoRoute(
+          path: 'bracket',
+          name: 'bracket',
+          builder: (context, state) {
+            final tournamentId = int.parse(state.pathParameters['id']!);
+            return BracketScreen(tournamentId: tournamentId);
           },
         ),
       ],

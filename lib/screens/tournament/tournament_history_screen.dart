@@ -105,29 +105,43 @@ class _TournamentHistoryCard extends ConsumerWidget {
                           color: AppTheme.textSecondary,
                         ),
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: tournament.type == TournamentType.knockout
-                          ? AppTheme.primaryColor.withValues(alpha: 0.2)
-                          : AppTheme.secondaryColor.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      tournament.type == TournamentType.knockout
-                          ? 'KNOCKOUT'
-                          : 'ROUND ROBIN',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: tournament.type == TournamentType.knockout
-                            ? AppTheme.primaryColor
-                            : AppTheme.secondaryColor,
+                  Row(
+                    children: [
+                      // Bracket button for knockout tournaments
+                      if (tournament.type == TournamentType.knockout)
+                        IconButton(
+                          icon: const Icon(Icons.account_tree),
+                          iconSize: 24,
+                          tooltip: 'View Bracket',
+                          color: AppTheme.primaryColor,
+                          onPressed: () =>
+                              context.push('/tournament/${tournament.id}/bracket'),
+                        ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: tournament.type == TournamentType.knockout
+                              ? AppTheme.primaryColor.withValues(alpha: 0.2)
+                              : AppTheme.secondaryColor.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          tournament.type == TournamentType.knockout
+                              ? 'KNOCKOUT'
+                              : 'ROUND ROBIN',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: tournament.type == TournamentType.knockout
+                                ? AppTheme.primaryColor
+                                : AppTheme.secondaryColor,
+                          ),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
                 ],
               ),
