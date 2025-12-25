@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../screens/garage/garage_screen.dart';
 import '../screens/garage/add_car_screen.dart';
+import '../screens/garage/car_detail_screen.dart';
 import '../screens/tournament/tournament_setup_screen.dart';
 import '../screens/tournament/tournament_dashboard_screen.dart';
 import '../screens/tournament/tournament_history_screen.dart';
@@ -34,6 +35,14 @@ final appRouter = GoRouter(
           path: 'add',
           name: 'addCar',
           builder: (context, state) => const AddCarScreen(),
+        ),
+        GoRoute(
+          path: 'car/:carId',
+          name: 'carDetail',
+          builder: (context, state) {
+            final carId = int.parse(state.pathParameters['carId']!);
+            return CarDetailScreen(carId: carId);
+          },
         ),
       ],
     ),

@@ -127,6 +127,7 @@ class _GarageScreenState extends ConsumerState<GarageScreen> {
                             name: car.name,
                             photoPath: car.photoPath,
                             carId: car.id,
+                            onTap: () => context.push('/garage/car/${car.id}'),
                             onDelete: () async {
                               final confirmed = await showDialog<bool>(
                                 context: context,
@@ -184,12 +185,14 @@ class _CarCard extends ConsumerWidget {
   final String name;
   final String photoPath;
   final int carId;
+  final VoidCallback onTap;
   final VoidCallback onDelete;
 
   const _CarCard({
     required this.name,
     required this.photoPath,
     required this.carId,
+    required this.onTap,
     required this.onDelete,
   });
 
@@ -200,6 +203,7 @@ class _CarCard extends ConsumerWidget {
     return Card(
       clipBehavior: Clip.antiAlias,
       child: InkWell(
+        onTap: onTap,
         onLongPress: onDelete,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
