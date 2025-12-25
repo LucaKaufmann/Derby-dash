@@ -14,7 +14,11 @@ class GarageScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('GARAGE'),
+        title: carsAsync.when(
+          data: (cars) => Text('GARAGE (${cars.length})'),
+          loading: () => const Text('GARAGE'),
+          error: (_, __) => const Text('GARAGE'),
+        ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
