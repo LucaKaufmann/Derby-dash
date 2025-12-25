@@ -163,39 +163,6 @@ class _TournamentSetupScreenState extends ConsumerState<TournamentSetupScreen> {
             ),
           ),
 
-          // Power of 2 disclaimer for bracket tournaments
-          if (_tournamentType == TournamentType.knockout ||
-              _tournamentType == TournamentType.doubleElimination)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppTheme.surfaceColor,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.info_outline,
-                      size: 20,
-                      color: Colors.blue[400],
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Bracket tournaments need 4, 8, 16, or 32 cars for balanced matchups',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.blue[300],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
           // Selection Count
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
