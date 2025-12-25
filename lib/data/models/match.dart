@@ -18,4 +18,11 @@ class Match {
 
   @Backlink(to: 'matches')
   final round = IsarLink<Round>();
+
+  /// Position within the round (0-indexed, used for bracket routing)
+  int matchPosition = 0;
+
+  /// For double elimination: ID of the loser's bracket match where loser goes
+  /// Null for loser's bracket matches (losers are eliminated)
+  int? loserDestinationMatchId;
 }

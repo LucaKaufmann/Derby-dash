@@ -34,6 +34,8 @@ class TournamentService {
     // Create first round based on type
     if (type == TournamentType.knockout) {
       await _createKnockoutRound(tournament, cars, 1);
+    } else if (type == TournamentType.doubleElimination) {
+      await _createDoubleEliminationBrackets(tournament, cars);
     } else {
       await _createRoundRobinRounds(tournament, cars);
     }
@@ -41,13 +43,28 @@ class TournamentService {
     return tournament.id;
   }
 
+  /// Create all brackets for a double elimination tournament
+  Future<void> _createDoubleEliminationBrackets(
+    Tournament tournament,
+    List<Car> cars,
+  ) async {
+    // Create winner's bracket first round (same as knockout)
+    await _createKnockoutRound(tournament, cars, 1, BracketType.winners);
+
+    // Loser's bracket and subsequent winner's bracket rounds are created
+    // dynamically as matches complete to properly route losers
+  }
+
   /// Create a knockout round with the given cars
   Future<void> _createKnockoutRound(
     Tournament tournament,
     List<Car> cars,
-    int roundNumber,
-  ) async {
-    final round = Round()..roundNumber = roundNumber;
+    int roundNumber, [
+    BracketType bracketType = BracketType.winners,
+  ]) async {
+    final round = Round()
+      ..roundNumber = roundNumber
+      ..bracketType = bracketType;
 
     await _isar.writeTxn(() async {
       await _isar.rounds.put(round);
@@ -58,7 +75,7 @@ class TournamentService {
     // Create matches - pair cars, handle odd numbers with bye
     final matches = <Match>[];
     for (int i = 0; i < cars.length; i += 2) {
-      final match = Match();
+      final match = Match()..matchPosition = i ~/ 2;
       match.carA.value = cars[i];
 
       if (i + 1 < cars.length) {
@@ -189,27 +206,11 @@ class TournamentService {
     final tournament = round.tournament.value;
     if (tournament == null) return;
 
-    // For knockout tournaments, generate next round
+    // Handle based on tournament type
     if (tournament.type == TournamentType.knockout) {
-      // Collect winners
-      final winners = <Car>[];
-      for (final m in allMatches) {
-        await m.winner.load();
-        if (m.winner.value != null) {
-          winners.add(m.winner.value!);
-        }
-      }
-
-      if (winners.length > 1) {
-        // Create next round
-        await _createKnockoutRound(tournament, winners, round.roundNumber + 1);
-      } else {
-        // Tournament complete
-        await _isar.writeTxn(() async {
-          tournament.status = TournamentStatus.completed;
-          await _isar.tournaments.put(tournament);
-        });
-      }
+      await _handleKnockoutRoundComplete(tournament, round, allMatches);
+    } else if (tournament.type == TournamentType.doubleElimination) {
+      await _handleDoubleEliminationRoundComplete(tournament, round, allMatches);
     } else {
       // Round robin - tournament complete when all matches done
       await _isar.writeTxn(() async {
@@ -217,6 +218,260 @@ class TournamentService {
         await _isar.tournaments.put(tournament);
       });
     }
+  }
+
+  /// Handle knockout round completion
+  Future<void> _handleKnockoutRoundComplete(
+    Tournament tournament,
+    Round round,
+    List<Match> allMatches,
+  ) async {
+    // Collect winners
+    final winners = <Car>[];
+    for (final m in allMatches) {
+      await m.winner.load();
+      if (m.winner.value != null) {
+        winners.add(m.winner.value!);
+      }
+    }
+
+    if (winners.length > 1) {
+      // Create next round
+      await _createKnockoutRound(tournament, winners, round.roundNumber + 1);
+    } else {
+      // Tournament complete
+      await _isar.writeTxn(() async {
+        tournament.status = TournamentStatus.completed;
+        await _isar.tournaments.put(tournament);
+      });
+    }
+  }
+
+  /// Handle double elimination round completion
+  Future<void> _handleDoubleEliminationRoundComplete(
+    Tournament tournament,
+    Round round,
+    List<Match> allMatches,
+  ) async {
+    // Collect winners and losers
+    final winners = <Car>[];
+    final losers = <Car>[];
+
+    for (final m in allMatches) {
+      await m.winner.load();
+      await m.carA.load();
+      await m.carB.load();
+
+      if (m.winner.value != null) {
+        winners.add(m.winner.value!);
+
+        // Determine loser (if not a bye)
+        if (!m.isBye && m.carA.value != null && m.carB.value != null) {
+          final loser = m.winner.value!.id == m.carA.value!.id
+              ? m.carB.value!
+              : m.carA.value!;
+          losers.add(loser);
+        }
+      }
+    }
+
+    if (round.bracketType == BracketType.winners) {
+      await _handleWinnersBracketRoundComplete(tournament, round, winners, losers);
+    } else if (round.bracketType == BracketType.losers) {
+      await _handleLosersBracketRoundComplete(tournament, round, winners);
+    } else if (round.bracketType == BracketType.grandFinals) {
+      // Grand finals complete - tournament is done
+      await _isar.writeTxn(() async {
+        tournament.status = TournamentStatus.completed;
+        await _isar.tournaments.put(tournament);
+      });
+    }
+  }
+
+  /// Handle winner's bracket round completion in double elimination
+  Future<void> _handleWinnersBracketRoundComplete(
+    Tournament tournament,
+    Round completedRound,
+    List<Car> winners,
+    List<Car> losers,
+  ) async {
+    // Get all existing rounds to determine state
+    await tournament.rounds.load();
+    final allRounds = tournament.rounds.toList();
+
+    final losersRounds = allRounds
+        .where((r) => r.bracketType == BracketType.losers)
+        .toList()
+      ..sort((a, b) => a.roundNumber.compareTo(b.roundNumber));
+
+    // Calculate next loser's bracket round number
+    final nextLosersRoundNum = losersRounds.isEmpty ? 1 : losersRounds.last.roundNumber + 1;
+
+    if (winners.length > 1) {
+      // Create next winner's bracket round
+      await _createKnockoutRound(
+        tournament,
+        winners,
+        completedRound.roundNumber + 1,
+        BracketType.winners,
+      );
+
+      // Create loser's bracket round with losers from this round
+      if (losers.isNotEmpty) {
+        await _createKnockoutRound(
+          tournament,
+          losers,
+          nextLosersRoundNum,
+          BracketType.losers,
+        );
+      }
+    } else if (winners.length == 1) {
+      // Winner's bracket complete - winner goes to grand finals
+      // But first, losers from this final match go to loser's bracket
+
+      if (losers.isNotEmpty) {
+        // Check if there's an active loser's bracket
+        final incompleteLosersRounds = losersRounds.where((r) => !r.isCompleted).toList();
+
+        if (incompleteLosersRounds.isNotEmpty) {
+          // Add loser to existing loser's bracket round or create new one
+          // For simplicity, create a new round with just this loser
+          // They'll play against the loser's bracket survivor
+          await _createKnockoutRound(
+            tournament,
+            losers,
+            nextLosersRoundNum,
+            BracketType.losers,
+          );
+        } else if (losersRounds.isNotEmpty) {
+          // Loser's bracket also complete - create grand finals immediately
+          // Get loser's bracket winner
+          final lastLosersRound = losersRounds.last;
+          await lastLosersRound.matches.load();
+          final losersMatches = lastLosersRound.matches.toList();
+
+          if (losersMatches.isNotEmpty) {
+            await losersMatches.first.winner.load();
+            final losersBracketWinner = losersMatches.first.winner.value;
+
+            if (losersBracketWinner != null) {
+              // Create grand finals
+              await _createKnockoutRound(
+                tournament,
+                [winners.first, losersBracketWinner],
+                1,
+                BracketType.grandFinals,
+              );
+            }
+          }
+        } else {
+          // No loser's bracket yet - create it with the loser
+          await _createKnockoutRound(
+            tournament,
+            losers,
+            1,
+            BracketType.losers,
+          );
+        }
+      }
+
+      // Check if we can create grand finals
+      await _checkAndCreateGrandFinals(tournament);
+    }
+  }
+
+  /// Handle loser's bracket round completion in double elimination
+  Future<void> _handleLosersBracketRoundComplete(
+    Tournament tournament,
+    Round completedRound,
+    List<Car> winners,
+  ) async {
+    if (winners.length > 1) {
+      // Create next loser's bracket round
+      await _createKnockoutRound(
+        tournament,
+        winners,
+        completedRound.roundNumber + 1,
+        BracketType.losers,
+      );
+    } else if (winners.length == 1) {
+      // Loser's bracket complete - check if grand finals can be created
+      await _checkAndCreateGrandFinals(tournament);
+    }
+  }
+
+  /// Check if both brackets are complete and create grand finals
+  Future<void> _checkAndCreateGrandFinals(Tournament tournament) async {
+    await tournament.rounds.load();
+    final allRounds = tournament.rounds.toList();
+
+    // Check for existing grand finals
+    final grandFinalsRounds = allRounds
+        .where((r) => r.bracketType == BracketType.grandFinals)
+        .toList();
+    if (grandFinalsRounds.isNotEmpty) return; // Already created
+
+    // Get winner's bracket rounds
+    final winnersRounds = allRounds
+        .where((r) => r.bracketType == BracketType.winners)
+        .toList()
+      ..sort((a, b) => a.roundNumber.compareTo(b.roundNumber));
+
+    // Get loser's bracket rounds
+    final losersRounds = allRounds
+        .where((r) => r.bracketType == BracketType.losers)
+        .toList()
+      ..sort((a, b) => a.roundNumber.compareTo(b.roundNumber));
+
+    if (winnersRounds.isEmpty || losersRounds.isEmpty) return;
+
+    // Check if winner's bracket is complete
+    final lastWinnersRound = winnersRounds.last;
+    if (!lastWinnersRound.isCompleted) return;
+
+    await lastWinnersRound.matches.load();
+    final winnersMatches = lastWinnersRound.matches.toList();
+    if (winnersMatches.isEmpty) return;
+
+    await winnersMatches.first.winner.load();
+    final winnersBracketChampion = winnersMatches.first.winner.value;
+    if (winnersBracketChampion == null) return;
+
+    // Check if loser's bracket is complete (only one car remaining)
+    final lastLosersRound = losersRounds.last;
+    if (!lastLosersRound.isCompleted) return;
+
+    await lastLosersRound.matches.load();
+    final losersMatches = lastLosersRound.matches.toList();
+    if (losersMatches.isEmpty) return;
+
+    await losersMatches.first.winner.load();
+    final losersBracketChampion = losersMatches.first.winner.value;
+    if (losersBracketChampion == null) return;
+
+    // Both brackets complete - create grand finals
+    await _createKnockoutRound(
+      tournament,
+      [winnersBracketChampion, losersBracketChampion],
+      1,
+      BracketType.grandFinals,
+    );
+  }
+
+  /// Get rounds by bracket type for a tournament
+  Future<List<Round>> getRoundsByBracket(
+    int tournamentId,
+    BracketType bracketType,
+  ) async {
+    final tournament = await _isar.tournaments.get(tournamentId);
+    if (tournament == null) return [];
+
+    await tournament.rounds.load();
+    final rounds = tournament.rounds
+        .where((r) => r.bracketType == bracketType)
+        .toList()
+      ..sort((a, b) => a.roundNumber.compareTo(b.roundNumber));
+    return rounds;
   }
 
   /// Get tournament by ID

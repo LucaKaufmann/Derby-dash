@@ -21,10 +21,15 @@ class _TournamentSetupScreenState extends ConsumerState<TournamentSetupScreen> {
   TournamentType _tournamentType = TournamentType.knockout;
   bool _isCreating = false;
 
+  int get _minCarsRequired =>
+      _tournamentType == TournamentType.doubleElimination ? 4 : 2;
+
   Future<void> _startTournament() async {
-    if (_selectedCarIds.length < 2) {
+    if (_selectedCarIds.length < _minCarsRequired) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Select at least 2 cars!')),
+        SnackBar(
+          content: Text('Select at least $_minCarsRequired cars for ${_tournamentType == TournamentType.doubleElimination ? "double elimination" : "this tournament"}!'),
+        ),
       );
       return;
     }
@@ -71,28 +76,46 @@ class _TournamentSetupScreenState extends ConsumerState<TournamentSetupScreen> {
           // Tournament Type Selection
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Row(
+            child: Column(
               children: [
-                Expanded(
-                  child: _TypeButton(
-                    label: 'KNOCKOUT',
-                    icon: Icons.emoji_events,
-                    isSelected: _tournamentType == TournamentType.knockout,
-                    onTap: () => setState(() {
-                      _tournamentType = TournamentType.knockout;
-                    }),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _TypeButton(
-                    label: 'ROUND ROBIN',
-                    icon: Icons.loop,
-                    isSelected: _tournamentType == TournamentType.roundRobin,
-                    onTap: () => setState(() {
-                      _tournamentType = TournamentType.roundRobin;
-                    }),
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _TypeButton(
+                        label: 'KNOCKOUT',
+                        subtitle: 'Single elimination',
+                        icon: Icons.emoji_events,
+                        isSelected: _tournamentType == TournamentType.knockout,
+                        onTap: () => setState(() {
+                          _tournamentType = TournamentType.knockout;
+                        }),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _TypeButton(
+                        label: 'DOUBLE ELIM',
+                        subtitle: 'Lose twice = out',
+                        icon: Icons.repeat,
+                        isSelected: _tournamentType == TournamentType.doubleElimination,
+                        onTap: () => setState(() {
+                          _tournamentType = TournamentType.doubleElimination;
+                        }),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _TypeButton(
+                        label: 'ROUND ROBIN',
+                        subtitle: 'Everyone plays',
+                        icon: Icons.loop,
+                        isSelected: _tournamentType == TournamentType.roundRobin,
+                        onTap: () => setState(() {
+                          _tournamentType = TournamentType.roundRobin;
+                        }),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -223,12 +246,14 @@ class _TournamentSetupScreenState extends ConsumerState<TournamentSetupScreen> {
 
 class _TypeButton extends StatelessWidget {
   final String label;
+  final String? subtitle;
   final IconData icon;
   final bool isSelected;
   final VoidCallback onTap;
 
   const _TypeButton({
     required this.label,
+    this.subtitle,
     required this.icon,
     required this.isSelected,
     required this.onTap,
@@ -243,23 +268,37 @@ class _TypeButton extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 16),
+          padding: const EdgeInsets.symmetric(vertical: 12),
           child: Column(
             children: [
               Icon(
                 icon,
-                size: 36,
+                size: 28,
                 color: isSelected ? Colors.white : AppTheme.textSecondary,
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 4),
               Text(
                 label,
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 11,
                   fontWeight: FontWeight.bold,
                   color: isSelected ? Colors.white : AppTheme.textSecondary,
                 ),
+                textAlign: TextAlign.center,
               ),
+              if (subtitle != null) ...[
+                const SizedBox(height: 2),
+                Text(
+                  subtitle!,
+                  style: TextStyle(
+                    fontSize: 9,
+                    color: isSelected
+                        ? Colors.white.withValues(alpha: 0.8)
+                        : AppTheme.textSecondary.withValues(alpha: 0.7),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ],
           ),
         ),

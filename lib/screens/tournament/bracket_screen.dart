@@ -5,6 +5,7 @@ import 'package:derby_dash/data/models/models.dart';
 import 'package:derby_dash/providers/tournament_provider.dart';
 import 'package:derby_dash/theme/app_theme.dart';
 import 'package:derby_dash/widgets/bracket/bracket_view.dart';
+import 'package:derby_dash/widgets/bracket/double_bracket_view.dart';
 
 /// Screen displaying the tournament bracket visualization.
 class BracketScreen extends ConsumerWidget {
@@ -35,8 +36,8 @@ class BracketScreen extends ConsumerWidget {
             );
           }
 
-          // Only knockout tournaments have brackets
-          if (tournament.type != TournamentType.knockout) {
+          // Only knockout and double elimination tournaments have brackets
+          if (tournament.type == TournamentType.roundRobin) {
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(32),
@@ -144,18 +145,26 @@ class _BracketContent extends ConsumerWidget {
       );
     }
 
+    final isDoubleElimination = tournament.type == TournamentType.doubleElimination;
+
     return Column(
       children: [
         // Status banner
         _StatusBanner(tournament: tournament),
 
-        // Bracket view
+        // Bracket view - use appropriate view based on tournament type
         Expanded(
-          child: BracketView(
-            rounds: rounds,
-            matchesByRound: matchesByRound,
-            onMatchTap: (match) => _showMatchDetails(context, match),
-          ),
+          child: isDoubleElimination
+              ? DoubleBracketView(
+                  rounds: rounds,
+                  matchesByRound: matchesByRound,
+                  onMatchTap: (match) => _showMatchDetails(context, match),
+                )
+              : BracketView(
+                  rounds: rounds,
+                  matchesByRound: matchesByRound,
+                  onMatchTap: (match) => _showMatchDetails(context, match),
+                ),
         ),
 
         // Zoom hint

@@ -12,6 +12,7 @@ enum TournamentStatus {
 enum TournamentType {
   knockout,
   roundRobin,
+  doubleElimination,
 }
 
 @collection

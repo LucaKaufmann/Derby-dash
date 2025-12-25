@@ -14,6 +14,17 @@ class TournamentDashboardScreen extends ConsumerWidget {
     required this.tournamentId,
   });
 
+  String _getTournamentTypeLabel(TournamentType type) {
+    switch (type) {
+      case TournamentType.knockout:
+        return 'KNOCKOUT';
+      case TournamentType.doubleElimination:
+        return 'DOUBLE ELIMINATION';
+      case TournamentType.roundRobin:
+        return 'ROUND ROBIN';
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tournamentAsync = ref.watch(tournamentProvider(tournamentId));
@@ -28,10 +39,11 @@ class TournamentDashboardScreen extends ConsumerWidget {
           onPressed: () => context.go('/'),
         ),
         actions: [
-          // Only show bracket button for knockout tournaments
+          // Show bracket button for knockout and double elimination tournaments
           tournamentAsync.maybeWhen(
             data: (tournament) {
-              if (tournament?.type == TournamentType.knockout) {
+              if (tournament?.type == TournamentType.knockout ||
+                  tournament?.type == TournamentType.doubleElimination) {
                 return IconButton(
                   icon: const Icon(Icons.account_tree),
                   tooltip: 'View Bracket',
@@ -62,9 +74,7 @@ class TournamentDashboardScreen extends ConsumerWidget {
                 child: Column(
                   children: [
                     Text(
-                      tournament.type == TournamentType.knockout
-                          ? 'KNOCKOUT'
-                          : 'ROUND ROBIN',
+                      _getTournamentTypeLabel(tournament.type),
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
                     if (tournament.status == TournamentStatus.completed)
@@ -117,8 +127,7 @@ class TournamentDashboardScreen extends ConsumerWidget {
                         return _RoundCard(
                           round: round,
                           tournamentId: tournamentId,
-                          isKnockout:
-                              tournament.type == TournamentType.knockout,
+                          tournamentType: tournament.type,
                         );
                       },
                     );
@@ -141,20 +150,66 @@ class TournamentDashboardScreen extends ConsumerWidget {
 class _RoundCard extends ConsumerWidget {
   final Round round;
   final int tournamentId;
-  final bool isKnockout;
+  final TournamentType tournamentType;
 
   const _RoundCard({
     required this.round,
     required this.tournamentId,
-    required this.isKnockout,
+    required this.tournamentType,
   });
 
   String _getRoundName() {
-    if (!isKnockout) return 'All Matches';
+    if (tournamentType == TournamentType.roundRobin) return 'All Matches';
 
-    // For knockout, we might want to show "Finals", "Semi-Finals", etc.
-    // But we don't know total rounds upfront, so just use numbers
+    // For double elimination, show bracket type
+    if (tournamentType == TournamentType.doubleElimination) {
+      final bracketLabel = _getBracketLabel();
+      return '$bracketLabel - Round ${round.roundNumber}';
+    }
+
+    // For knockout, just use round numbers
     return 'Round ${round.roundNumber}';
+  }
+
+  String _getBracketLabel() {
+    switch (round.bracketType) {
+      case BracketType.winners:
+        return 'Winners';
+      case BracketType.losers:
+        return 'Losers';
+      case BracketType.grandFinals:
+        return 'Grand Finals';
+    }
+  }
+
+  Color _getBracketColor() {
+    if (tournamentType != TournamentType.doubleElimination) {
+      return round.isCompleted ? AppTheme.successColor : AppTheme.primaryColor;
+    }
+
+    switch (round.bracketType) {
+      case BracketType.winners:
+        return round.isCompleted
+            ? AppTheme.successColor
+            : AppTheme.successColor.withOpacity(0.7);
+      case BracketType.losers:
+        return round.isCompleted
+            ? AppTheme.successColor
+            : AppTheme.errorColor.withOpacity(0.7);
+      case BracketType.grandFinals:
+        return round.isCompleted ? AppTheme.successColor : AppTheme.winnerColor;
+    }
+  }
+
+  IconData _getBracketIcon() {
+    switch (round.bracketType) {
+      case BracketType.winners:
+        return Icons.emoji_events;
+      case BracketType.losers:
+        return Icons.trending_down;
+      case BracketType.grandFinals:
+        return Icons.military_tech;
+    }
   }
 
   @override
@@ -171,24 +226,32 @@ class _RoundCard extends ConsumerWidget {
             width: double.infinity,
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: round.isCompleted
-                  ? AppTheme.successColor.withOpacity(0.3)
-                  : AppTheme.primaryColor.withOpacity(0.3),
+              color: _getBracketColor().withOpacity(0.3),
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(16),
               ),
             ),
             child: Row(
               children: [
-                Text(
-                  _getRoundName(),
-                  style: Theme.of(context).textTheme.titleLarge,
+                // Bracket icon for double elimination
+                if (tournamentType == TournamentType.doubleElimination) ...[
+                  Icon(
+                    _getBracketIcon(),
+                    color: _getBracketColor(),
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                Expanded(
+                  child: Text(
+                    _getRoundName(),
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
                 ),
-                const Spacer(),
                 if (round.isCompleted)
                   const Icon(Icons.check_circle, color: AppTheme.successColor)
                 else
-                  const Icon(Icons.play_circle, color: AppTheme.primaryColor),
+                  Icon(Icons.play_circle, color: _getBracketColor()),
               ],
             ),
           ),

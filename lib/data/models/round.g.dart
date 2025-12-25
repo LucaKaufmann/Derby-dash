@@ -17,13 +17,19 @@ const RoundSchema = CollectionSchema(
   name: r'Round',
   id: 8762410198825043196,
   properties: {
-    r'isCompleted': PropertySchema(
+    r'bracketType': PropertySchema(
       id: 0,
+      name: r'bracketType',
+      type: IsarType.string,
+      enumMap: _RoundbracketTypeEnumValueMap,
+    ),
+    r'isCompleted': PropertySchema(
+      id: 1,
       name: r'isCompleted',
       type: IsarType.bool,
     ),
     r'roundNumber': PropertySchema(
-      id: 1,
+      id: 2,
       name: r'roundNumber',
       type: IsarType.long,
     )
@@ -62,6 +68,7 @@ int _roundEstimateSize(
   Map<Type, List<int>> allOffsets,
 ) {
   var bytesCount = offsets.last;
+  bytesCount += 3 + object.bracketType.name.length * 3;
   return bytesCount;
 }
 
@@ -71,8 +78,9 @@ void _roundSerialize(
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
-  writer.writeBool(offsets[0], object.isCompleted);
-  writer.writeLong(offsets[1], object.roundNumber);
+  writer.writeString(offsets[0], object.bracketType.name);
+  writer.writeBool(offsets[1], object.isCompleted);
+  writer.writeLong(offsets[2], object.roundNumber);
 }
 
 Round _roundDeserialize(
@@ -82,9 +90,12 @@ Round _roundDeserialize(
   Map<Type, List<int>> allOffsets,
 ) {
   final object = Round();
+  object.bracketType =
+      _RoundbracketTypeValueEnumMap[reader.readStringOrNull(offsets[0])] ??
+          BracketType.winners;
   object.id = id;
-  object.isCompleted = reader.readBool(offsets[0]);
-  object.roundNumber = reader.readLong(offsets[1]);
+  object.isCompleted = reader.readBool(offsets[1]);
+  object.roundNumber = reader.readLong(offsets[2]);
   return object;
 }
 
@@ -96,13 +107,27 @@ P _roundDeserializeProp<P>(
 ) {
   switch (propertyId) {
     case 0:
-      return (reader.readBool(offset)) as P;
+      return (_RoundbracketTypeValueEnumMap[reader.readStringOrNull(offset)] ??
+          BracketType.winners) as P;
     case 1:
+      return (reader.readBool(offset)) as P;
+    case 2:
       return (reader.readLong(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
   }
 }
+
+const _RoundbracketTypeEnumValueMap = {
+  r'winners': r'winners',
+  r'losers': r'losers',
+  r'grandFinals': r'grandFinals',
+};
+const _RoundbracketTypeValueEnumMap = {
+  r'winners': BracketType.winners,
+  r'losers': BracketType.losers,
+  r'grandFinals': BracketType.grandFinals,
+};
 
 Id _roundGetId(Round object) {
   return object.id;
@@ -195,6 +220,136 @@ extension RoundQueryWhere on QueryBuilder<Round, Round, QWhereClause> {
 }
 
 extension RoundQueryFilter on QueryBuilder<Round, Round, QFilterCondition> {
+  QueryBuilder<Round, Round, QAfterFilterCondition> bracketTypeEqualTo(
+    BracketType value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'bracketType',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Round, Round, QAfterFilterCondition> bracketTypeGreaterThan(
+    BracketType value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'bracketType',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Round, Round, QAfterFilterCondition> bracketTypeLessThan(
+    BracketType value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'bracketType',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Round, Round, QAfterFilterCondition> bracketTypeBetween(
+    BracketType lower,
+    BracketType upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'bracketType',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Round, Round, QAfterFilterCondition> bracketTypeStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'bracketType',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Round, Round, QAfterFilterCondition> bracketTypeEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'bracketType',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Round, Round, QAfterFilterCondition> bracketTypeContains(
+      String value,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'bracketType',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Round, Round, QAfterFilterCondition> bracketTypeMatches(
+      String pattern,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'bracketType',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Round, Round, QAfterFilterCondition> bracketTypeIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'bracketType',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<Round, Round, QAfterFilterCondition> bracketTypeIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'bracketType',
+        value: '',
+      ));
+    });
+  }
+
   QueryBuilder<Round, Round, QAfterFilterCondition> idEqualTo(Id value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
@@ -385,6 +540,18 @@ extension RoundQueryLinks on QueryBuilder<Round, Round, QFilterCondition> {
 }
 
 extension RoundQuerySortBy on QueryBuilder<Round, Round, QSortBy> {
+  QueryBuilder<Round, Round, QAfterSortBy> sortByBracketType() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'bracketType', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Round, Round, QAfterSortBy> sortByBracketTypeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'bracketType', Sort.desc);
+    });
+  }
+
   QueryBuilder<Round, Round, QAfterSortBy> sortByIsCompleted() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'isCompleted', Sort.asc);
@@ -411,6 +578,18 @@ extension RoundQuerySortBy on QueryBuilder<Round, Round, QSortBy> {
 }
 
 extension RoundQuerySortThenBy on QueryBuilder<Round, Round, QSortThenBy> {
+  QueryBuilder<Round, Round, QAfterSortBy> thenByBracketType() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'bracketType', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Round, Round, QAfterSortBy> thenByBracketTypeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'bracketType', Sort.desc);
+    });
+  }
+
   QueryBuilder<Round, Round, QAfterSortBy> thenById() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'id', Sort.asc);
@@ -449,6 +628,13 @@ extension RoundQuerySortThenBy on QueryBuilder<Round, Round, QSortThenBy> {
 }
 
 extension RoundQueryWhereDistinct on QueryBuilder<Round, Round, QDistinct> {
+  QueryBuilder<Round, Round, QDistinct> distinctByBracketType(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'bracketType', caseSensitive: caseSensitive);
+    });
+  }
+
   QueryBuilder<Round, Round, QDistinct> distinctByIsCompleted() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'isCompleted');
@@ -466,6 +652,12 @@ extension RoundQueryProperty on QueryBuilder<Round, Round, QQueryProperty> {
   QueryBuilder<Round, int, QQueryOperations> idProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'id');
+    });
+  }
+
+  QueryBuilder<Round, BracketType, QQueryOperations> bracketTypeProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'bracketType');
     });
   }
 

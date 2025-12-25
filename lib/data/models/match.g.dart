@@ -21,6 +21,16 @@ const MatchSchema = CollectionSchema(
       id: 0,
       name: r'isBye',
       type: IsarType.bool,
+    ),
+    r'loserDestinationMatchId': PropertySchema(
+      id: 1,
+      name: r'loserDestinationMatchId',
+      type: IsarType.long,
+    ),
+    r'matchPosition': PropertySchema(
+      id: 2,
+      name: r'matchPosition',
+      type: IsarType.long,
     )
   },
   estimateSize: _matchEstimateSize,
@@ -79,6 +89,8 @@ void _matchSerialize(
   Map<Type, List<int>> allOffsets,
 ) {
   writer.writeBool(offsets[0], object.isBye);
+  writer.writeLong(offsets[1], object.loserDestinationMatchId);
+  writer.writeLong(offsets[2], object.matchPosition);
 }
 
 Match _matchDeserialize(
@@ -90,6 +102,8 @@ Match _matchDeserialize(
   final object = Match();
   object.id = id;
   object.isBye = reader.readBool(offsets[0]);
+  object.loserDestinationMatchId = reader.readLongOrNull(offsets[1]);
+  object.matchPosition = reader.readLong(offsets[2]);
   return object;
 }
 
@@ -102,6 +116,10 @@ P _matchDeserializeProp<P>(
   switch (propertyId) {
     case 0:
       return (reader.readBool(offset)) as P;
+    case 1:
+      return (reader.readLongOrNull(offset)) as P;
+    case 2:
+      return (reader.readLong(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
   }
@@ -259,6 +277,133 @@ extension MatchQueryFilter on QueryBuilder<Match, Match, QFilterCondition> {
       ));
     });
   }
+
+  QueryBuilder<Match, Match, QAfterFilterCondition>
+      loserDestinationMatchIdIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'loserDestinationMatchId',
+      ));
+    });
+  }
+
+  QueryBuilder<Match, Match, QAfterFilterCondition>
+      loserDestinationMatchIdIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'loserDestinationMatchId',
+      ));
+    });
+  }
+
+  QueryBuilder<Match, Match, QAfterFilterCondition>
+      loserDestinationMatchIdEqualTo(int? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'loserDestinationMatchId',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Match, Match, QAfterFilterCondition>
+      loserDestinationMatchIdGreaterThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'loserDestinationMatchId',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Match, Match, QAfterFilterCondition>
+      loserDestinationMatchIdLessThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'loserDestinationMatchId',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Match, Match, QAfterFilterCondition>
+      loserDestinationMatchIdBetween(
+    int? lower,
+    int? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'loserDestinationMatchId',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<Match, Match, QAfterFilterCondition> matchPositionEqualTo(
+      int value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'matchPosition',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Match, Match, QAfterFilterCondition> matchPositionGreaterThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'matchPosition',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Match, Match, QAfterFilterCondition> matchPositionLessThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'matchPosition',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Match, Match, QAfterFilterCondition> matchPositionBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'matchPosition',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
 }
 
 extension MatchQueryObject on QueryBuilder<Match, Match, QFilterCondition> {}
@@ -326,6 +471,30 @@ extension MatchQuerySortBy on QueryBuilder<Match, Match, QSortBy> {
       return query.addSortBy(r'isBye', Sort.desc);
     });
   }
+
+  QueryBuilder<Match, Match, QAfterSortBy> sortByLoserDestinationMatchId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'loserDestinationMatchId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Match, Match, QAfterSortBy> sortByLoserDestinationMatchIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'loserDestinationMatchId', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Match, Match, QAfterSortBy> sortByMatchPosition() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'matchPosition', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Match, Match, QAfterSortBy> sortByMatchPositionDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'matchPosition', Sort.desc);
+    });
+  }
 }
 
 extension MatchQuerySortThenBy on QueryBuilder<Match, Match, QSortThenBy> {
@@ -352,12 +521,48 @@ extension MatchQuerySortThenBy on QueryBuilder<Match, Match, QSortThenBy> {
       return query.addSortBy(r'isBye', Sort.desc);
     });
   }
+
+  QueryBuilder<Match, Match, QAfterSortBy> thenByLoserDestinationMatchId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'loserDestinationMatchId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Match, Match, QAfterSortBy> thenByLoserDestinationMatchIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'loserDestinationMatchId', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Match, Match, QAfterSortBy> thenByMatchPosition() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'matchPosition', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Match, Match, QAfterSortBy> thenByMatchPositionDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'matchPosition', Sort.desc);
+    });
+  }
 }
 
 extension MatchQueryWhereDistinct on QueryBuilder<Match, Match, QDistinct> {
   QueryBuilder<Match, Match, QDistinct> distinctByIsBye() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'isBye');
+    });
+  }
+
+  QueryBuilder<Match, Match, QDistinct> distinctByLoserDestinationMatchId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'loserDestinationMatchId');
+    });
+  }
+
+  QueryBuilder<Match, Match, QDistinct> distinctByMatchPosition() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'matchPosition');
     });
   }
 }
@@ -372,6 +577,19 @@ extension MatchQueryProperty on QueryBuilder<Match, Match, QQueryProperty> {
   QueryBuilder<Match, bool, QQueryOperations> isByeProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'isBye');
+    });
+  }
+
+  QueryBuilder<Match, int?, QQueryOperations>
+      loserDestinationMatchIdProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'loserDestinationMatchId');
+    });
+  }
+
+  QueryBuilder<Match, int, QQueryOperations> matchPositionProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'matchPosition');
     });
   }
 }

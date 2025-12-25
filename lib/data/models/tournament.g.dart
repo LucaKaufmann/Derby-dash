@@ -129,10 +129,12 @@ const _TournamentstatusValueEnumMap = {
 const _TournamenttypeEnumValueMap = {
   r'knockout': r'knockout',
   r'roundRobin': r'roundRobin',
+  r'doubleElimination': r'doubleElimination',
 };
 const _TournamenttypeValueEnumMap = {
   r'knockout': TournamentType.knockout,
   r'roundRobin': TournamentType.roundRobin,
+  r'doubleElimination': TournamentType.doubleElimination,
 };
 
 Id _tournamentGetId(Tournament object) {
