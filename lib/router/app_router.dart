@@ -10,6 +10,7 @@ import '../screens/tournament/standings_screen.dart';
 import '../screens/match/match_screen.dart';
 import '../screens/home_screen.dart';
 import '../screens/tournament/bracket_screen.dart';
+import '../screens/settings/settings_screen.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/',
@@ -18,6 +19,11 @@ final appRouter = GoRouter(
       path: '/',
       name: 'home',
       builder: (context, state) => const HomeScreen(),
+    ),
+    GoRoute(
+      path: '/settings',
+      name: 'settings',
+      builder: (context, state) => const SettingsScreen(),
     ),
     GoRoute(
       path: '/garage',
