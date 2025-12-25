@@ -21,7 +21,6 @@ class BracketMatchCard extends StatelessWidget {
   });
 
   bool get _isCompleted => match.winner.value != null;
-  bool get _isBye => match.isBye;
 
   @override
   Widget build(BuildContext context) {
@@ -49,7 +48,7 @@ class BracketMatchCard extends StatelessWidget {
             ),
           ],
         ),
-        child: _isBye ? _buildByeContent() : _buildMatchContent(),
+        child: _buildMatchContent(),
       ),
     );
   }
@@ -78,51 +77,6 @@ class BracketMatchCard extends StatelessWidget {
           isLoser: _isCompleted && winner?.id != carB?.id,
         ),
       ],
-    );
-  }
-
-  Widget _buildByeContent() {
-    final car = match.carA.value;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      child: Row(
-        children: [
-          _CarPhoto(car: car, size: 28),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  car?.name ?? 'Unknown',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.textPrimary,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Text(
-                  'BYE',
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.winnerColor.withValues(alpha: 0.8),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Icon(
-            Icons.arrow_forward,
-            size: 16,
-            color: AppTheme.winnerColor.withValues(alpha: 0.8),
-          ),
-        ],
-      ),
     );
   }
 }

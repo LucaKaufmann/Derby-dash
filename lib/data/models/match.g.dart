@@ -17,18 +17,13 @@ const MatchSchema = CollectionSchema(
   name: r'Match',
   id: -4384922031457139852,
   properties: {
-    r'isBye': PropertySchema(
-      id: 0,
-      name: r'isBye',
-      type: IsarType.bool,
-    ),
     r'loserDestinationMatchId': PropertySchema(
-      id: 1,
+      id: 0,
       name: r'loserDestinationMatchId',
       type: IsarType.long,
     ),
     r'matchPosition': PropertySchema(
-      id: 2,
+      id: 1,
       name: r'matchPosition',
       type: IsarType.long,
     )
@@ -88,9 +83,8 @@ void _matchSerialize(
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
-  writer.writeBool(offsets[0], object.isBye);
-  writer.writeLong(offsets[1], object.loserDestinationMatchId);
-  writer.writeLong(offsets[2], object.matchPosition);
+  writer.writeLong(offsets[0], object.loserDestinationMatchId);
+  writer.writeLong(offsets[1], object.matchPosition);
 }
 
 Match _matchDeserialize(
@@ -101,9 +95,8 @@ Match _matchDeserialize(
 ) {
   final object = Match();
   object.id = id;
-  object.isBye = reader.readBool(offsets[0]);
-  object.loserDestinationMatchId = reader.readLongOrNull(offsets[1]);
-  object.matchPosition = reader.readLong(offsets[2]);
+  object.loserDestinationMatchId = reader.readLongOrNull(offsets[0]);
+  object.matchPosition = reader.readLong(offsets[1]);
   return object;
 }
 
@@ -115,10 +108,8 @@ P _matchDeserializeProp<P>(
 ) {
   switch (propertyId) {
     case 0:
-      return (reader.readBool(offset)) as P;
-    case 1:
       return (reader.readLongOrNull(offset)) as P;
-    case 2:
+    case 1:
       return (reader.readLong(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -265,15 +256,6 @@ extension MatchQueryFilter on QueryBuilder<Match, Match, QFilterCondition> {
         includeLower: includeLower,
         upper: upper,
         includeUpper: includeUpper,
-      ));
-    });
-  }
-
-  QueryBuilder<Match, Match, QAfterFilterCondition> isByeEqualTo(bool value) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'isBye',
-        value: value,
       ));
     });
   }
@@ -460,18 +442,6 @@ extension MatchQueryLinks on QueryBuilder<Match, Match, QFilterCondition> {
 }
 
 extension MatchQuerySortBy on QueryBuilder<Match, Match, QSortBy> {
-  QueryBuilder<Match, Match, QAfterSortBy> sortByIsBye() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'isBye', Sort.asc);
-    });
-  }
-
-  QueryBuilder<Match, Match, QAfterSortBy> sortByIsByeDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'isBye', Sort.desc);
-    });
-  }
-
   QueryBuilder<Match, Match, QAfterSortBy> sortByLoserDestinationMatchId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'loserDestinationMatchId', Sort.asc);
@@ -510,18 +480,6 @@ extension MatchQuerySortThenBy on QueryBuilder<Match, Match, QSortThenBy> {
     });
   }
 
-  QueryBuilder<Match, Match, QAfterSortBy> thenByIsBye() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'isBye', Sort.asc);
-    });
-  }
-
-  QueryBuilder<Match, Match, QAfterSortBy> thenByIsByeDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'isBye', Sort.desc);
-    });
-  }
-
   QueryBuilder<Match, Match, QAfterSortBy> thenByLoserDestinationMatchId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'loserDestinationMatchId', Sort.asc);
@@ -548,12 +506,6 @@ extension MatchQuerySortThenBy on QueryBuilder<Match, Match, QSortThenBy> {
 }
 
 extension MatchQueryWhereDistinct on QueryBuilder<Match, Match, QDistinct> {
-  QueryBuilder<Match, Match, QDistinct> distinctByIsBye() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(r'isBye');
-    });
-  }
-
   QueryBuilder<Match, Match, QDistinct> distinctByLoserDestinationMatchId() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'loserDestinationMatchId');
@@ -571,12 +523,6 @@ extension MatchQueryProperty on QueryBuilder<Match, Match, QQueryProperty> {
   QueryBuilder<Match, int, QQueryOperations> idProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'id');
-    });
-  }
-
-  QueryBuilder<Match, bool, QQueryOperations> isByeProperty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addPropertyName(r'isBye');
     });
   }
 

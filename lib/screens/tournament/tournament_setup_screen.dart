@@ -24,11 +24,35 @@ class _TournamentSetupScreenState extends ConsumerState<TournamentSetupScreen> {
   int get _minCarsRequired =>
       _tournamentType == TournamentType.doubleElimination ? 4 : 2;
 
+  bool get _isValidCarCount {
+    final count = _selectedCarIds.length;
+    if (count < _minCarsRequired) return false;
+    // Require even number of cars for knockout/double elimination
+    if (_tournamentType == TournamentType.knockout ||
+        _tournamentType == TournamentType.doubleElimination) {
+      return count % 2 == 0;
+    }
+    return true; // Round robin allows any count >= 2
+  }
+
+  String? get _validationMessage {
+    final count = _selectedCarIds.length;
+    if (count < _minCarsRequired) {
+      return 'Select at least $_minCarsRequired cars';
+    }
+    if ((_tournamentType == TournamentType.knockout ||
+            _tournamentType == TournamentType.doubleElimination) &&
+        count % 2 != 0) {
+      return 'Select an even number of cars';
+    }
+    return null;
+  }
+
   Future<void> _startTournament() async {
-    if (_selectedCarIds.length < _minCarsRequired) {
+    if (!_isValidCarCount) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Select at least $_minCarsRequired cars for ${_tournamentType == TournamentType.doubleElimination ? "double elimination" : "this tournament"}!'),
+          content: Text(_validationMessage ?? 'Invalid car selection'),
         ),
       );
       return;
@@ -217,12 +241,25 @@ class _TournamentSetupScreenState extends ConsumerState<TournamentSetupScreen> {
             ),
           ),
 
+          // Validation message
+          if (_validationMessage != null && _selectedCarIds.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                _validationMessage!,
+                style: TextStyle(
+                  color: Colors.orange[700],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+
           // Start Button
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: ElevatedButton(
-                onPressed: _selectedCarIds.length >= 2 && !_isCreating
+                onPressed: _isValidCarCount && !_isCreating
                     ? _startTournament
                     : null,
                 child: _isCreating

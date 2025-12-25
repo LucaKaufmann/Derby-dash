@@ -257,7 +257,6 @@ class _MatchDetailsSheet extends StatelessWidget {
     final carB = match.carB.value;
     final winner = match.winner.value;
     final isCompleted = winner != null;
-    final isBye = match.isBye;
 
     return Padding(
       padding: const EdgeInsets.all(24),
@@ -276,9 +275,9 @@ class _MatchDetailsSheet extends StatelessWidget {
           ),
 
           // Title
-          Text(
-            isBye ? 'Bye Match' : 'Match Details',
-            style: const TextStyle(
+          const Text(
+            'Match Details',
+            style: TextStyle(
               fontSize: AppTheme.fontSizeLarge,
               fontWeight: FontWeight.bold,
               color: AppTheme.textPrimary,
@@ -286,45 +285,36 @@ class _MatchDetailsSheet extends StatelessWidget {
           ),
           const SizedBox(height: 24),
 
-          if (isBye) ...[
-            // Bye match display
-            _CarDisplay(
-              car: carA,
-              isWinner: true,
-              label: 'Auto-advances',
-            ),
-          ] else ...[
-            // Regular match display
-            Row(
-              children: [
-                Expanded(
-                  child: _CarDisplay(
-                    car: carA,
-                    isWinner: winner?.id == carA?.id,
-                    isLoser: isCompleted && winner.id != carA?.id,
+          // Match display
+          Row(
+            children: [
+              Expanded(
+                child: _CarDisplay(
+                  car: carA,
+                  isWinner: winner?.id == carA?.id,
+                  isLoser: winner != null && winner.id != carA?.id,
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
+                  'VS',
+                  style: TextStyle(
+                    fontSize: AppTheme.fontSizeMedium,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.textSecondary.withValues(alpha: 0.7),
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Text(
-                    'VS',
-                    style: TextStyle(
-                      fontSize: AppTheme.fontSizeMedium,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.textSecondary.withValues(alpha: 0.7),
-                    ),
-                  ),
+              ),
+              Expanded(
+                child: _CarDisplay(
+                  car: carB,
+                  isWinner: winner?.id == carB?.id,
+                  isLoser: winner != null && winner.id != carB?.id,
                 ),
-                Expanded(
-                  child: _CarDisplay(
-                    car: carB,
-                    isWinner: winner?.id == carB?.id,
-                    isLoser: isCompleted && winner.id != carB?.id,
-                  ),
-                ),
-              ],
-            ),
-          ],
+              ),
+            ],
+          ),
 
           const SizedBox(height: 24),
 
@@ -338,11 +328,7 @@ class _MatchDetailsSheet extends StatelessWidget {
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
-              isCompleted
-                  ? isBye
-                      ? 'Bye - Auto Advanced'
-                      : 'Winner: ${winner.name}'
-                  : 'Match Pending',
+              isCompleted ? 'Winner: ${winner.name}' : 'Match Pending',
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
@@ -363,13 +349,11 @@ class _CarDisplay extends StatelessWidget {
   final Car? car;
   final bool isWinner;
   final bool isLoser;
-  final String? label;
 
   const _CarDisplay({
     required this.car,
     this.isWinner = false,
     this.isLoser = false,
-    this.label,
   });
 
   @override
@@ -440,21 +424,21 @@ class _CarDisplay extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
         ),
 
-        // Winner badge or label
+        // Winner badge
         if (isWinner) ...[
           const SizedBox(height: 4),
-          Row(
+          const Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(
+              Icon(
                 Icons.emoji_events,
                 size: 16,
                 color: AppTheme.winnerColor,
               ),
-              const SizedBox(width: 4),
+              SizedBox(width: 4),
               Text(
-                label ?? 'WINNER',
-                style: const TextStyle(
+                'WINNER',
+                style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                   color: AppTheme.winnerColor,

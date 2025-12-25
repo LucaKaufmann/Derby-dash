@@ -57,11 +57,8 @@ class CarRepository {
 
   // Get loss count for a car (dynamically calculated)
   Future<int> getLossCount(Id carId) async {
-    // Get all completed non-bye matches where car participated
-    final allMatches = await _isar.matchs
-        .filter()
-        .isByeEqualTo(false)
-        .findAll();
+    // Get all completed matches where car participated
+    final allMatches = await _isar.matchs.where().findAll();
 
     int losses = 0;
     for (final match in allMatches) {
@@ -86,10 +83,7 @@ class CarRepository {
 
   // Get total match count for a car
   Future<int> getMatchCount(Id carId) async {
-    final allMatches = await _isar.matchs
-        .filter()
-        .isByeEqualTo(false)
-        .findAll();
+    final allMatches = await _isar.matchs.where().findAll();
 
     int count = 0;
     for (final match in allMatches) {

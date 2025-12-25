@@ -6,7 +6,6 @@ import '../screens/tournament/tournament_setup_screen.dart';
 import '../screens/tournament/tournament_dashboard_screen.dart';
 import '../screens/tournament/tournament_history_screen.dart';
 import '../screens/match/match_screen.dart';
-import '../screens/match/bye_screen.dart';
 import '../screens/home_screen.dart';
 import '../screens/tournament/bracket_screen.dart';
 
@@ -55,18 +54,6 @@ final appRouter = GoRouter(
             final tournamentId = int.parse(state.pathParameters['id']!);
             final matchId = int.parse(state.pathParameters['matchId']!);
             return MatchScreen(
-              tournamentId: tournamentId,
-              matchId: matchId,
-            );
-          },
-        ),
-        GoRoute(
-          path: 'bye/:matchId',
-          name: 'bye',
-          builder: (context, state) {
-            final tournamentId = int.parse(state.pathParameters['id']!);
-            final matchId = int.parse(state.pathParameters['matchId']!);
-            return ByeScreen(
               tournamentId: tournamentId,
               matchId: matchId,
             );

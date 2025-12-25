@@ -55,13 +55,22 @@ class BracketLayoutCalculator {
         (roundMatches.length - 1) * config.horizontalSpacing;
   }
 
-  /// Calculate total bracket height based on first round match count.
+  /// Calculate total bracket height based on actual match positions.
   double get totalHeight {
     if (roundMatches.isEmpty) return 0;
-    final firstRoundCount = roundMatches.first.length;
-    return config.padding * 2 +
-        firstRoundCount * config.cardHeight +
-        (firstRoundCount - 1) * config.verticalSpacing;
+
+    // Find the maximum Y position used by any match
+    double maxY = 0;
+    for (int roundIdx = 0; roundIdx < roundMatches.length; roundIdx++) {
+      final matches = roundMatches[roundIdx];
+      for (int matchIdx = 0; matchIdx < matches.length; matchIdx++) {
+        final y = _calculateMatchY(roundIdx, matchIdx);
+        if (y > maxY) maxY = y;
+      }
+    }
+
+    // Total height is the max Y position plus card height plus padding
+    return maxY + config.cardHeight + config.padding;
   }
 
   /// Calculate Y position for a match.
