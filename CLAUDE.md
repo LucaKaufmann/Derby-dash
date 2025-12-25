@@ -24,8 +24,14 @@ flutter pub get
 # Generate Isar schemas and Riverpod code
 flutter pub run build_runner build --delete-conflicting-outputs
 
-# Run the app
+# Run the app (debug mode - requires debugger connection)
 flutter run
+
+# Run without debugger (profile mode - standalone testing)
+flutter run --profile
+
+# Run without debugger (release mode - production build)
+flutter run --release
 
 # Run tests
 flutter test
