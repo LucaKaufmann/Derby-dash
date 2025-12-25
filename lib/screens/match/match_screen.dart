@@ -20,67 +20,49 @@ class MatchScreen extends ConsumerStatefulWidget {
   ConsumerState<MatchScreen> createState() => _MatchScreenState();
 }
 
-class _MatchScreenState extends ConsumerState<MatchScreen>
-    with SingleTickerProviderStateMixin {
+class _MatchScreenState extends ConsumerState<MatchScreen> {
   int? _selectedWinnerId;
-  bool _isAnimating = false;
-  late AnimationController _animationController;
-  late Animation<double> _scaleAnimation;
+  bool _isConfirming = false;
 
-  @override
-  void initState() {
-    super.initState();
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 500),
-      vsync: this,
-    );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.05).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.elasticOut),
-    );
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _selectWinner(Car winner) async {
-    if (_isAnimating) return;
+  void _selectWinner(Car winner) {
+    if (_isConfirming) return;
 
     setState(() {
-      _selectedWinnerId = winner.id;
-      _isAnimating = true;
+      // Toggle selection if tapping same car, otherwise select new one
+      if (_selectedWinnerId == winner.id) {
+        _selectedWinnerId = null;
+      } else {
+        _selectedWinnerId = winner.id;
+      }
     });
+  }
 
-    // Play winner animation
-    await _animationController.forward();
+  Future<void> _confirmWinner() async {
+    if (_selectedWinnerId == null || _isConfirming) return;
+
+    setState(() {
+      _isConfirming = true;
+    });
 
     // Complete match in database
     await ref
         .read(tournamentServiceProvider)
-        .completeMatch(widget.matchId, winner.id);
+        .completeMatch(widget.matchId, _selectedWinnerId!);
 
     // Invalidate providers to refresh data
     ref.invalidate(matchDetailsProvider(widget.matchId));
     ref.invalidate(tournamentRoundsProvider(widget.tournamentId));
     ref.invalidate(tournamentProvider(widget.tournamentId));
 
-    // Wait a bit, then navigate back
-    await Future.delayed(const Duration(seconds: 2));
-
     if (mounted) {
       context.go('/tournament/${widget.tournamentId}');
     }
   }
 
-  void _undoSelection() {
-    if (!_isAnimating || _selectedWinnerId == null) return;
-
-    _animationController.reverse();
+  void _clearSelection() {
+    if (_isConfirming) return;
     setState(() {
       _selectedWinnerId = null;
-      _isAnimating = false;
     });
   }
 
@@ -106,7 +88,7 @@ class _MatchScreenState extends ConsumerState<MatchScreen>
           return SafeArea(
             child: Column(
               children: [
-                // Header with back and undo
+                // Header with back button
                 Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: Row(
@@ -114,16 +96,17 @@ class _MatchScreenState extends ConsumerState<MatchScreen>
                     children: [
                       IconButton(
                         icon: const Icon(Icons.arrow_back, size: 32),
-                        onPressed: () =>
-                            context.go('/tournament/${widget.tournamentId}'),
+                        onPressed: _isConfirming
+                            ? null
+                            : () => context.go('/tournament/${widget.tournamentId}'),
                       ),
-                      if (_isAnimating)
+                      if (_selectedWinnerId != null && !_isConfirming)
                         TextButton.icon(
-                          onPressed: _undoSelection,
-                          icon: const Icon(Icons.undo),
-                          label: const Text('UNDO'),
+                          onPressed: _clearSelection,
+                          icon: const Icon(Icons.close),
+                          label: const Text('CLEAR'),
                           style: TextButton.styleFrom(
-                            foregroundColor: AppTheme.errorColor,
+                            foregroundColor: AppTheme.textSecondary,
                           ),
                         ),
                     ],
@@ -137,42 +120,68 @@ class _MatchScreenState extends ConsumerState<MatchScreen>
                     isSelected: _selectedWinnerId == carA.id,
                     isLoser: _selectedWinnerId != null &&
                         _selectedWinnerId != carA.id,
-                    scaleAnimation: _scaleAnimation,
                     onTap: () => _selectWinner(carA),
                     color: AppTheme.primaryColor,
                   ),
                 ),
 
-                // VS Divider
+                // VS Divider / Confirm Button
                 Container(
-                  height: 80,
+                  height: 100,
                   width: double.infinity,
                   color: AppTheme.backgroundColor,
                   child: Center(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 32,
-                        vertical: 12,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppTheme.surfaceColor,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: _isAnimating
-                              ? AppTheme.successColor
-                              : AppTheme.textSecondary,
-                          width: 3,
-                        ),
-                      ),
-                      child: Text(
-                        _isAnimating ? 'WINNER!' : 'VS',
-                        style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                              color: _isAnimating
-                                  ? AppTheme.successColor
-                                  : AppTheme.textPrimary,
+                    child: _selectedWinnerId != null
+                        ? ElevatedButton.icon(
+                            onPressed: _isConfirming ? null : _confirmWinner,
+                            icon: _isConfirming
+                                ? const SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : const Icon(Icons.check, size: 32),
+                            label: Text(
+                              _isConfirming ? 'SAVING...' : 'CONFIRM WINNER',
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 1,
+                              ),
                             ),
-                      ),
-                    ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.successColor,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 32,
+                                vertical: 16,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                            ),
+                          )
+                        : Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 32,
+                              vertical: 12,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppTheme.surfaceColor,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: AppTheme.textSecondary,
+                                width: 3,
+                              ),
+                            ),
+                            child: Text(
+                              'VS',
+                              style: Theme.of(context).textTheme.headlineLarge,
+                            ),
+                          ),
                   ),
                 ),
 
@@ -183,7 +192,6 @@ class _MatchScreenState extends ConsumerState<MatchScreen>
                     isSelected: _selectedWinnerId == carB.id,
                     isLoser: _selectedWinnerId != null &&
                         _selectedWinnerId != carB.id,
-                    scaleAnimation: _scaleAnimation,
                     onTap: () => _selectWinner(carB),
                     color: AppTheme.secondaryColor,
                   ),
@@ -203,7 +211,6 @@ class _CarPanel extends StatelessWidget {
   final Car car;
   final bool isSelected;
   final bool isLoser;
-  final Animation<double> scaleAnimation;
   final VoidCallback onTap;
   final Color color;
 
@@ -211,14 +218,13 @@ class _CarPanel extends StatelessWidget {
     required this.car,
     required this.isSelected,
     required this.isLoser,
-    required this.scaleAnimation,
     required this.onTap,
     required this.color,
   });
 
   @override
   Widget build(BuildContext context) {
-    Widget panel = GestureDetector(
+    return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
@@ -322,7 +328,7 @@ class _CarPanel extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.only(bottom: 16),
                   child: Text(
-                    'TAP TO SELECT WINNER',
+                    'TAP TO SELECT',
                     style: TextStyle(
                       color: color,
                       fontWeight: FontWeight.bold,
@@ -335,19 +341,5 @@ class _CarPanel extends StatelessWidget {
         ),
       ),
     );
-
-    if (isSelected) {
-      return AnimatedBuilder(
-        animation: scaleAnimation,
-        builder: (context, child) {
-          return Transform.scale(
-            scale: scaleAnimation.value,
-            child: panel,
-          );
-        },
-      );
-    }
-
-    return panel;
   }
 }
