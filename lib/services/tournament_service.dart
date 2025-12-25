@@ -280,12 +280,74 @@ class TournamentService {
     } else if (round.bracketType == BracketType.losers) {
       await _handleLosersBracketRoundComplete(tournament, round, winners);
     } else if (round.bracketType == BracketType.grandFinals) {
-      // Grand finals complete - tournament is done
+      await _handleGrandFinalsComplete(tournament, round, allMatches);
+    }
+  }
+
+  /// Handle grand finals completion with bracket reset logic
+  Future<void> _handleGrandFinalsComplete(
+    Tournament tournament,
+    Round round,
+    List<Match> allMatches,
+  ) async {
+    if (allMatches.isEmpty) return;
+
+    final match = allMatches.first;
+    await match.winner.load();
+    await match.carA.load();
+    await match.carB.load();
+
+    final winner = match.winner.value;
+    final winnersBracketChampion = match.carA.value; // Always carA in grand finals
+    final losersBracketChampion = match.carB.value; // Always carB in grand finals
+
+    if (winner == null || winnersBracketChampion == null || losersBracketChampion == null) {
+      return;
+    }
+
+    // Check if this is round 1 or round 2 of grand finals
+    if (round.roundNumber == 1 && winner.id == losersBracketChampion.id) {
+      // Losers bracket champion won round 1 - bracket reset!
+      // Create round 2 of grand finals (same matchup)
+      await _createGrandFinalsRound2(tournament, winnersBracketChampion, losersBracketChampion);
+    } else {
+      // Either winners bracket champion won, or this is round 2
+      // Tournament is complete
       await _isar.writeTxn(() async {
         tournament.status = TournamentStatus.completed;
         await _isar.tournaments.put(tournament);
       });
     }
+  }
+
+  /// Create round 2 of grand finals (bracket reset)
+  Future<void> _createGrandFinalsRound2(
+    Tournament tournament,
+    Car winnersBracketChampion,
+    Car losersBracketChampion,
+  ) async {
+    final round = Round()
+      ..roundNumber = 2
+      ..bracketType = BracketType.grandFinals;
+
+    final match = Match()
+      ..matchPosition = 0
+      ..isBye = false;
+    // Keep same order: carA = winners bracket, carB = losers bracket
+    match.carA.value = winnersBracketChampion;
+    match.carB.value = losersBracketChampion;
+
+    await _isar.writeTxn(() async {
+      await _isar.rounds.put(round);
+      tournament.rounds.add(round);
+      await tournament.rounds.save();
+
+      await _isar.matchs.put(match);
+      await match.carA.save();
+      await match.carB.save();
+      round.matches.add(match);
+      await round.matches.save();
+    });
   }
 
   /// Handle winner's bracket round completion in double elimination

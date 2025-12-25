@@ -164,6 +164,10 @@ class _RoundCard extends ConsumerWidget {
     // For double elimination, show bracket type
     if (tournamentType == TournamentType.doubleElimination) {
       final bracketLabel = _getBracketLabel();
+      // Grand finals doesn't need "Round X" suffix
+      if (round.bracketType == BracketType.grandFinals) {
+        return bracketLabel;
+      }
       return '$bracketLabel - Round ${round.roundNumber}';
     }
 
@@ -178,7 +182,8 @@ class _RoundCard extends ConsumerWidget {
       case BracketType.losers:
         return 'Losers';
       case BracketType.grandFinals:
-        return 'Grand Finals';
+        // Round 2 is bracket reset
+        return round.roundNumber == 2 ? 'Grand Finals - RESET' : 'Grand Finals';
     }
   }
 

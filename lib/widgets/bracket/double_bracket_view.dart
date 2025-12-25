@@ -233,14 +233,36 @@ class _GrandFinalsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final grandFinalsRound = rounds.firstOrNull;
-    if (grandFinalsRound == null) return const SizedBox.shrink();
+    if (rounds.isEmpty) return const SizedBox.shrink();
 
-    final matches = matchesByRound[grandFinalsRound.id] ?? [];
-    if (matches.isEmpty) return const SizedBox.shrink();
+    // Sort rounds by round number
+    final sortedRounds = List<Round>.from(rounds)
+      ..sort((a, b) => a.roundNumber.compareTo(b.roundNumber));
 
-    final match = matches.first;
-    final isCompleted = match.winner.value != null;
+    // Get all matches from grand finals rounds
+    final allMatches = <Match>[];
+    for (final round in sortedRounds) {
+      final matches = matchesByRound[round.id] ?? [];
+      allMatches.addAll(matches);
+    }
+
+    if (allMatches.isEmpty) return const SizedBox.shrink();
+
+    // Check if there's a bracket reset (round 2)
+    final hasBracketReset = sortedRounds.any((r) => r.roundNumber == 2);
+
+    // Find the final winner (last completed match)
+    Match? championMatch;
+    for (final match in allMatches.reversed) {
+      if (match.winner.value != null) {
+        championMatch = match;
+        break;
+      }
+    }
+
+    // Tournament is complete if last round is complete
+    final lastRound = sortedRounds.last;
+    final tournamentComplete = lastRound.isCompleted;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -270,9 +292,9 @@ class _GrandFinalsSection extends StatelessWidget {
                 size: 28,
               ),
               const SizedBox(width: 12),
-              const Text(
-                'GRAND FINALS',
-                style: TextStyle(
+              Text(
+                hasBracketReset ? 'GRAND FINALS (BRACKET RESET)' : 'GRAND FINALS',
+                style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                   color: AppTheme.winnerColor,
@@ -284,32 +306,73 @@ class _GrandFinalsSection extends StatelessWidget {
         ),
         const SizedBox(height: 16),
 
-        // Grand Finals match card (larger)
-        Center(
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: isCompleted
-                      ? AppTheme.winnerColor.withValues(alpha: 0.4)
-                      : AppTheme.primaryColor.withValues(alpha: 0.3),
-                  blurRadius: 20,
-                  spreadRadius: 4,
+        // Show all grand finals matches
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            for (int i = 0; i < allMatches.length; i++) ...[
+              if (i > 0) ...[
+                // Arrow between matches
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.arrow_forward,
+                        color: AppTheme.winnerColor.withValues(alpha: 0.7),
+                        size: 24,
+                      ),
+                      Text(
+                        'RESET',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.errorColor.withValues(alpha: 0.8),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
-            ),
-            child: BracketMatchCard(
-              match: match,
-              width: 200,
-              height: 90,
-              onTap: onMatchTap != null ? () => onMatchTap!(match) : null,
-            ),
-          ),
+              Column(
+                children: [
+                  Text(
+                    i == 0 ? 'Match 1' : 'Match 2',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.textSecondary.withValues(alpha: 0.8),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: allMatches[i].winner.value != null
+                              ? AppTheme.winnerColor.withValues(alpha: 0.4)
+                              : AppTheme.primaryColor.withValues(alpha: 0.3),
+                          blurRadius: 20,
+                          spreadRadius: 4,
+                        ),
+                      ],
+                    ),
+                    child: BracketMatchCard(
+                      match: allMatches[i],
+                      width: 200,
+                      height: 90,
+                      onTap: onMatchTap != null ? () => onMatchTap!(allMatches[i]) : null,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ],
         ),
 
-        // Champion indicator
-        if (isCompleted) ...[
+        // Champion indicator (only show when tournament is complete)
+        if (tournamentComplete && championMatch != null) ...[
           const SizedBox(height: 16),
           Center(
             child: Container(
@@ -332,7 +395,7 @@ class _GrandFinalsSection extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'CHAMPION: ${match.winner.value?.name ?? 'Unknown'}',
+                    'CHAMPION: ${championMatch.winner.value?.name ?? 'Unknown'}',
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
