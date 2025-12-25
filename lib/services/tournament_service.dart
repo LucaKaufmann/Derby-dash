@@ -662,7 +662,7 @@ class TournamentService {
     return null;
   }
 
-  /// Get match by ID with cars loaded
+  /// Get match by ID with cars and round loaded
   Future<Match?> getMatch(int matchId) async {
     final match = await _isar.matchs.get(matchId);
     if (match == null) return null;
@@ -670,6 +670,7 @@ class TournamentService {
     await match.carA.load();
     await match.carB.load();
     await match.winner.load();
+    await match.round.load();
     return match;
   }
 

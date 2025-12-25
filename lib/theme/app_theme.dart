@@ -10,6 +10,10 @@ class AppTheme {
   static const Color successColor = Color(0xFF06D6A0); // Green for success
   static const Color winnerColor = Color(0xFFFFD700); // Gold for winners
 
+  // Grand Finals special colors
+  static const Color grandFinalsGold = Color(0xFFFFD700); // Gold
+  static const Color grandFinalsPurple = Color(0xFF9B59B6); // Royal purple
+
   // Text colors
   static const Color textPrimary = Colors.white;
   static const Color textSecondary = Color(0xFFB8B8B8);

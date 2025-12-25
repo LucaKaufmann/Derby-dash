@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../data/models/car.dart';
+import '../../data/models/round.dart';
 import '../../data/models/tournament.dart';
 import '../../providers/tournament_provider.dart';
 import '../../theme/app_theme.dart';
@@ -93,25 +94,39 @@ class _MatchScreenState extends ConsumerState<MatchScreen> {
 
           final carA = match.carA.value;
           final carB = match.carB.value;
+          final round = match.round.value;
 
           if (carA == null || carB == null) {
             return const Center(child: Text('Cars not found'));
           }
 
+          final isGrandFinals = round?.bracketType == BracketType.grandFinals;
+          final colorA = isGrandFinals
+              ? AppTheme.grandFinalsGold
+              : AppTheme.primaryColor;
+          final colorB = isGrandFinals
+              ? AppTheme.grandFinalsPurple
+              : AppTheme.secondaryColor;
+
           return SafeArea(
             child: Column(
               children: [
-                // Header with back button
+                // Header with back button and round indicator
                 Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       IconButton(
                         icon: const Icon(Icons.arrow_back, size: 32),
                         onPressed: _isConfirming
                             ? null
                             : () => context.go('/tournament/${widget.tournamentId}'),
+                      ),
+                      Expanded(
+                        child: _RoundIndicator(
+                          round: round,
+                          isGrandFinals: isGrandFinals,
+                        ),
                       ),
                       if (_selectedWinnerId != null && !_isConfirming)
                         TextButton.icon(
@@ -121,7 +136,9 @@ class _MatchScreenState extends ConsumerState<MatchScreen> {
                           style: TextButton.styleFrom(
                             foregroundColor: AppTheme.textSecondary,
                           ),
-                        ),
+                        )
+                      else
+                        const SizedBox(width: 48), // Balance the layout
                     ],
                   ),
                 ),
@@ -134,7 +151,7 @@ class _MatchScreenState extends ConsumerState<MatchScreen> {
                     isLoser: _selectedWinnerId != null &&
                         _selectedWinnerId != carA.id,
                     onTap: () => _selectWinner(carA),
-                    color: AppTheme.primaryColor,
+                    color: colorA,
                   ),
                 ),
 
@@ -206,7 +223,7 @@ class _MatchScreenState extends ConsumerState<MatchScreen> {
                     isLoser: _selectedWinnerId != null &&
                         _selectedWinnerId != carB.id,
                     onTap: () => _selectWinner(carB),
-                    color: AppTheme.secondaryColor,
+                    color: colorB,
                   ),
                 ),
               ],
@@ -351,6 +368,67 @@ class _CarPanel extends StatelessWidget {
                 ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _RoundIndicator extends StatelessWidget {
+  final Round? round;
+  final bool isGrandFinals;
+
+  const _RoundIndicator({
+    required this.round,
+    required this.isGrandFinals,
+  });
+
+  String _getRoundLabel() {
+    if (round == null) return '';
+
+    if (isGrandFinals) {
+      return '🏆 GRAND FINALS 🏆';
+    }
+
+    switch (round!.bracketType) {
+      case BracketType.winners:
+        return 'Round ${round!.roundNumber}';
+      case BracketType.losers:
+        return 'Losers Round ${round!.roundNumber}';
+      case BracketType.grandFinals:
+        return '🏆 GRAND FINALS 🏆';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (round == null) return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        gradient: isGrandFinals
+            ? LinearGradient(
+                colors: [
+                  AppTheme.grandFinalsGold.withOpacity(0.3),
+                  AppTheme.grandFinalsPurple.withOpacity(0.3),
+                ],
+              )
+            : null,
+        color: isGrandFinals ? null : AppTheme.surfaceColor,
+        borderRadius: BorderRadius.circular(12),
+        border: isGrandFinals
+            ? Border.all(color: AppTheme.grandFinalsGold, width: 2)
+            : null,
+      ),
+      child: Text(
+        _getRoundLabel(),
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontSize: isGrandFinals ? 20 : 16,
+          fontWeight: FontWeight.bold,
+          color: isGrandFinals ? AppTheme.grandFinalsGold : AppTheme.textPrimary,
+          letterSpacing: isGrandFinals ? 2 : 1,
         ),
       ),
     );
