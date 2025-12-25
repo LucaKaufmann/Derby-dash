@@ -74,7 +74,7 @@ class TournamentHistoryScreen extends ConsumerWidget {
                   ),
                 ),
                 confirmDismiss: (direction) async {
-                  return await showDialog<bool>(
+                  final confirmed = await showDialog<bool>(
                     context: context,
                     builder: (context) => AlertDialog(
                       title: const Text('Delete Tournament?'),
@@ -96,11 +96,14 @@ class TournamentHistoryScreen extends ConsumerWidget {
                       ],
                     ),
                   ) ?? false;
-                },
-                onDismissed: (direction) async {
-                  final service = ref.read(tournamentServiceProvider);
-                  await service.deleteTournament(tournament.id);
-                  ref.invalidate(completedTournamentsProvider);
+
+                  if (confirmed) {
+                    // Delete before dismiss animation to avoid race condition
+                    final service = ref.read(tournamentServiceProvider);
+                    await service.deleteTournament(tournament.id);
+                    ref.invalidate(completedTournamentsProvider);
+                  }
+                  return confirmed;
                 },
                 child: _TournamentHistoryCard(
                   tournament: tournament,
