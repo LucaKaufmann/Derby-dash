@@ -303,7 +303,7 @@ class _TournamentHistoryCard extends ConsumerWidget {
                       ),
                     ],
                   ),
-                  // Type badge and bracket button
+                  // Type badge and bracket/standings button
                   Row(
                     children: [
                       // Bracket button for knockout and double elimination tournaments
@@ -316,6 +316,16 @@ class _TournamentHistoryCard extends ConsumerWidget {
                           color: AppTheme.primaryColor,
                           onPressed: () =>
                               context.push('/tournament/${tournament.id}/bracket'),
+                        )
+                      // Standings button for round robin tournaments
+                      else if (tournament.type == TournamentType.roundRobin)
+                        IconButton(
+                          icon: const Icon(Icons.leaderboard),
+                          iconSize: 24,
+                          tooltip: 'View Standings',
+                          color: AppTheme.primaryColor,
+                          onPressed: () =>
+                              context.push('/tournament/${tournament.id}/standings'),
                         ),
                       Container(
                         padding: const EdgeInsets.symmetric(

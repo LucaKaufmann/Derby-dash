@@ -39,7 +39,7 @@ class TournamentDashboardScreen extends ConsumerWidget {
           onPressed: () => context.go('/'),
         ),
         actions: [
-          // Show bracket button for knockout and double elimination tournaments
+          // Show bracket button for knockout/double elimination, standings for round robin
           tournamentAsync.maybeWhen(
             data: (tournament) {
               if (tournament?.type == TournamentType.knockout ||
@@ -48,6 +48,12 @@ class TournamentDashboardScreen extends ConsumerWidget {
                   icon: const Icon(Icons.account_tree),
                   tooltip: 'View Bracket',
                   onPressed: () => context.push('/tournament/$tournamentId/bracket'),
+                );
+              } else if (tournament?.type == TournamentType.roundRobin) {
+                return IconButton(
+                  icon: const Icon(Icons.leaderboard),
+                  tooltip: 'View Standings',
+                  onPressed: () => context.push('/tournament/$tournamentId/standings'),
                 );
               }
               return const SizedBox.shrink();
