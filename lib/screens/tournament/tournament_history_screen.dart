@@ -56,9 +56,56 @@ class TournamentHistoryScreen extends ConsumerWidget {
             itemCount: tournaments.length,
             itemBuilder: (context, index) {
               final tournament = tournaments[index];
-              return _TournamentHistoryCard(
-                tournament: tournament,
-                onTap: () => context.push('/tournament/${tournament.id}'),
+              return Dismissible(
+                key: Key('tournament_${tournament.id}'),
+                direction: DismissDirection.endToStart,
+                background: Container(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: AppTheme.errorColor,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.only(right: 24),
+                  child: const Icon(
+                    Icons.delete,
+                    color: Colors.white,
+                    size: 32,
+                  ),
+                ),
+                confirmDismiss: (direction) async {
+                  return await showDialog<bool>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Delete Tournament?'),
+                      content: const Text(
+                        'This will permanently delete this tournament and all its matches. This cannot be undone.',
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(false),
+                          child: const Text('CANCEL'),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(true),
+                          style: TextButton.styleFrom(
+                            foregroundColor: AppTheme.errorColor,
+                          ),
+                          child: const Text('DELETE'),
+                        ),
+                      ],
+                    ),
+                  ) ?? false;
+                },
+                onDismissed: (direction) async {
+                  final service = ref.read(tournamentServiceProvider);
+                  await service.deleteTournament(tournament.id);
+                  ref.invalidate(completedTournamentsProvider);
+                },
+                child: _TournamentHistoryCard(
+                  tournament: tournament,
+                  onTap: () => context.push('/tournament/${tournament.id}'),
+                ),
               );
             },
           );

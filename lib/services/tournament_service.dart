@@ -751,6 +751,31 @@ class TournamentService {
         .findAll();
   }
 
+  /// Delete a tournament and all its rounds and matches
+  Future<void> deleteTournament(int tournamentId) async {
+    final tournament = await _isar.tournaments.get(tournamentId);
+    if (tournament == null) return;
+
+    await tournament.rounds.load();
+    final rounds = tournament.rounds.toList();
+
+    // Collect all match IDs to delete
+    final matchIds = <int>[];
+    for (final round in rounds) {
+      await round.matches.load();
+      for (final match in round.matches) {
+        matchIds.add(match.id);
+      }
+    }
+
+    // Delete in transaction: matches, rounds, then tournament
+    await _isar.writeTxn(() async {
+      await _isar.matchs.deleteAll(matchIds);
+      await _isar.rounds.deleteAll(rounds.map((r) => r.id).toList());
+      await _isar.tournaments.delete(tournamentId);
+    });
+  }
+
   /// Get participant count for a tournament
   Future<int> getParticipantCount(int tournamentId) async {
     final rounds = await getRounds(tournamentId);
