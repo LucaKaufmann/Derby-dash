@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../data/models/car.dart';
+import '../../data/models/tournament.dart';
 import '../../providers/tournament_provider.dart';
 import '../../theme/app_theme.dart';
 
@@ -53,9 +54,21 @@ class _MatchScreenState extends ConsumerState<MatchScreen> {
     ref.invalidate(matchDetailsProvider(widget.matchId));
     ref.invalidate(tournamentRoundsProvider(widget.tournamentId));
     ref.invalidate(tournamentProvider(widget.tournamentId));
+    ref.invalidate(tournamentWinnerProvider(widget.tournamentId));
 
     if (mounted) {
-      context.go('/tournament/${widget.tournamentId}');
+      // Check if tournament is now completed
+      final tournament = await ref
+          .read(tournamentServiceProvider)
+          .getTournament(widget.tournamentId);
+
+      if (tournament?.status == TournamentStatus.completed) {
+        // Navigate to champion screen
+        context.go('/tournament/${widget.tournamentId}/champion');
+      } else {
+        // Navigate back to tournament dashboard
+        context.go('/tournament/${widget.tournamentId}');
+      }
     }
   }
 

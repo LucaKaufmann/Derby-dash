@@ -1,6 +1,7 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../data/models/models.dart';
 import '../services/tournament_service.dart';
+export '../services/tournament_service.dart' show TournamentCarStats;
 import 'database_provider.dart';
 
 part 'tournament_provider.g.dart';
@@ -63,4 +64,10 @@ Future<List<Tournament>> completedTournaments(CompletedTournamentsRef ref) async
 Future<int> tournamentParticipantCount(TournamentParticipantCountRef ref, int tournamentId) async {
   final service = ref.watch(tournamentServiceProvider);
   return await service.getParticipantCount(tournamentId);
+}
+
+@riverpod
+Future<List<TournamentCarStats>> tournamentStats(TournamentStatsRef ref, int tournamentId) async {
+  final service = ref.watch(tournamentServiceProvider);
+  return await service.getTournamentStats(tournamentId);
 }

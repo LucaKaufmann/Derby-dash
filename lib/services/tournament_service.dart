@@ -777,4 +777,88 @@ class TournamentService {
     }
     return carIds.length;
   }
+
+  /// Get win/loss stats for all cars in a tournament
+  /// Returns a map of carId -> {car, wins, losses}
+  Future<List<TournamentCarStats>> getTournamentStats(int tournamentId) async {
+    final rounds = await getRounds(tournamentId);
+    if (rounds.isEmpty) return [];
+
+    final carStats = <int, TournamentCarStats>{};
+
+    for (final round in rounds) {
+      final matches = await getMatches(round.id);
+      for (final match in matches) {
+        await match.carA.load();
+        await match.carB.load();
+        await match.winner.load();
+
+        final carA = match.carA.value;
+        final carB = match.carB.value;
+        final winner = match.winner.value;
+
+        // Initialize stats for cars if not present
+        if (carA != null && !carStats.containsKey(carA.id)) {
+          carStats[carA.id] = TournamentCarStats(car: carA, wins: 0, losses: 0);
+        }
+        if (carB != null && !carStats.containsKey(carB.id)) {
+          carStats[carB.id] = TournamentCarStats(car: carB, wins: 0, losses: 0);
+        }
+
+        // Count wins and losses
+        if (winner != null && carA != null && carB != null) {
+          if (winner.id == carA.id) {
+            carStats[carA.id] = carStats[carA.id]!.copyWith(
+              wins: carStats[carA.id]!.wins + 1,
+            );
+            carStats[carB.id] = carStats[carB.id]!.copyWith(
+              losses: carStats[carB.id]!.losses + 1,
+            );
+          } else if (winner.id == carB.id) {
+            carStats[carB.id] = carStats[carB.id]!.copyWith(
+              wins: carStats[carB.id]!.wins + 1,
+            );
+            carStats[carA.id] = carStats[carA.id]!.copyWith(
+              losses: carStats[carA.id]!.losses + 1,
+            );
+          }
+        }
+      }
+    }
+
+    // Sort by wins (descending), then by losses (ascending)
+    final statsList = carStats.values.toList()
+      ..sort((a, b) {
+        final winCompare = b.wins.compareTo(a.wins);
+        if (winCompare != 0) return winCompare;
+        return a.losses.compareTo(b.losses);
+      });
+
+    return statsList;
+  }
+}
+
+/// Stats for a car in a specific tournament
+class TournamentCarStats {
+  final Car car;
+  final int wins;
+  final int losses;
+
+  const TournamentCarStats({
+    required this.car,
+    required this.wins,
+    required this.losses,
+  });
+
+  TournamentCarStats copyWith({
+    Car? car,
+    int? wins,
+    int? losses,
+  }) {
+    return TournamentCarStats(
+      car: car ?? this.car,
+      wins: wins ?? this.wins,
+      losses: losses ?? this.losses,
+    );
+  }
 }

@@ -979,5 +979,139 @@ class _TournamentParticipantCountProviderElement
   int get tournamentId =>
       (origin as TournamentParticipantCountProvider).tournamentId;
 }
+
+String _$tournamentStatsHash() => r'0374a0a6fa3fd9d3936d5d326b2eb48ab1d57e01';
+
+/// See also [tournamentStats].
+@ProviderFor(tournamentStats)
+const tournamentStatsProvider = TournamentStatsFamily();
+
+/// See also [tournamentStats].
+class TournamentStatsFamily
+    extends Family<AsyncValue<List<TournamentCarStats>>> {
+  /// See also [tournamentStats].
+  const TournamentStatsFamily();
+
+  /// See also [tournamentStats].
+  TournamentStatsProvider call(
+    int tournamentId,
+  ) {
+    return TournamentStatsProvider(
+      tournamentId,
+    );
+  }
+
+  @override
+  TournamentStatsProvider getProviderOverride(
+    covariant TournamentStatsProvider provider,
+  ) {
+    return call(
+      provider.tournamentId,
+    );
+  }
+
+  static const Iterable<ProviderOrFamily>? _dependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get dependencies => _dependencies;
+
+  static const Iterable<ProviderOrFamily>? _allTransitiveDependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get allTransitiveDependencies =>
+      _allTransitiveDependencies;
+
+  @override
+  String? get name => r'tournamentStatsProvider';
+}
+
+/// See also [tournamentStats].
+class TournamentStatsProvider
+    extends AutoDisposeFutureProvider<List<TournamentCarStats>> {
+  /// See also [tournamentStats].
+  TournamentStatsProvider(
+    int tournamentId,
+  ) : this._internal(
+          (ref) => tournamentStats(
+            ref as TournamentStatsRef,
+            tournamentId,
+          ),
+          from: tournamentStatsProvider,
+          name: r'tournamentStatsProvider',
+          debugGetCreateSourceHash:
+              const bool.fromEnvironment('dart.vm.product')
+                  ? null
+                  : _$tournamentStatsHash,
+          dependencies: TournamentStatsFamily._dependencies,
+          allTransitiveDependencies:
+              TournamentStatsFamily._allTransitiveDependencies,
+          tournamentId: tournamentId,
+        );
+
+  TournamentStatsProvider._internal(
+    super._createNotifier, {
+    required super.name,
+    required super.dependencies,
+    required super.allTransitiveDependencies,
+    required super.debugGetCreateSourceHash,
+    required super.from,
+    required this.tournamentId,
+  }) : super.internal();
+
+  final int tournamentId;
+
+  @override
+  Override overrideWith(
+    FutureOr<List<TournamentCarStats>> Function(TournamentStatsRef provider)
+        create,
+  ) {
+    return ProviderOverride(
+      origin: this,
+      override: TournamentStatsProvider._internal(
+        (ref) => create(ref as TournamentStatsRef),
+        from: from,
+        name: null,
+        dependencies: null,
+        allTransitiveDependencies: null,
+        debugGetCreateSourceHash: null,
+        tournamentId: tournamentId,
+      ),
+    );
+  }
+
+  @override
+  AutoDisposeFutureProviderElement<List<TournamentCarStats>> createElement() {
+    return _TournamentStatsProviderElement(this);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is TournamentStatsProvider &&
+        other.tournamentId == tournamentId;
+  }
+
+  @override
+  int get hashCode {
+    var hash = _SystemHash.combine(0, runtimeType.hashCode);
+    hash = _SystemHash.combine(hash, tournamentId.hashCode);
+
+    return _SystemHash.finish(hash);
+  }
+}
+
+mixin TournamentStatsRef
+    on AutoDisposeFutureProviderRef<List<TournamentCarStats>> {
+  /// The parameter `tournamentId` of this provider.
+  int get tournamentId;
+}
+
+class _TournamentStatsProviderElement
+    extends AutoDisposeFutureProviderElement<List<TournamentCarStats>>
+    with TournamentStatsRef {
+  _TournamentStatsProviderElement(super.provider);
+
+  @override
+  int get tournamentId => (origin as TournamentStatsProvider).tournamentId;
+}
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member

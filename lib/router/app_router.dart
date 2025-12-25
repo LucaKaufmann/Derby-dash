@@ -5,6 +5,7 @@ import '../screens/garage/add_car_screen.dart';
 import '../screens/tournament/tournament_setup_screen.dart';
 import '../screens/tournament/tournament_dashboard_screen.dart';
 import '../screens/tournament/tournament_history_screen.dart';
+import '../screens/tournament/champion_screen.dart';
 import '../screens/match/match_screen.dart';
 import '../screens/home_screen.dart';
 import '../screens/tournament/bracket_screen.dart';
@@ -65,6 +66,14 @@ final appRouter = GoRouter(
           builder: (context, state) {
             final tournamentId = int.parse(state.pathParameters['id']!);
             return BracketScreen(tournamentId: tournamentId);
+          },
+        ),
+        GoRoute(
+          path: 'champion',
+          name: 'champion',
+          builder: (context, state) {
+            final tournamentId = int.parse(state.pathParameters['id']!);
+            return ChampionScreen(tournamentId: tournamentId);
           },
         ),
       ],

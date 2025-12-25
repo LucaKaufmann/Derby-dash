@@ -162,21 +162,148 @@ class _TournamentHistoryCard extends ConsumerWidget {
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header row with date and type
-              Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Winner card at top (match card style)
+            winnerAsync.when(
+              data: (winner) {
+                if (winner == null) {
+                  return const SizedBox.shrink();
+                }
+                return Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppTheme.winnerColor.withValues(alpha: 0.15),
+                    border: Border(
+                      bottom: BorderSide(
+                        color: AppTheme.winnerColor.withValues(alpha: 0.3),
+                        width: 2,
+                      ),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      // Trophy icon
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppTheme.winnerColor.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.emoji_events,
+                          color: AppTheme.winnerColor,
+                          size: 28,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      // Winner photo
+                      Container(
+                        width: 56,
+                        height: 56,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: AppTheme.winnerColor,
+                            width: 3,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppTheme.winnerColor.withValues(alpha: 0.3),
+                              blurRadius: 8,
+                              spreadRadius: 1,
+                            ),
+                          ],
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: winner.photoPath.isNotEmpty &&
+                                File(winner.photoPath).existsSync()
+                            ? Image.file(
+                                File(winner.photoPath),
+                                fit: BoxFit.cover,
+                              )
+                            : Container(
+                                color: AppTheme.backgroundColor,
+                                child: const Icon(
+                                  Icons.directions_car,
+                                  size: 28,
+                                  color: AppTheme.textSecondary,
+                                ),
+                              ),
+                      ),
+                      const SizedBox(width: 12),
+                      // Winner info
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'CHAMPION',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.winnerColor,
+                                letterSpacing: 1.5,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              winner.name,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleLarge
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+              loading: () => const SizedBox(
+                height: 88,
+                child: Center(child: CircularProgressIndicator()),
+              ),
+              error: (_, __) => const SizedBox.shrink(),
+            ),
+
+            // Tournament info section
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    DateFormat('MMM d, yyyy').format(tournament.date),
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: AppTheme.textSecondary,
+                  // Date and participant count
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        DateFormat('MMM d, yyyy').format(tournament.date),
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              color: AppTheme.textSecondary,
+                            ),
+                      ),
+                      const SizedBox(height: 4),
+                      participantCountAsync.when(
+                        data: (count) => Text(
+                          '$count cars competed',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: AppTheme.textSecondary,
+                              ),
                         ),
+                        loading: () => const SizedBox.shrink(),
+                        error: (_, __) => const SizedBox.shrink(),
+                      ),
+                    ],
                   ),
+                  // Type badge and bracket button
                   Row(
                     children: [
                       // Bracket button for knockout and double elimination tournaments
@@ -193,7 +320,7 @@ class _TournamentHistoryCard extends ConsumerWidget {
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 12,
-                          vertical: 4,
+                          vertical: 6,
                         ),
                         decoration: BoxDecoration(
                           color: _getTournamentTypeColor(tournament.type)
@@ -213,106 +340,8 @@ class _TournamentHistoryCard extends ConsumerWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
-
-              // Winner section
-              winnerAsync.when(
-                data: (winner) {
-                  if (winner == null) {
-                    return const Text('No winner');
-                  }
-                  return Row(
-                    children: [
-                      // Winner photo
-                      Container(
-                        width: 64,
-                        height: 64,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: AppTheme.winnerColor,
-                            width: 3,
-                          ),
-                        ),
-                        clipBehavior: Clip.antiAlias,
-                        child: winner.photoPath.isNotEmpty &&
-                                File(winner.photoPath).existsSync()
-                            ? Image.file(
-                                File(winner.photoPath),
-                                fit: BoxFit.cover,
-                              )
-                            : const Center(
-                                child: Icon(
-                                  Icons.directions_car,
-                                  size: 32,
-                                  color: AppTheme.textSecondary,
-                                ),
-                              ),
-                      ),
-                      const SizedBox(width: 16),
-                      // Winner info
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                const Icon(
-                                  Icons.emoji_events,
-                                  color: AppTheme.winnerColor,
-                                  size: 24,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'WINNER',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppTheme.winnerColor,
-                                    letterSpacing: 1,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              winner.name,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .headlineSmall
-                                  ?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  );
-                },
-                loading: () => const SizedBox(
-                  height: 64,
-                  child: Center(child: CircularProgressIndicator()),
-                ),
-                error: (_, __) => const Text('Error loading winner'),
-              ),
-              const SizedBox(height: 12),
-
-              // Participant count
-              participantCountAsync.when(
-                data: (count) => Text(
-                  '$count cars competed',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppTheme.textSecondary,
-                      ),
-                ),
-                loading: () => const SizedBox.shrink(),
-                error: (_, __) => const SizedBox.shrink(),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
