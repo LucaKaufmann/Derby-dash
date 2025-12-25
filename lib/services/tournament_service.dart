@@ -6,6 +6,9 @@ class TournamentService {
 
   TournamentService(this._isar);
 
+  /// Check if a number is a power of 2 (2, 4, 8, 16, 32, 64, etc.)
+  bool _isPowerOfTwo(int n) => n > 0 && (n & (n - 1)) == 0;
+
   /// Create a new tournament with the given cars
   Future<int> createTournament({
     required List<int> carIds,
@@ -16,8 +19,8 @@ class TournamentService {
       if (carIds.length < 2) {
         throw ArgumentError('Tournament requires at least 2 cars');
       }
-      if (carIds.length % 2 != 0) {
-        throw ArgumentError('Knockout and double elimination tournaments require an even number of cars');
+      if (!_isPowerOfTwo(carIds.length)) {
+        throw ArgumentError('Knockout and double elimination tournaments require a power of 2 cars (4, 8, 16, 32, etc.)');
       }
       if (type == TournamentType.doubleElimination && carIds.length < 4) {
         throw ArgumentError('Double elimination requires at least 4 cars');

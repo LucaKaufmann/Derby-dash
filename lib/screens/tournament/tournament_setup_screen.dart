@@ -24,15 +24,28 @@ class _TournamentSetupScreenState extends ConsumerState<TournamentSetupScreen> {
   int get _minCarsRequired =>
       _tournamentType == TournamentType.doubleElimination ? 4 : 2;
 
+  /// Check if a number is a power of 2 (2, 4, 8, 16, 32, 64, etc.)
+  bool _isPowerOfTwo(int n) => n > 0 && (n & (n - 1)) == 0;
+
   bool get _isValidCarCount {
     final count = _selectedCarIds.length;
     if (count < _minCarsRequired) return false;
-    // Require even number of cars for knockout/double elimination
+    // Require power of 2 for knockout/double elimination (4, 8, 16, 32, etc.)
     if (_tournamentType == TournamentType.knockout ||
         _tournamentType == TournamentType.doubleElimination) {
-      return count % 2 == 0;
+      return _isPowerOfTwo(count);
     }
     return true; // Round robin allows any count >= 2
+  }
+
+  /// Get the next valid power of 2 for display
+  int _nextPowerOfTwo(int n) {
+    if (n <= 0) return 2;
+    int power = 2;
+    while (power < n) {
+      power *= 2;
+    }
+    return power;
   }
 
   String? get _validationMessage {
@@ -42,8 +55,13 @@ class _TournamentSetupScreenState extends ConsumerState<TournamentSetupScreen> {
     }
     if ((_tournamentType == TournamentType.knockout ||
             _tournamentType == TournamentType.doubleElimination) &&
-        count % 2 != 0) {
-      return 'Select an even number of cars';
+        !_isPowerOfTwo(count)) {
+      final next = _nextPowerOfTwo(count);
+      final prev = next ~/ 2;
+      if (count > prev && prev >= _minCarsRequired) {
+        return 'Select $prev or $next cars (power of 2 required)';
+      }
+      return 'Select $next cars (power of 2 required)';
     }
     return null;
   }
@@ -144,6 +162,39 @@ class _TournamentSetupScreenState extends ConsumerState<TournamentSetupScreen> {
               ],
             ),
           ),
+
+          // Power of 2 disclaimer for bracket tournaments
+          if (_tournamentType == TournamentType.knockout ||
+              _tournamentType == TournamentType.doubleElimination)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppTheme.surfaceColor,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      size: 20,
+                      color: Colors.blue[400],
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Bracket tournaments need 4, 8, 16, or 32 cars for balanced matchups',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.blue[300],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
 
           // Selection Count
           Container(
