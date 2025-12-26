@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -98,7 +97,7 @@ class _BestOfConfigScreenState extends ConsumerState<BestOfConfigScreen> {
       final tournamentId = await ref.read(tournamentServiceProvider).createTournament(
             carIds: widget.carIds,
             type: TournamentType.groupKnockout,
-            knockoutFormat: jsonEncode(_knockoutFormat),
+            knockoutFormat: _knockoutFormat,
           );
 
       if (mounted) {
