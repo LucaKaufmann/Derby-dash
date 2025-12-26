@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../data/models/models.dart';
 import '../../providers/tournament_provider.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/group/group_stage_view.dart';
 
 class TournamentDashboardScreen extends ConsumerWidget {
   final int tournamentId;
@@ -57,6 +58,15 @@ class TournamentDashboardScreen extends ConsumerWidget {
                   tooltip: 'View Standings',
                   onPressed: () => context.push('/tournament/$tournamentId/standings'),
                 );
+              } else if (tournament?.type == TournamentType.groupKnockout) {
+                // Show bracket button in knockout phase
+                if (tournament?.phase == TournamentPhase.knockout) {
+                  return IconButton(
+                    icon: const Icon(Icons.account_tree),
+                    tooltip: 'View Bracket',
+                    onPressed: () => context.push('/tournament/$tournamentId/bracket'),
+                  );
+                }
               }
               return const SizedBox.shrink();
             },
@@ -70,6 +80,12 @@ class TournamentDashboardScreen extends ConsumerWidget {
             return const Center(child: Text('Tournament not found'));
           }
 
+          // For groupKnockout in group phase, show GroupStageView
+          if (tournament.type == TournamentType.groupKnockout &&
+              tournament.phase == TournamentPhase.group) {
+            return GroupStageView(tournament: tournament);
+          }
+
           return Column(
             children: [
               // Tournament Status Header
@@ -80,7 +96,9 @@ class TournamentDashboardScreen extends ConsumerWidget {
                     ? AppTheme.successColor.withOpacity(0.2)
                     : AppTheme.primaryColor.withOpacity(0.2),
                 child: Text(
-                  _getTournamentTypeLabel(tournament.type),
+                  tournament.type == TournamentType.groupKnockout
+                      ? 'KNOCKOUT STAGE'
+                      : _getTournamentTypeLabel(tournament.type),
                   style: Theme.of(context).textTheme.titleLarge,
                   textAlign: TextAlign.center,
                 ),
