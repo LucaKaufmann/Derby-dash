@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../data/models/car.dart';
+import '../../data/models/match.dart';
 import '../../data/models/round.dart';
 import '../../data/models/tournament.dart';
 import '../../providers/tournament_provider.dart';
@@ -39,36 +40,81 @@ class _MatchScreenState extends ConsumerState<MatchScreen> {
     });
   }
 
-  Future<void> _confirmWinner() async {
+  Future<void> _confirmWinner([Match? currentMatch]) async {
     if (_selectedWinnerId == null || _isConfirming) return;
 
     setState(() {
       _isConfirming = true;
     });
 
-    // Complete match in database
-    await ref
-        .read(tournamentServiceProvider)
-        .completeMatch(widget.matchId, _selectedWinnerId!);
+    final service = ref.read(tournamentServiceProvider);
 
-    // Invalidate providers to refresh data
-    ref.invalidate(matchDetailsProvider(widget.matchId));
-    ref.invalidate(tournamentRoundsProvider(widget.tournamentId));
-    ref.invalidate(tournamentProvider(widget.tournamentId));
-    ref.invalidate(tournamentWinnerProvider(widget.tournamentId));
+    // Check if this is a series match
+    final isSeries = currentMatch != null && currentMatch.seriesLength > 1;
 
-    if (mounted) {
-      // Check if tournament is now completed
-      final tournament = await ref
-          .read(tournamentServiceProvider)
-          .getTournament(widget.tournamentId);
+    if (isSeries) {
+      // Record a single game win in the series
+      await service.recordSeriesGameWin(widget.matchId, _selectedWinnerId!);
 
-      if (tournament?.status == TournamentStatus.completed) {
-        // Navigate to champion screen
-        context.go('/tournament/${widget.tournamentId}/champion');
+      // Refresh match data
+      ref.invalidate(matchDetailsProvider(widget.matchId));
+
+      // Get updated match to check if series is complete
+      final updatedMatch = await service.getMatch(widget.matchId);
+
+      if (updatedMatch != null && updatedMatch.isSeriesComplete) {
+        // Series is complete, navigate
+        ref.invalidate(tournamentRoundsProvider(widget.tournamentId));
+        ref.invalidate(tournamentProvider(widget.tournamentId));
+        ref.invalidate(tournamentWinnerProvider(widget.tournamentId));
+
+        if (mounted) {
+          final tournament = await service.getTournament(widget.tournamentId);
+
+          if (tournament?.status == TournamentStatus.completed) {
+            context.go('/tournament/${widget.tournamentId}/champion');
+          } else {
+            context.go('/tournament/${widget.tournamentId}');
+          }
+        }
       } else {
-        // Navigate back to tournament dashboard
-        context.go('/tournament/${widget.tournamentId}');
+        // Series not complete, show feedback and reset for next game
+        if (mounted) {
+          final gameNumber = (updatedMatch?.carASeriesWins ?? 0) +
+              (updatedMatch?.carBSeriesWins ?? 0);
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Game $gameNumber recorded!'),
+              duration: const Duration(seconds: 1),
+              backgroundColor: AppTheme.successColor,
+            ),
+          );
+
+          setState(() {
+            _selectedWinnerId = null;
+            _isConfirming = false;
+          });
+        }
+      }
+    } else {
+      // Standard single-game match
+      await service.completeMatch(widget.matchId, _selectedWinnerId!);
+
+      // Invalidate providers to refresh data
+      ref.invalidate(matchDetailsProvider(widget.matchId));
+      ref.invalidate(tournamentRoundsProvider(widget.tournamentId));
+      ref.invalidate(tournamentProvider(widget.tournamentId));
+      ref.invalidate(tournamentWinnerProvider(widget.tournamentId));
+
+      if (mounted) {
+        final tournament = await service.getTournament(widget.tournamentId);
+
+        if (tournament?.status == TournamentStatus.completed) {
+          context.go('/tournament/${widget.tournamentId}/champion');
+        } else {
+          context.go('/tournament/${widget.tournamentId}');
+        }
       }
     }
   }
@@ -100,13 +146,18 @@ class _MatchScreenState extends ConsumerState<MatchScreen> {
             return const Center(child: Text('Cars not found'));
           }
 
-          final isGrandFinals = round?.bracketType == BracketType.grandFinals;
+          final isGrandFinals = round?.bracketType == BracketType.grandFinals ||
+              round?.knockoutRoundName == 'gf';
           final colorA = isGrandFinals
               ? AppTheme.grandFinalsGold
               : AppTheme.primaryColor;
           final colorB = isGrandFinals
               ? AppTheme.grandFinalsPurple
               : AppTheme.secondaryColor;
+
+          // Series info
+          final isSeries = match.seriesLength > 1;
+          final currentGame = match.carASeriesWins + match.carBSeriesWins + 1;
 
           return SafeArea(
             child: Column(
@@ -126,6 +177,7 @@ class _MatchScreenState extends ConsumerState<MatchScreen> {
                         child: _RoundIndicator(
                           round: round,
                           isGrandFinals: isGrandFinals,
+                          seriesLength: match.seriesLength,
                         ),
                       ),
                       if (_selectedWinnerId != null && !_isConfirming)
@@ -142,6 +194,19 @@ class _MatchScreenState extends ConsumerState<MatchScreen> {
                     ],
                   ),
                 ),
+
+                // Series score header (when Best-of-X)
+                if (isSeries)
+                  _SeriesScoreHeader(
+                    carA: carA,
+                    carB: carB,
+                    carAWins: match.carASeriesWins,
+                    carBWins: match.carBSeriesWins,
+                    currentGame: currentGame,
+                    seriesLength: match.seriesLength,
+                    colorA: colorA,
+                    colorB: colorB,
+                  ),
 
                 // Car A (top half)
                 Expanded(
@@ -163,7 +228,9 @@ class _MatchScreenState extends ConsumerState<MatchScreen> {
                   child: Center(
                     child: _selectedWinnerId != null
                         ? ElevatedButton.icon(
-                            onPressed: _isConfirming ? null : _confirmWinner,
+                            onPressed: _isConfirming
+                                ? null
+                                : () => _confirmWinner(match),
                             icon: _isConfirming
                                 ? const SizedBox(
                                     width: 24,
@@ -175,7 +242,11 @@ class _MatchScreenState extends ConsumerState<MatchScreen> {
                                   )
                                 : const Icon(Icons.check, size: 32),
                             label: Text(
-                              _isConfirming ? 'SAVING...' : 'CONFIRM WINNER',
+                              _isConfirming
+                                  ? 'SAVING...'
+                                  : isSeries
+                                      ? 'CONFIRM GAME $currentGame'
+                                      : 'CONFIRM WINNER',
                               style: const TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
@@ -208,7 +279,7 @@ class _MatchScreenState extends ConsumerState<MatchScreen> {
                               ),
                             ),
                             child: Text(
-                              'VS',
+                              isSeries ? 'GAME $currentGame' : 'VS',
                               style: Theme.of(context).textTheme.headlineLarge,
                             ),
                           ),
@@ -377,10 +448,12 @@ class _CarPanel extends StatelessWidget {
 class _RoundIndicator extends StatelessWidget {
   final Round? round;
   final bool isGrandFinals;
+  final int seriesLength;
 
   const _RoundIndicator({
     required this.round,
     required this.isGrandFinals,
+    this.seriesLength = 1,
   });
 
   String _getRoundLabel() {
@@ -429,32 +502,212 @@ class _RoundIndicator extends StatelessWidget {
   Widget build(BuildContext context) {
     if (round == null) return const SizedBox.shrink();
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        gradient: isGrandFinals
-            ? LinearGradient(
-                colors: [
-                  AppTheme.grandFinalsGold.withOpacity(0.3),
-                  AppTheme.grandFinalsPurple.withOpacity(0.3),
-                ],
-              )
-            : null,
-        color: isGrandFinals ? null : AppTheme.surfaceColor,
-        borderRadius: BorderRadius.circular(12),
-        border: isGrandFinals
-            ? Border.all(color: AppTheme.grandFinalsGold, width: 2)
-            : null,
-      ),
-      child: Text(
-        _getRoundLabel(),
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          fontSize: isGrandFinals ? 20 : 16,
-          fontWeight: FontWeight.bold,
-          color: isGrandFinals ? AppTheme.grandFinalsGold : AppTheme.textPrimary,
-          letterSpacing: isGrandFinals ? 2 : 1,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            gradient: isGrandFinals
+                ? LinearGradient(
+                    colors: [
+                      AppTheme.grandFinalsGold.withOpacity(0.3),
+                      AppTheme.grandFinalsPurple.withOpacity(0.3),
+                    ],
+                  )
+                : null,
+            color: isGrandFinals ? null : AppTheme.surfaceColor,
+            borderRadius: BorderRadius.circular(12),
+            border: isGrandFinals
+                ? Border.all(color: AppTheme.grandFinalsGold, width: 2)
+                : null,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                _getRoundLabel(),
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: isGrandFinals ? 20 : 16,
+                  fontWeight: FontWeight.bold,
+                  color: isGrandFinals ? AppTheme.grandFinalsGold : AppTheme.textPrimary,
+                  letterSpacing: isGrandFinals ? 2 : 1,
+                ),
+              ),
+              if (seriesLength > 1) ...[
+                const SizedBox(height: 4),
+                Text(
+                  'BEST OF $seriesLength',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: isGrandFinals
+                        ? AppTheme.grandFinalsGold.withValues(alpha: 0.8)
+                        : AppTheme.textSecondary,
+                    letterSpacing: 1,
+                  ),
+                ),
+              ],
+            ],
+          ),
         ),
+      ],
+    );
+  }
+}
+
+class _SeriesScoreHeader extends StatelessWidget {
+  final Car carA;
+  final Car carB;
+  final int carAWins;
+  final int carBWins;
+  final int currentGame;
+  final int seriesLength;
+  final Color colorA;
+  final Color colorB;
+
+  const _SeriesScoreHeader({
+    required this.carA,
+    required this.carB,
+    required this.carAWins,
+    required this.carBWins,
+    required this.currentGame,
+    required this.seriesLength,
+    required this.colorA,
+    required this.colorB,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final winsNeeded = (seriesLength + 1) ~/ 2;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppTheme.textSecondary.withValues(alpha: 0.3),
+          width: 2,
+        ),
+      ),
+      child: Column(
+        children: [
+          // Score row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Car A score
+              Expanded(
+                child: Column(
+                  children: [
+                    Text(
+                      carA.name,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: colorA,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: carAWins >= winsNeeded
+                            ? AppTheme.successColor.withValues(alpha: 0.2)
+                            : colorA.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: carAWins >= winsNeeded ? AppTheme.successColor : colorA,
+                          width: 2,
+                        ),
+                      ),
+                      child: Text(
+                        '$carAWins',
+                        style: TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                          color: carAWins >= winsNeeded ? AppTheme.successColor : colorA,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Dash separator
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
+                  '-',
+                  style: TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.textSecondary,
+                  ),
+                ),
+              ),
+
+              // Car B score
+              Expanded(
+                child: Column(
+                  children: [
+                    Text(
+                      carB.name,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: colorB,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: carBWins >= winsNeeded
+                            ? AppTheme.successColor.withValues(alpha: 0.2)
+                            : colorB.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: carBWins >= winsNeeded ? AppTheme.successColor : colorB,
+                          width: 2,
+                        ),
+                      ),
+                      child: Text(
+                        '$carBWins',
+                        style: TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                          color: carBWins >= winsNeeded ? AppTheme.successColor : colorB,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 8),
+
+          // First to X wins indicator
+          Text(
+            'First to $winsNeeded wins',
+            style: TextStyle(
+              fontSize: 12,
+              color: AppTheme.textSecondary,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
       ),
     );
   }
