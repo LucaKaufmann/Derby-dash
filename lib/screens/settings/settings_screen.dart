@@ -27,9 +27,9 @@ class SettingsScreen extends ConsumerWidget {
               title: 'Display',
               children: [
                 SwitchListTile(
-                  title: const Text('Keep Screen On'),
+                  title: const Text('Keep Screen Always On'),
                   subtitle: const Text(
-                    'Prevent the screen from turning off during tournaments',
+                    'Prevent the screen from turning off while the app is open',
                   ),
                   value: settings.keepScreenOn,
                   onChanged: (value) {
@@ -41,6 +41,30 @@ class SettingsScreen extends ConsumerWidget {
                         ? Icons.brightness_high
                         : Icons.brightness_low,
                     color: settings.keepScreenOn
+                        ? AppTheme.primaryColor
+                        : AppTheme.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+            _SettingsSection(
+              title: 'Tournament',
+              children: [
+                SwitchListTile(
+                  title: const Text('Advanced Mode'),
+                  subtitle: const Text(
+                    'Show additional tournament formats (Round Robin, Group + Knockout)',
+                  ),
+                  value: settings.advancedMode,
+                  onChanged: (value) {
+                    ref.read(settingsProvider.notifier).setAdvancedMode(value);
+                  },
+                  activeColor: AppTheme.primaryColor,
+                  secondary: Icon(
+                    settings.advancedMode
+                        ? Icons.science
+                        : Icons.science_outlined,
+                    color: settings.advancedMode
                         ? AppTheme.primaryColor
                         : AppTheme.textSecondary,
                   ),

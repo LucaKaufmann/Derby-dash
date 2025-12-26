@@ -64,9 +64,15 @@ class _MatchScreenState extends ConsumerState<MatchScreen> {
 
       if (updatedMatch != null && updatedMatch.isSeriesComplete) {
         // Series is complete, navigate
+        final roundId = updatedMatch.round.value?.id;
+
         ref.invalidate(tournamentRoundsProvider(widget.tournamentId));
         ref.invalidate(tournamentProvider(widget.tournamentId));
         ref.invalidate(tournamentWinnerProvider(widget.tournamentId));
+        ref.invalidate(allGroupStandingsProvider(widget.tournamentId));
+        if (roundId != null) {
+          ref.invalidate(roundMatchesProvider(roundId));
+        }
 
         if (mounted) {
           final tournament = await service.getTournament(widget.tournamentId);
@@ -101,11 +107,19 @@ class _MatchScreenState extends ConsumerState<MatchScreen> {
       // Standard single-game match
       await service.completeMatch(widget.matchId, _selectedWinnerId!);
 
+      // Get the match to find its round ID for provider invalidation
+      final completedMatch = await service.getMatch(widget.matchId);
+      final roundId = completedMatch?.round.value?.id;
+
       // Invalidate providers to refresh data
       ref.invalidate(matchDetailsProvider(widget.matchId));
       ref.invalidate(tournamentRoundsProvider(widget.tournamentId));
       ref.invalidate(tournamentProvider(widget.tournamentId));
       ref.invalidate(tournamentWinnerProvider(widget.tournamentId));
+      ref.invalidate(allGroupStandingsProvider(widget.tournamentId));
+      if (roundId != null) {
+        ref.invalidate(roundMatchesProvider(roundId));
+      }
 
       if (mounted) {
         final tournament = await service.getTournament(widget.tournamentId);

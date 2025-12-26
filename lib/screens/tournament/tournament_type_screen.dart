@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../data/models/tournament.dart';
+import '../../providers/settings_provider.dart';
 import '../../theme/app_theme.dart';
 
 /// Screen for selecting the tournament type.
 /// First step in the tournament creation flow.
-class TournamentTypeScreen extends StatelessWidget {
+class TournamentTypeScreen extends ConsumerWidget {
   const TournamentTypeScreen({super.key});
 
   void _selectType(BuildContext context, TournamentType type) {
@@ -18,8 +20,38 @@ class TournamentTypeScreen extends StatelessWidget {
     }
   }
 
+  Widget _buildBasicTypeRow(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: _TypeCard(
+            label: 'KNOCKOUT',
+            subtitle: 'Single elimination bracket',
+            description: 'Lose once and you\'re out!',
+            icon: Icons.emoji_events,
+            color: AppTheme.winnerColor,
+            onTap: () => _selectType(context, TournamentType.knockout),
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: _TypeCard(
+            label: 'DOUBLE ELIM',
+            subtitle: 'Second chance bracket',
+            description: 'Lose twice to be eliminated',
+            icon: Icons.repeat,
+            color: AppTheme.primaryColor,
+            onTap: () => _selectType(context, TournamentType.doubleElimination),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settingsAsync = ref.watch(settingsProvider);
+    final advancedMode = settingsAsync.valueOrNull?.advancedMode ?? false;
     return Scaffold(
       appBar: AppBar(
         title: const Text('NEW TOURNAMENT'),
@@ -55,61 +87,48 @@ class TournamentTypeScreen extends StatelessWidget {
               Expanded(
                 child: Column(
                   children: [
-                    Expanded(
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: _TypeCard(
-                              label: 'KNOCKOUT',
-                              subtitle: 'Single elimination bracket',
-                              description: 'Lose once and you\'re out!',
-                              icon: Icons.emoji_events,
-                              color: AppTheme.winnerColor,
-                              onTap: () => _selectType(context, TournamentType.knockout),
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: _TypeCard(
-                              label: 'DOUBLE ELIM',
-                              subtitle: 'Second chance bracket',
-                              description: 'Lose twice to be eliminated',
-                              icon: Icons.repeat,
-                              color: AppTheme.primaryColor,
-                              onTap: () => _selectType(context, TournamentType.doubleElimination),
-                            ),
-                          ),
-                        ],
+                    // Basic tournament types (always visible)
+                    // Use fixed height when not in advanced mode, expand when in advanced mode
+                    if (advancedMode)
+                      Expanded(
+                        child: _buildBasicTypeRow(context),
+                      )
+                    else
+                      SizedBox(
+                        height: 240,
+                        child: _buildBasicTypeRow(context),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    Expanded(
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: _TypeCard(
-                              label: 'ROUND ROBIN',
-                              subtitle: 'Everyone plays everyone',
-                              description: 'Most wins takes the crown',
-                              icon: Icons.loop,
-                              color: AppTheme.secondaryColor,
-                              onTap: () => _selectType(context, TournamentType.roundRobin),
+                    // Advanced tournament types (only visible in advanced mode)
+                    if (advancedMode) ...[
+                      const SizedBox(height: 16),
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: _TypeCard(
+                                label: 'ROUND ROBIN',
+                                subtitle: 'Everyone plays everyone',
+                                description: 'Most wins takes the crown',
+                                icon: Icons.loop,
+                                color: AppTheme.secondaryColor,
+                                onTap: () => _selectType(context, TournamentType.roundRobin),
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: _TypeCard(
-                              label: 'GROUP + KO',
-                              subtitle: 'Groups then playoffs',
-                              description: 'Best-of series in finals',
-                              icon: Icons.view_module,
-                              color: Colors.purple,
-                              onTap: () => _selectType(context, TournamentType.groupKnockout),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: _TypeCard(
+                                label: 'GROUP + KO',
+                                subtitle: 'Groups then playoffs',
+                                description: 'Best-of series in finals',
+                                icon: Icons.view_module,
+                                color: Colors.purple,
+                                onTap: () => _selectType(context, TournamentType.groupKnockout),
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ),

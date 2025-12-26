@@ -134,26 +134,42 @@ class _StandingRow extends StatelessWidget {
             width: 40,
             height: 40,
             margin: const EdgeInsets.only(right: 12),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8),
-              border: isAdvancing
-                  ? Border.all(color: AppTheme.winnerColor, width: 2)
-                  : Border.all(color: AppTheme.surfaceColor, width: 1),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: car.photoPath.isNotEmpty && File(car.photoPath).existsSync()
-                ? Image.file(
-                    File(car.photoPath),
-                    fit: BoxFit.cover,
-                  )
-                : Container(
-                    color: AppTheme.surfaceColor,
-                    child: const Icon(
-                      Icons.directions_car,
-                      size: 20,
-                      color: AppTheme.textSecondary,
+            child: Stack(
+              children: [
+                // Photo or placeholder (clipped)
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: SizedBox(
+                    width: 40,
+                    height: 40,
+                    child: car.photoPath.isNotEmpty && File(car.photoPath).existsSync()
+                        ? Image.file(
+                            File(car.photoPath),
+                            fit: BoxFit.cover,
+                          )
+                        : Container(
+                            color: AppTheme.surfaceColor,
+                            child: const Icon(
+                              Icons.directions_car,
+                              size: 20,
+                              color: AppTheme.textSecondary,
+                            ),
+                          ),
+                  ),
+                ),
+                // Border overlay
+                Positioned.fill(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      border: isAdvancing
+                          ? Border.all(color: AppTheme.winnerColor, width: 2)
+                          : Border.all(color: AppTheme.surfaceColor, width: 1),
                     ),
                   ),
+                ),
+              ],
+            ),
           ),
 
           // Car name

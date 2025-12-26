@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'router/app_router.dart';
 import 'theme/app_theme.dart';
 import 'services/database_service.dart';
+import 'providers/settings_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -38,6 +39,9 @@ class DerbyDashApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Initialize settings on app startup (this applies wakelock if enabled)
+    ref.watch(settingsProvider);
+
     return MaterialApp.router(
       title: 'Derby Dash',
       debugShowCheckedModeBanner: false,
