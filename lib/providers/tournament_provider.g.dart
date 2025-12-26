@@ -1113,5 +1113,737 @@ class _TournamentStatsProviderElement
   @override
   int get tournamentId => (origin as TournamentStatsProvider).tournamentId;
 }
+
+String _$groupStandingsHash() => r'00067e32f8098e51a888ae08e89a3fa692253fbb';
+
+/// Get standings for a specific group in a groupKnockout tournament
+///
+/// Copied from [groupStandings].
+@ProviderFor(groupStandings)
+const groupStandingsProvider = GroupStandingsFamily();
+
+/// Get standings for a specific group in a groupKnockout tournament
+///
+/// Copied from [groupStandings].
+class GroupStandingsFamily extends Family<AsyncValue<List<GroupStanding>>> {
+  /// Get standings for a specific group in a groupKnockout tournament
+  ///
+  /// Copied from [groupStandings].
+  const GroupStandingsFamily();
+
+  /// Get standings for a specific group in a groupKnockout tournament
+  ///
+  /// Copied from [groupStandings].
+  GroupStandingsProvider call(
+    int tournamentId,
+    int groupIndex,
+  ) {
+    return GroupStandingsProvider(
+      tournamentId,
+      groupIndex,
+    );
+  }
+
+  @override
+  GroupStandingsProvider getProviderOverride(
+    covariant GroupStandingsProvider provider,
+  ) {
+    return call(
+      provider.tournamentId,
+      provider.groupIndex,
+    );
+  }
+
+  static const Iterable<ProviderOrFamily>? _dependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get dependencies => _dependencies;
+
+  static const Iterable<ProviderOrFamily>? _allTransitiveDependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get allTransitiveDependencies =>
+      _allTransitiveDependencies;
+
+  @override
+  String? get name => r'groupStandingsProvider';
+}
+
+/// Get standings for a specific group in a groupKnockout tournament
+///
+/// Copied from [groupStandings].
+class GroupStandingsProvider
+    extends AutoDisposeFutureProvider<List<GroupStanding>> {
+  /// Get standings for a specific group in a groupKnockout tournament
+  ///
+  /// Copied from [groupStandings].
+  GroupStandingsProvider(
+    int tournamentId,
+    int groupIndex,
+  ) : this._internal(
+          (ref) => groupStandings(
+            ref as GroupStandingsRef,
+            tournamentId,
+            groupIndex,
+          ),
+          from: groupStandingsProvider,
+          name: r'groupStandingsProvider',
+          debugGetCreateSourceHash:
+              const bool.fromEnvironment('dart.vm.product')
+                  ? null
+                  : _$groupStandingsHash,
+          dependencies: GroupStandingsFamily._dependencies,
+          allTransitiveDependencies:
+              GroupStandingsFamily._allTransitiveDependencies,
+          tournamentId: tournamentId,
+          groupIndex: groupIndex,
+        );
+
+  GroupStandingsProvider._internal(
+    super._createNotifier, {
+    required super.name,
+    required super.dependencies,
+    required super.allTransitiveDependencies,
+    required super.debugGetCreateSourceHash,
+    required super.from,
+    required this.tournamentId,
+    required this.groupIndex,
+  }) : super.internal();
+
+  final int tournamentId;
+  final int groupIndex;
+
+  @override
+  Override overrideWith(
+    FutureOr<List<GroupStanding>> Function(GroupStandingsRef provider) create,
+  ) {
+    return ProviderOverride(
+      origin: this,
+      override: GroupStandingsProvider._internal(
+        (ref) => create(ref as GroupStandingsRef),
+        from: from,
+        name: null,
+        dependencies: null,
+        allTransitiveDependencies: null,
+        debugGetCreateSourceHash: null,
+        tournamentId: tournamentId,
+        groupIndex: groupIndex,
+      ),
+    );
+  }
+
+  @override
+  AutoDisposeFutureProviderElement<List<GroupStanding>> createElement() {
+    return _GroupStandingsProviderElement(this);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is GroupStandingsProvider &&
+        other.tournamentId == tournamentId &&
+        other.groupIndex == groupIndex;
+  }
+
+  @override
+  int get hashCode {
+    var hash = _SystemHash.combine(0, runtimeType.hashCode);
+    hash = _SystemHash.combine(hash, tournamentId.hashCode);
+    hash = _SystemHash.combine(hash, groupIndex.hashCode);
+
+    return _SystemHash.finish(hash);
+  }
+}
+
+mixin GroupStandingsRef on AutoDisposeFutureProviderRef<List<GroupStanding>> {
+  /// The parameter `tournamentId` of this provider.
+  int get tournamentId;
+
+  /// The parameter `groupIndex` of this provider.
+  int get groupIndex;
+}
+
+class _GroupStandingsProviderElement
+    extends AutoDisposeFutureProviderElement<List<GroupStanding>>
+    with GroupStandingsRef {
+  _GroupStandingsProviderElement(super.provider);
+
+  @override
+  int get tournamentId => (origin as GroupStandingsProvider).tournamentId;
+  @override
+  int get groupIndex => (origin as GroupStandingsProvider).groupIndex;
+}
+
+String _$groupRoundsHash() => r'0bd469521e0a3cf6b5bb2c96eef8a4c920e00af7';
+
+/// Get all group stage rounds for a groupKnockout tournament
+///
+/// Copied from [groupRounds].
+@ProviderFor(groupRounds)
+const groupRoundsProvider = GroupRoundsFamily();
+
+/// Get all group stage rounds for a groupKnockout tournament
+///
+/// Copied from [groupRounds].
+class GroupRoundsFamily extends Family<AsyncValue<List<Round>>> {
+  /// Get all group stage rounds for a groupKnockout tournament
+  ///
+  /// Copied from [groupRounds].
+  const GroupRoundsFamily();
+
+  /// Get all group stage rounds for a groupKnockout tournament
+  ///
+  /// Copied from [groupRounds].
+  GroupRoundsProvider call(
+    int tournamentId,
+  ) {
+    return GroupRoundsProvider(
+      tournamentId,
+    );
+  }
+
+  @override
+  GroupRoundsProvider getProviderOverride(
+    covariant GroupRoundsProvider provider,
+  ) {
+    return call(
+      provider.tournamentId,
+    );
+  }
+
+  static const Iterable<ProviderOrFamily>? _dependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get dependencies => _dependencies;
+
+  static const Iterable<ProviderOrFamily>? _allTransitiveDependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get allTransitiveDependencies =>
+      _allTransitiveDependencies;
+
+  @override
+  String? get name => r'groupRoundsProvider';
+}
+
+/// Get all group stage rounds for a groupKnockout tournament
+///
+/// Copied from [groupRounds].
+class GroupRoundsProvider extends AutoDisposeFutureProvider<List<Round>> {
+  /// Get all group stage rounds for a groupKnockout tournament
+  ///
+  /// Copied from [groupRounds].
+  GroupRoundsProvider(
+    int tournamentId,
+  ) : this._internal(
+          (ref) => groupRounds(
+            ref as GroupRoundsRef,
+            tournamentId,
+          ),
+          from: groupRoundsProvider,
+          name: r'groupRoundsProvider',
+          debugGetCreateSourceHash:
+              const bool.fromEnvironment('dart.vm.product')
+                  ? null
+                  : _$groupRoundsHash,
+          dependencies: GroupRoundsFamily._dependencies,
+          allTransitiveDependencies:
+              GroupRoundsFamily._allTransitiveDependencies,
+          tournamentId: tournamentId,
+        );
+
+  GroupRoundsProvider._internal(
+    super._createNotifier, {
+    required super.name,
+    required super.dependencies,
+    required super.allTransitiveDependencies,
+    required super.debugGetCreateSourceHash,
+    required super.from,
+    required this.tournamentId,
+  }) : super.internal();
+
+  final int tournamentId;
+
+  @override
+  Override overrideWith(
+    FutureOr<List<Round>> Function(GroupRoundsRef provider) create,
+  ) {
+    return ProviderOverride(
+      origin: this,
+      override: GroupRoundsProvider._internal(
+        (ref) => create(ref as GroupRoundsRef),
+        from: from,
+        name: null,
+        dependencies: null,
+        allTransitiveDependencies: null,
+        debugGetCreateSourceHash: null,
+        tournamentId: tournamentId,
+      ),
+    );
+  }
+
+  @override
+  AutoDisposeFutureProviderElement<List<Round>> createElement() {
+    return _GroupRoundsProviderElement(this);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is GroupRoundsProvider && other.tournamentId == tournamentId;
+  }
+
+  @override
+  int get hashCode {
+    var hash = _SystemHash.combine(0, runtimeType.hashCode);
+    hash = _SystemHash.combine(hash, tournamentId.hashCode);
+
+    return _SystemHash.finish(hash);
+  }
+}
+
+mixin GroupRoundsRef on AutoDisposeFutureProviderRef<List<Round>> {
+  /// The parameter `tournamentId` of this provider.
+  int get tournamentId;
+}
+
+class _GroupRoundsProviderElement
+    extends AutoDisposeFutureProviderElement<List<Round>> with GroupRoundsRef {
+  _GroupRoundsProviderElement(super.provider);
+
+  @override
+  int get tournamentId => (origin as GroupRoundsProvider).tournamentId;
+}
+
+String _$knockoutRoundsHash() => r'9832a75bbdb4dbfe50f536cc70c1ce51a219e151';
+
+/// Get all knockout stage rounds for a groupKnockout tournament
+///
+/// Copied from [knockoutRounds].
+@ProviderFor(knockoutRounds)
+const knockoutRoundsProvider = KnockoutRoundsFamily();
+
+/// Get all knockout stage rounds for a groupKnockout tournament
+///
+/// Copied from [knockoutRounds].
+class KnockoutRoundsFamily extends Family<AsyncValue<List<Round>>> {
+  /// Get all knockout stage rounds for a groupKnockout tournament
+  ///
+  /// Copied from [knockoutRounds].
+  const KnockoutRoundsFamily();
+
+  /// Get all knockout stage rounds for a groupKnockout tournament
+  ///
+  /// Copied from [knockoutRounds].
+  KnockoutRoundsProvider call(
+    int tournamentId,
+  ) {
+    return KnockoutRoundsProvider(
+      tournamentId,
+    );
+  }
+
+  @override
+  KnockoutRoundsProvider getProviderOverride(
+    covariant KnockoutRoundsProvider provider,
+  ) {
+    return call(
+      provider.tournamentId,
+    );
+  }
+
+  static const Iterable<ProviderOrFamily>? _dependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get dependencies => _dependencies;
+
+  static const Iterable<ProviderOrFamily>? _allTransitiveDependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get allTransitiveDependencies =>
+      _allTransitiveDependencies;
+
+  @override
+  String? get name => r'knockoutRoundsProvider';
+}
+
+/// Get all knockout stage rounds for a groupKnockout tournament
+///
+/// Copied from [knockoutRounds].
+class KnockoutRoundsProvider extends AutoDisposeFutureProvider<List<Round>> {
+  /// Get all knockout stage rounds for a groupKnockout tournament
+  ///
+  /// Copied from [knockoutRounds].
+  KnockoutRoundsProvider(
+    int tournamentId,
+  ) : this._internal(
+          (ref) => knockoutRounds(
+            ref as KnockoutRoundsRef,
+            tournamentId,
+          ),
+          from: knockoutRoundsProvider,
+          name: r'knockoutRoundsProvider',
+          debugGetCreateSourceHash:
+              const bool.fromEnvironment('dart.vm.product')
+                  ? null
+                  : _$knockoutRoundsHash,
+          dependencies: KnockoutRoundsFamily._dependencies,
+          allTransitiveDependencies:
+              KnockoutRoundsFamily._allTransitiveDependencies,
+          tournamentId: tournamentId,
+        );
+
+  KnockoutRoundsProvider._internal(
+    super._createNotifier, {
+    required super.name,
+    required super.dependencies,
+    required super.allTransitiveDependencies,
+    required super.debugGetCreateSourceHash,
+    required super.from,
+    required this.tournamentId,
+  }) : super.internal();
+
+  final int tournamentId;
+
+  @override
+  Override overrideWith(
+    FutureOr<List<Round>> Function(KnockoutRoundsRef provider) create,
+  ) {
+    return ProviderOverride(
+      origin: this,
+      override: KnockoutRoundsProvider._internal(
+        (ref) => create(ref as KnockoutRoundsRef),
+        from: from,
+        name: null,
+        dependencies: null,
+        allTransitiveDependencies: null,
+        debugGetCreateSourceHash: null,
+        tournamentId: tournamentId,
+      ),
+    );
+  }
+
+  @override
+  AutoDisposeFutureProviderElement<List<Round>> createElement() {
+    return _KnockoutRoundsProviderElement(this);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is KnockoutRoundsProvider &&
+        other.tournamentId == tournamentId;
+  }
+
+  @override
+  int get hashCode {
+    var hash = _SystemHash.combine(0, runtimeType.hashCode);
+    hash = _SystemHash.combine(hash, tournamentId.hashCode);
+
+    return _SystemHash.finish(hash);
+  }
+}
+
+mixin KnockoutRoundsRef on AutoDisposeFutureProviderRef<List<Round>> {
+  /// The parameter `tournamentId` of this provider.
+  int get tournamentId;
+}
+
+class _KnockoutRoundsProviderElement
+    extends AutoDisposeFutureProviderElement<List<Round>>
+    with KnockoutRoundsRef {
+  _KnockoutRoundsProviderElement(super.provider);
+
+  @override
+  int get tournamentId => (origin as KnockoutRoundsProvider).tournamentId;
+}
+
+String _$isGroupStageCompleteHash() =>
+    r'61c4f38a9dd2b1437a4dbcb74c5784d92d12b989';
+
+/// Check if the group stage is complete for a groupKnockout tournament
+///
+/// Copied from [isGroupStageComplete].
+@ProviderFor(isGroupStageComplete)
+const isGroupStageCompleteProvider = IsGroupStageCompleteFamily();
+
+/// Check if the group stage is complete for a groupKnockout tournament
+///
+/// Copied from [isGroupStageComplete].
+class IsGroupStageCompleteFamily extends Family<AsyncValue<bool>> {
+  /// Check if the group stage is complete for a groupKnockout tournament
+  ///
+  /// Copied from [isGroupStageComplete].
+  const IsGroupStageCompleteFamily();
+
+  /// Check if the group stage is complete for a groupKnockout tournament
+  ///
+  /// Copied from [isGroupStageComplete].
+  IsGroupStageCompleteProvider call(
+    int tournamentId,
+  ) {
+    return IsGroupStageCompleteProvider(
+      tournamentId,
+    );
+  }
+
+  @override
+  IsGroupStageCompleteProvider getProviderOverride(
+    covariant IsGroupStageCompleteProvider provider,
+  ) {
+    return call(
+      provider.tournamentId,
+    );
+  }
+
+  static const Iterable<ProviderOrFamily>? _dependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get dependencies => _dependencies;
+
+  static const Iterable<ProviderOrFamily>? _allTransitiveDependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get allTransitiveDependencies =>
+      _allTransitiveDependencies;
+
+  @override
+  String? get name => r'isGroupStageCompleteProvider';
+}
+
+/// Check if the group stage is complete for a groupKnockout tournament
+///
+/// Copied from [isGroupStageComplete].
+class IsGroupStageCompleteProvider extends AutoDisposeFutureProvider<bool> {
+  /// Check if the group stage is complete for a groupKnockout tournament
+  ///
+  /// Copied from [isGroupStageComplete].
+  IsGroupStageCompleteProvider(
+    int tournamentId,
+  ) : this._internal(
+          (ref) => isGroupStageComplete(
+            ref as IsGroupStageCompleteRef,
+            tournamentId,
+          ),
+          from: isGroupStageCompleteProvider,
+          name: r'isGroupStageCompleteProvider',
+          debugGetCreateSourceHash:
+              const bool.fromEnvironment('dart.vm.product')
+                  ? null
+                  : _$isGroupStageCompleteHash,
+          dependencies: IsGroupStageCompleteFamily._dependencies,
+          allTransitiveDependencies:
+              IsGroupStageCompleteFamily._allTransitiveDependencies,
+          tournamentId: tournamentId,
+        );
+
+  IsGroupStageCompleteProvider._internal(
+    super._createNotifier, {
+    required super.name,
+    required super.dependencies,
+    required super.allTransitiveDependencies,
+    required super.debugGetCreateSourceHash,
+    required super.from,
+    required this.tournamentId,
+  }) : super.internal();
+
+  final int tournamentId;
+
+  @override
+  Override overrideWith(
+    FutureOr<bool> Function(IsGroupStageCompleteRef provider) create,
+  ) {
+    return ProviderOverride(
+      origin: this,
+      override: IsGroupStageCompleteProvider._internal(
+        (ref) => create(ref as IsGroupStageCompleteRef),
+        from: from,
+        name: null,
+        dependencies: null,
+        allTransitiveDependencies: null,
+        debugGetCreateSourceHash: null,
+        tournamentId: tournamentId,
+      ),
+    );
+  }
+
+  @override
+  AutoDisposeFutureProviderElement<bool> createElement() {
+    return _IsGroupStageCompleteProviderElement(this);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is IsGroupStageCompleteProvider &&
+        other.tournamentId == tournamentId;
+  }
+
+  @override
+  int get hashCode {
+    var hash = _SystemHash.combine(0, runtimeType.hashCode);
+    hash = _SystemHash.combine(hash, tournamentId.hashCode);
+
+    return _SystemHash.finish(hash);
+  }
+}
+
+mixin IsGroupStageCompleteRef on AutoDisposeFutureProviderRef<bool> {
+  /// The parameter `tournamentId` of this provider.
+  int get tournamentId;
+}
+
+class _IsGroupStageCompleteProviderElement
+    extends AutoDisposeFutureProviderElement<bool>
+    with IsGroupStageCompleteRef {
+  _IsGroupStageCompleteProviderElement(super.provider);
+
+  @override
+  int get tournamentId => (origin as IsGroupStageCompleteProvider).tournamentId;
+}
+
+String _$allGroupStandingsHash() => r'5a4e60a0fa99fc087150e4652412658cae73e074';
+
+/// Get all standings for all groups in a groupKnockout tournament
+///
+/// Copied from [allGroupStandings].
+@ProviderFor(allGroupStandings)
+const allGroupStandingsProvider = AllGroupStandingsFamily();
+
+/// Get all standings for all groups in a groupKnockout tournament
+///
+/// Copied from [allGroupStandings].
+class AllGroupStandingsFamily
+    extends Family<AsyncValue<Map<int, List<GroupStanding>>>> {
+  /// Get all standings for all groups in a groupKnockout tournament
+  ///
+  /// Copied from [allGroupStandings].
+  const AllGroupStandingsFamily();
+
+  /// Get all standings for all groups in a groupKnockout tournament
+  ///
+  /// Copied from [allGroupStandings].
+  AllGroupStandingsProvider call(
+    int tournamentId,
+  ) {
+    return AllGroupStandingsProvider(
+      tournamentId,
+    );
+  }
+
+  @override
+  AllGroupStandingsProvider getProviderOverride(
+    covariant AllGroupStandingsProvider provider,
+  ) {
+    return call(
+      provider.tournamentId,
+    );
+  }
+
+  static const Iterable<ProviderOrFamily>? _dependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get dependencies => _dependencies;
+
+  static const Iterable<ProviderOrFamily>? _allTransitiveDependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get allTransitiveDependencies =>
+      _allTransitiveDependencies;
+
+  @override
+  String? get name => r'allGroupStandingsProvider';
+}
+
+/// Get all standings for all groups in a groupKnockout tournament
+///
+/// Copied from [allGroupStandings].
+class AllGroupStandingsProvider
+    extends AutoDisposeFutureProvider<Map<int, List<GroupStanding>>> {
+  /// Get all standings for all groups in a groupKnockout tournament
+  ///
+  /// Copied from [allGroupStandings].
+  AllGroupStandingsProvider(
+    int tournamentId,
+  ) : this._internal(
+          (ref) => allGroupStandings(
+            ref as AllGroupStandingsRef,
+            tournamentId,
+          ),
+          from: allGroupStandingsProvider,
+          name: r'allGroupStandingsProvider',
+          debugGetCreateSourceHash:
+              const bool.fromEnvironment('dart.vm.product')
+                  ? null
+                  : _$allGroupStandingsHash,
+          dependencies: AllGroupStandingsFamily._dependencies,
+          allTransitiveDependencies:
+              AllGroupStandingsFamily._allTransitiveDependencies,
+          tournamentId: tournamentId,
+        );
+
+  AllGroupStandingsProvider._internal(
+    super._createNotifier, {
+    required super.name,
+    required super.dependencies,
+    required super.allTransitiveDependencies,
+    required super.debugGetCreateSourceHash,
+    required super.from,
+    required this.tournamentId,
+  }) : super.internal();
+
+  final int tournamentId;
+
+  @override
+  Override overrideWith(
+    FutureOr<Map<int, List<GroupStanding>>> Function(
+            AllGroupStandingsRef provider)
+        create,
+  ) {
+    return ProviderOverride(
+      origin: this,
+      override: AllGroupStandingsProvider._internal(
+        (ref) => create(ref as AllGroupStandingsRef),
+        from: from,
+        name: null,
+        dependencies: null,
+        allTransitiveDependencies: null,
+        debugGetCreateSourceHash: null,
+        tournamentId: tournamentId,
+      ),
+    );
+  }
+
+  @override
+  AutoDisposeFutureProviderElement<Map<int, List<GroupStanding>>>
+      createElement() {
+    return _AllGroupStandingsProviderElement(this);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is AllGroupStandingsProvider &&
+        other.tournamentId == tournamentId;
+  }
+
+  @override
+  int get hashCode {
+    var hash = _SystemHash.combine(0, runtimeType.hashCode);
+    hash = _SystemHash.combine(hash, tournamentId.hashCode);
+
+    return _SystemHash.finish(hash);
+  }
+}
+
+mixin AllGroupStandingsRef
+    on AutoDisposeFutureProviderRef<Map<int, List<GroupStanding>>> {
+  /// The parameter `tournamentId` of this provider.
+  int get tournamentId;
+}
+
+class _AllGroupStandingsProviderElement
+    extends AutoDisposeFutureProviderElement<Map<int, List<GroupStanding>>>
+    with AllGroupStandingsRef {
+  _AllGroupStandingsProviderElement(super.provider);
+
+  @override
+  int get tournamentId => (origin as AllGroupStandingsProvider).tournamentId;
+}
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member
