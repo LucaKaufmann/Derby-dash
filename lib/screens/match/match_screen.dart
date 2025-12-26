@@ -67,6 +67,7 @@ class _MatchScreenState extends ConsumerState<MatchScreen> {
         final roundId = updatedMatch.round.value?.id;
 
         ref.invalidate(tournamentRoundsProvider(widget.tournamentId));
+        ref.invalidate(groupRoundsProvider(widget.tournamentId));
         ref.invalidate(tournamentProvider(widget.tournamentId));
         ref.invalidate(tournamentWinnerProvider(widget.tournamentId));
         ref.invalidate(allGroupStandingsProvider(widget.tournamentId));
@@ -114,6 +115,7 @@ class _MatchScreenState extends ConsumerState<MatchScreen> {
       // Invalidate providers to refresh data
       ref.invalidate(matchDetailsProvider(widget.matchId));
       ref.invalidate(tournamentRoundsProvider(widget.tournamentId));
+      ref.invalidate(groupRoundsProvider(widget.tournamentId));
       ref.invalidate(tournamentProvider(widget.tournamentId));
       ref.invalidate(tournamentWinnerProvider(widget.tournamentId));
       ref.invalidate(allGroupStandingsProvider(widget.tournamentId));
