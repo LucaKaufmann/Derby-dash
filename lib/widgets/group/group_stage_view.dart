@@ -114,6 +114,13 @@ class GroupStageView extends ConsumerWidget {
                         ),
                         const SizedBox(height: 8),
 
+                        // Next match card (if group not complete)
+                        if (!groupRound.isCompleted)
+                          _NextMatchCard(
+                            round: groupRound,
+                            tournamentId: tournament.id,
+                          ),
+
                         // Group matches
                         _GroupMatchesCard(
                           round: groupRound,
@@ -134,6 +141,166 @@ class GroupStageView extends ConsumerWidget {
       ),
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (error, _) => Center(child: Text('Error: $error')),
+    );
+  }
+}
+
+class _NextMatchCard extends ConsumerWidget {
+  final Round round;
+  final int tournamentId;
+
+  const _NextMatchCard({
+    required this.round,
+    required this.tournamentId,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final matchesAsync = ref.watch(roundMatchesProvider(round.id));
+
+    return matchesAsync.when(
+      data: (matches) {
+        // Find the first incomplete match
+        final nextMatch = matches.cast<Match?>().firstWhere(
+              (m) => m?.winner.value == null,
+              orElse: () => null,
+            );
+
+        if (nextMatch == null) {
+          return const SizedBox.shrink();
+        }
+
+        return _NextMatchCardContent(
+          match: nextMatch,
+          tournamentId: tournamentId,
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+    );
+  }
+}
+
+class _NextMatchCardContent extends ConsumerWidget {
+  final Match match;
+  final int tournamentId;
+
+  const _NextMatchCardContent({
+    required this.match,
+    required this.tournamentId,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final matchAsync = ref.watch(matchDetailsProvider(match.id));
+
+    return matchAsync.when(
+      data: (matchDetails) {
+        if (matchDetails == null) return const SizedBox.shrink();
+
+        final carA = matchDetails.carA.value;
+        final carB = matchDetails.carB.value;
+
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: Material(
+            color: AppTheme.primaryColor,
+            borderRadius: BorderRadius.circular(16),
+            child: InkWell(
+              onTap: () =>
+                  context.push('/tournament/$tournamentId/match/${match.id}'),
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.play_circle_filled,
+                          color: Colors.white.withValues(alpha: 0.9),
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'NEXT MATCH',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        // Car A
+                        Expanded(
+                          child: Text(
+                            carA?.name ?? 'Unknown',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.right,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        // VS badge
+                        Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 16),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Text(
+                            'VS',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        // Car B
+                        Expanded(
+                          child: Text(
+                            carB?.name ?? 'Unknown',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Tap to play',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.7),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
     );
   }
 }
@@ -259,25 +426,20 @@ class _GroupMatchRow extends ConsumerWidget {
 
         return Padding(
           padding: const EdgeInsets.only(bottom: 8),
-          child: InkWell(
-            onTap: isComplete
-                ? null
-                : () => context.push('/tournament/$tournamentId/match/${match.id}'),
-            borderRadius: BorderRadius.circular(8),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              decoration: BoxDecoration(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: isComplete
+                  ? AppTheme.successColor.withValues(alpha: 0.1)
+                  : AppTheme.surfaceColor,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
                 color: isComplete
-                    ? AppTheme.successColor.withValues(alpha: 0.1)
-                    : AppTheme.surfaceColor,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: isComplete
-                      ? AppTheme.successColor.withValues(alpha: 0.5)
-                      : Colors.transparent,
-                ),
+                    ? AppTheme.successColor.withValues(alpha: 0.5)
+                    : Colors.transparent,
               ),
-              child: Row(
+            ),
+            child: Row(
                 children: [
                   // Car A
                   Expanded(
@@ -346,7 +508,6 @@ class _GroupMatchRow extends ConsumerWidget {
                 ],
               ),
             ),
-          ),
         );
       },
       loading: () => const SizedBox(height: 40),
