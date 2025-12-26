@@ -22,6 +22,8 @@ class TournamentDashboardScreen extends ConsumerWidget {
         return 'DOUBLE ELIMINATION';
       case TournamentType.roundRobin:
         return 'ROUND ROBIN';
+      case TournamentType.groupKnockout:
+        return 'GROUP + KNOCKOUT';
     }
   }
 
@@ -180,11 +182,36 @@ class _RoundCard extends ConsumerWidget {
       case BracketType.grandFinals:
         // Round 2 is bracket reset
         return round.roundNumber == 2 ? 'Grand Finals - RESET' : 'Grand Finals';
+      case BracketType.knockout:
+        // For groupKnockout knockout phase
+        switch (round.knockoutRoundName) {
+          case 'gf':
+            return 'Grand Finals';
+          case 'sf':
+            return 'Semifinals';
+          case 'qf':
+            return 'Quarterfinals';
+          case 'ro16':
+            return 'Round of 16';
+          default:
+            return 'Knockout';
+        }
+      case BracketType.groupA:
+      case BracketType.groupB:
+      case BracketType.groupC:
+      case BracketType.groupD:
+      case BracketType.groupE:
+      case BracketType.groupF:
+      case BracketType.groupG:
+      case BracketType.groupH:
+        final groupLetter = String.fromCharCode('A'.codeUnitAt(0) + (round.groupIndex ?? 0));
+        return 'Group $groupLetter';
     }
   }
 
   Color _getBracketColor() {
-    if (tournamentType != TournamentType.doubleElimination) {
+    if (tournamentType != TournamentType.doubleElimination &&
+        tournamentType != TournamentType.groupKnockout) {
       return round.isCompleted ? AppTheme.successColor : AppTheme.primaryColor;
     }
 
@@ -192,13 +219,28 @@ class _RoundCard extends ConsumerWidget {
       case BracketType.winners:
         return round.isCompleted
             ? AppTheme.successColor
-            : AppTheme.successColor.withOpacity(0.7);
+            : AppTheme.successColor.withValues(alpha: 0.7);
       case BracketType.losers:
         return round.isCompleted
             ? AppTheme.successColor
-            : AppTheme.errorColor.withOpacity(0.7);
+            : AppTheme.errorColor.withValues(alpha: 0.7);
       case BracketType.grandFinals:
         return round.isCompleted ? AppTheme.successColor : AppTheme.winnerColor;
+      case BracketType.knockout:
+        // For groupKnockout knockout phase
+        if (round.knockoutRoundName == 'gf') {
+          return round.isCompleted ? AppTheme.successColor : AppTheme.winnerColor;
+        }
+        return round.isCompleted ? AppTheme.successColor : AppTheme.primaryColor;
+      case BracketType.groupA:
+      case BracketType.groupB:
+      case BracketType.groupC:
+      case BracketType.groupD:
+      case BracketType.groupE:
+      case BracketType.groupF:
+      case BracketType.groupG:
+      case BracketType.groupH:
+        return round.isCompleted ? AppTheme.successColor : AppTheme.primaryColor;
     }
   }
 
@@ -210,6 +252,20 @@ class _RoundCard extends ConsumerWidget {
         return Icons.trending_down;
       case BracketType.grandFinals:
         return Icons.military_tech;
+      case BracketType.knockout:
+        if (round.knockoutRoundName == 'gf') {
+          return Icons.military_tech;
+        }
+        return Icons.sports_mma;
+      case BracketType.groupA:
+      case BracketType.groupB:
+      case BracketType.groupC:
+      case BracketType.groupD:
+      case BracketType.groupE:
+      case BracketType.groupF:
+      case BracketType.groupG:
+      case BracketType.groupH:
+        return Icons.groups;
     }
   }
 

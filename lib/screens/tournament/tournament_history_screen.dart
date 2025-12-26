@@ -137,6 +137,8 @@ class _TournamentHistoryCard extends ConsumerWidget {
         return 'DOUBLE ELIM';
       case TournamentType.roundRobin:
         return 'ROUND ROBIN';
+      case TournamentType.groupKnockout:
+        return 'GROUP + KO';
     }
   }
 
@@ -148,6 +150,8 @@ class _TournamentHistoryCard extends ConsumerWidget {
         return AppTheme.primaryColor;
       case TournamentType.roundRobin:
         return AppTheme.secondaryColor;
+      case TournamentType.groupKnockout:
+        return AppTheme.primaryColor;
     }
   }
 

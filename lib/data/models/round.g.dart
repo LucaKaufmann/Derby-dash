@@ -23,13 +23,23 @@ const RoundSchema = CollectionSchema(
       type: IsarType.string,
       enumMap: _RoundbracketTypeEnumValueMap,
     ),
-    r'isCompleted': PropertySchema(
+    r'groupIndex': PropertySchema(
       id: 1,
+      name: r'groupIndex',
+      type: IsarType.long,
+    ),
+    r'isCompleted': PropertySchema(
+      id: 2,
       name: r'isCompleted',
       type: IsarType.bool,
     ),
+    r'knockoutRoundName': PropertySchema(
+      id: 3,
+      name: r'knockoutRoundName',
+      type: IsarType.string,
+    ),
     r'roundNumber': PropertySchema(
-      id: 2,
+      id: 4,
       name: r'roundNumber',
       type: IsarType.long,
     )
@@ -69,6 +79,12 @@ int _roundEstimateSize(
 ) {
   var bytesCount = offsets.last;
   bytesCount += 3 + object.bracketType.name.length * 3;
+  {
+    final value = object.knockoutRoundName;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
   return bytesCount;
 }
 
@@ -79,8 +95,10 @@ void _roundSerialize(
   Map<Type, List<int>> allOffsets,
 ) {
   writer.writeString(offsets[0], object.bracketType.name);
-  writer.writeBool(offsets[1], object.isCompleted);
-  writer.writeLong(offsets[2], object.roundNumber);
+  writer.writeLong(offsets[1], object.groupIndex);
+  writer.writeBool(offsets[2], object.isCompleted);
+  writer.writeString(offsets[3], object.knockoutRoundName);
+  writer.writeLong(offsets[4], object.roundNumber);
 }
 
 Round _roundDeserialize(
@@ -93,9 +111,11 @@ Round _roundDeserialize(
   object.bracketType =
       _RoundbracketTypeValueEnumMap[reader.readStringOrNull(offsets[0])] ??
           BracketType.winners;
+  object.groupIndex = reader.readLongOrNull(offsets[1]);
   object.id = id;
-  object.isCompleted = reader.readBool(offsets[1]);
-  object.roundNumber = reader.readLong(offsets[2]);
+  object.isCompleted = reader.readBool(offsets[2]);
+  object.knockoutRoundName = reader.readStringOrNull(offsets[3]);
+  object.roundNumber = reader.readLong(offsets[4]);
   return object;
 }
 
@@ -110,8 +130,12 @@ P _roundDeserializeProp<P>(
       return (_RoundbracketTypeValueEnumMap[reader.readStringOrNull(offset)] ??
           BracketType.winners) as P;
     case 1:
-      return (reader.readBool(offset)) as P;
+      return (reader.readLongOrNull(offset)) as P;
     case 2:
+      return (reader.readBool(offset)) as P;
+    case 3:
+      return (reader.readStringOrNull(offset)) as P;
+    case 4:
       return (reader.readLong(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -122,11 +146,29 @@ const _RoundbracketTypeEnumValueMap = {
   r'winners': r'winners',
   r'losers': r'losers',
   r'grandFinals': r'grandFinals',
+  r'groupA': r'groupA',
+  r'groupB': r'groupB',
+  r'groupC': r'groupC',
+  r'groupD': r'groupD',
+  r'groupE': r'groupE',
+  r'groupF': r'groupF',
+  r'groupG': r'groupG',
+  r'groupH': r'groupH',
+  r'knockout': r'knockout',
 };
 const _RoundbracketTypeValueEnumMap = {
   r'winners': BracketType.winners,
   r'losers': BracketType.losers,
   r'grandFinals': BracketType.grandFinals,
+  r'groupA': BracketType.groupA,
+  r'groupB': BracketType.groupB,
+  r'groupC': BracketType.groupC,
+  r'groupD': BracketType.groupD,
+  r'groupE': BracketType.groupE,
+  r'groupF': BracketType.groupF,
+  r'groupG': BracketType.groupG,
+  r'groupH': BracketType.groupH,
+  r'knockout': BracketType.knockout,
 };
 
 Id _roundGetId(Round object) {
@@ -350,6 +392,75 @@ extension RoundQueryFilter on QueryBuilder<Round, Round, QFilterCondition> {
     });
   }
 
+  QueryBuilder<Round, Round, QAfterFilterCondition> groupIndexIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'groupIndex',
+      ));
+    });
+  }
+
+  QueryBuilder<Round, Round, QAfterFilterCondition> groupIndexIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'groupIndex',
+      ));
+    });
+  }
+
+  QueryBuilder<Round, Round, QAfterFilterCondition> groupIndexEqualTo(
+      int? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'groupIndex',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Round, Round, QAfterFilterCondition> groupIndexGreaterThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'groupIndex',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Round, Round, QAfterFilterCondition> groupIndexLessThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'groupIndex',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Round, Round, QAfterFilterCondition> groupIndexBetween(
+    int? lower,
+    int? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'groupIndex',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
   QueryBuilder<Round, Round, QAfterFilterCondition> idEqualTo(Id value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
@@ -408,6 +519,155 @@ extension RoundQueryFilter on QueryBuilder<Round, Round, QFilterCondition> {
       return query.addFilterCondition(FilterCondition.equalTo(
         property: r'isCompleted',
         value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Round, Round, QAfterFilterCondition> knockoutRoundNameIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'knockoutRoundName',
+      ));
+    });
+  }
+
+  QueryBuilder<Round, Round, QAfterFilterCondition>
+      knockoutRoundNameIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'knockoutRoundName',
+      ));
+    });
+  }
+
+  QueryBuilder<Round, Round, QAfterFilterCondition> knockoutRoundNameEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'knockoutRoundName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Round, Round, QAfterFilterCondition>
+      knockoutRoundNameGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'knockoutRoundName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Round, Round, QAfterFilterCondition> knockoutRoundNameLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'knockoutRoundName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Round, Round, QAfterFilterCondition> knockoutRoundNameBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'knockoutRoundName',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Round, Round, QAfterFilterCondition> knockoutRoundNameStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'knockoutRoundName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Round, Round, QAfterFilterCondition> knockoutRoundNameEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'knockoutRoundName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Round, Round, QAfterFilterCondition> knockoutRoundNameContains(
+      String value,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'knockoutRoundName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Round, Round, QAfterFilterCondition> knockoutRoundNameMatches(
+      String pattern,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'knockoutRoundName',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Round, Round, QAfterFilterCondition> knockoutRoundNameIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'knockoutRoundName',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<Round, Round, QAfterFilterCondition>
+      knockoutRoundNameIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'knockoutRoundName',
+        value: '',
       ));
     });
   }
@@ -552,6 +812,18 @@ extension RoundQuerySortBy on QueryBuilder<Round, Round, QSortBy> {
     });
   }
 
+  QueryBuilder<Round, Round, QAfterSortBy> sortByGroupIndex() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'groupIndex', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Round, Round, QAfterSortBy> sortByGroupIndexDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'groupIndex', Sort.desc);
+    });
+  }
+
   QueryBuilder<Round, Round, QAfterSortBy> sortByIsCompleted() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'isCompleted', Sort.asc);
@@ -561,6 +833,18 @@ extension RoundQuerySortBy on QueryBuilder<Round, Round, QSortBy> {
   QueryBuilder<Round, Round, QAfterSortBy> sortByIsCompletedDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'isCompleted', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Round, Round, QAfterSortBy> sortByKnockoutRoundName() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'knockoutRoundName', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Round, Round, QAfterSortBy> sortByKnockoutRoundNameDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'knockoutRoundName', Sort.desc);
     });
   }
 
@@ -590,6 +874,18 @@ extension RoundQuerySortThenBy on QueryBuilder<Round, Round, QSortThenBy> {
     });
   }
 
+  QueryBuilder<Round, Round, QAfterSortBy> thenByGroupIndex() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'groupIndex', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Round, Round, QAfterSortBy> thenByGroupIndexDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'groupIndex', Sort.desc);
+    });
+  }
+
   QueryBuilder<Round, Round, QAfterSortBy> thenById() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'id', Sort.asc);
@@ -614,6 +910,18 @@ extension RoundQuerySortThenBy on QueryBuilder<Round, Round, QSortThenBy> {
     });
   }
 
+  QueryBuilder<Round, Round, QAfterSortBy> thenByKnockoutRoundName() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'knockoutRoundName', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Round, Round, QAfterSortBy> thenByKnockoutRoundNameDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'knockoutRoundName', Sort.desc);
+    });
+  }
+
   QueryBuilder<Round, Round, QAfterSortBy> thenByRoundNumber() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'roundNumber', Sort.asc);
@@ -635,9 +943,23 @@ extension RoundQueryWhereDistinct on QueryBuilder<Round, Round, QDistinct> {
     });
   }
 
+  QueryBuilder<Round, Round, QDistinct> distinctByGroupIndex() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'groupIndex');
+    });
+  }
+
   QueryBuilder<Round, Round, QDistinct> distinctByIsCompleted() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'isCompleted');
+    });
+  }
+
+  QueryBuilder<Round, Round, QDistinct> distinctByKnockoutRoundName(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'knockoutRoundName',
+          caseSensitive: caseSensitive);
     });
   }
 
@@ -661,9 +983,21 @@ extension RoundQueryProperty on QueryBuilder<Round, Round, QQueryProperty> {
     });
   }
 
+  QueryBuilder<Round, int?, QQueryOperations> groupIndexProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'groupIndex');
+    });
+  }
+
   QueryBuilder<Round, bool, QQueryOperations> isCompletedProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'isCompleted');
+    });
+  }
+
+  QueryBuilder<Round, String?, QQueryOperations> knockoutRoundNameProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'knockoutRoundName');
     });
   }
 

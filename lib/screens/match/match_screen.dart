@@ -397,6 +397,31 @@ class _RoundIndicator extends StatelessWidget {
         return 'Losers Round ${round!.roundNumber}';
       case BracketType.grandFinals:
         return '🏆 GRAND FINALS 🏆';
+      case BracketType.knockout:
+        // For groupKnockout knockout phase
+        final roundName = round!.knockoutRoundName;
+        switch (roundName) {
+          case 'gf':
+            return '🏆 GRAND FINALS 🏆';
+          case 'sf':
+            return 'SEMIFINALS';
+          case 'qf':
+            return 'QUARTERFINALS';
+          case 'ro16':
+            return 'ROUND OF 16';
+          default:
+            return 'Round ${round!.roundNumber}';
+        }
+      case BracketType.groupA:
+      case BracketType.groupB:
+      case BracketType.groupC:
+      case BracketType.groupD:
+      case BracketType.groupE:
+      case BracketType.groupF:
+      case BracketType.groupG:
+      case BracketType.groupH:
+        final groupLetter = String.fromCharCode('A'.codeUnitAt(0) + (round!.groupIndex ?? 0));
+        return 'GROUP $groupLetter';
     }
   }
 

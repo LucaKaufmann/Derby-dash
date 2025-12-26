@@ -624,6 +624,25 @@ class TournamentService {
         return 1;
       case BracketType.grandFinals:
         return 2;
+      // For groupKnockout: groups come first, then knockout
+      case BracketType.groupA:
+        return 10;
+      case BracketType.groupB:
+        return 11;
+      case BracketType.groupC:
+        return 12;
+      case BracketType.groupD:
+        return 13;
+      case BracketType.groupE:
+        return 14;
+      case BracketType.groupF:
+        return 15;
+      case BracketType.groupG:
+        return 16;
+      case BracketType.groupH:
+        return 17;
+      case BracketType.knockout:
+        return 20;
     }
   }
 

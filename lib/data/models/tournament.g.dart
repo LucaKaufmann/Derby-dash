@@ -22,14 +22,30 @@ const TournamentSchema = CollectionSchema(
       name: r'date',
       type: IsarType.dateTime,
     ),
-    r'status': PropertySchema(
+    r'groupCount': PropertySchema(
       id: 1,
+      name: r'groupCount',
+      type: IsarType.long,
+    ),
+    r'knockoutFormat': PropertySchema(
+      id: 2,
+      name: r'knockoutFormat',
+      type: IsarType.string,
+    ),
+    r'phase': PropertySchema(
+      id: 3,
+      name: r'phase',
+      type: IsarType.string,
+      enumMap: _TournamentphaseEnumValueMap,
+    ),
+    r'status': PropertySchema(
+      id: 4,
       name: r'status',
       type: IsarType.string,
       enumMap: _TournamentstatusEnumValueMap,
     ),
     r'type': PropertySchema(
-      id: 2,
+      id: 5,
       name: r'type',
       type: IsarType.string,
       enumMap: _TournamenttypeEnumValueMap,
@@ -62,6 +78,13 @@ int _tournamentEstimateSize(
   Map<Type, List<int>> allOffsets,
 ) {
   var bytesCount = offsets.last;
+  {
+    final value = object.knockoutFormat;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
+  bytesCount += 3 + object.phase.name.length * 3;
   bytesCount += 3 + object.status.name.length * 3;
   bytesCount += 3 + object.type.name.length * 3;
   return bytesCount;
@@ -74,8 +97,11 @@ void _tournamentSerialize(
   Map<Type, List<int>> allOffsets,
 ) {
   writer.writeDateTime(offsets[0], object.date);
-  writer.writeString(offsets[1], object.status.name);
-  writer.writeString(offsets[2], object.type.name);
+  writer.writeLong(offsets[1], object.groupCount);
+  writer.writeString(offsets[2], object.knockoutFormat);
+  writer.writeString(offsets[3], object.phase.name);
+  writer.writeString(offsets[4], object.status.name);
+  writer.writeString(offsets[5], object.type.name);
 }
 
 Tournament _tournamentDeserialize(
@@ -86,12 +112,17 @@ Tournament _tournamentDeserialize(
 ) {
   final object = Tournament();
   object.date = reader.readDateTime(offsets[0]);
+  object.groupCount = reader.readLongOrNull(offsets[1]);
   object.id = id;
+  object.knockoutFormat = reader.readStringOrNull(offsets[2]);
+  object.phase =
+      _TournamentphaseValueEnumMap[reader.readStringOrNull(offsets[3])] ??
+          TournamentPhase.group;
   object.status =
-      _TournamentstatusValueEnumMap[reader.readStringOrNull(offsets[1])] ??
+      _TournamentstatusValueEnumMap[reader.readStringOrNull(offsets[4])] ??
           TournamentStatus.setup;
   object.type =
-      _TournamenttypeValueEnumMap[reader.readStringOrNull(offsets[2])] ??
+      _TournamenttypeValueEnumMap[reader.readStringOrNull(offsets[5])] ??
           TournamentType.knockout;
   return object;
 }
@@ -106,9 +137,16 @@ P _tournamentDeserializeProp<P>(
     case 0:
       return (reader.readDateTime(offset)) as P;
     case 1:
+      return (reader.readLongOrNull(offset)) as P;
+    case 2:
+      return (reader.readStringOrNull(offset)) as P;
+    case 3:
+      return (_TournamentphaseValueEnumMap[reader.readStringOrNull(offset)] ??
+          TournamentPhase.group) as P;
+    case 4:
       return (_TournamentstatusValueEnumMap[reader.readStringOrNull(offset)] ??
           TournamentStatus.setup) as P;
-    case 2:
+    case 5:
       return (_TournamenttypeValueEnumMap[reader.readStringOrNull(offset)] ??
           TournamentType.knockout) as P;
     default:
@@ -116,6 +154,14 @@ P _tournamentDeserializeProp<P>(
   }
 }
 
+const _TournamentphaseEnumValueMap = {
+  r'group': r'group',
+  r'knockout': r'knockout',
+};
+const _TournamentphaseValueEnumMap = {
+  r'group': TournamentPhase.group,
+  r'knockout': TournamentPhase.knockout,
+};
 const _TournamentstatusEnumValueMap = {
   r'setup': r'setup',
   r'active': r'active',
@@ -130,11 +176,13 @@ const _TournamenttypeEnumValueMap = {
   r'knockout': r'knockout',
   r'roundRobin': r'roundRobin',
   r'doubleElimination': r'doubleElimination',
+  r'groupKnockout': r'groupKnockout',
 };
 const _TournamenttypeValueEnumMap = {
   r'knockout': TournamentType.knockout,
   r'roundRobin': TournamentType.roundRobin,
   r'doubleElimination': TournamentType.doubleElimination,
+  r'groupKnockout': TournamentType.groupKnockout,
 };
 
 Id _tournamentGetId(Tournament object) {
@@ -282,6 +330,79 @@ extension TournamentQueryFilter
     });
   }
 
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition>
+      groupCountIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'groupCount',
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition>
+      groupCountIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'groupCount',
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition> groupCountEqualTo(
+      int? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'groupCount',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition>
+      groupCountGreaterThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'groupCount',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition>
+      groupCountLessThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'groupCount',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition> groupCountBetween(
+    int? lower,
+    int? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'groupCount',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
   QueryBuilder<Tournament, Tournament, QAfterFilterCondition> idEqualTo(
       Id value) {
     return QueryBuilder.apply(this, (query) {
@@ -331,6 +452,291 @@ extension TournamentQueryFilter
         includeLower: includeLower,
         upper: upper,
         includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition>
+      knockoutFormatIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'knockoutFormat',
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition>
+      knockoutFormatIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'knockoutFormat',
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition>
+      knockoutFormatEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'knockoutFormat',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition>
+      knockoutFormatGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'knockoutFormat',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition>
+      knockoutFormatLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'knockoutFormat',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition>
+      knockoutFormatBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'knockoutFormat',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition>
+      knockoutFormatStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'knockoutFormat',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition>
+      knockoutFormatEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'knockoutFormat',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition>
+      knockoutFormatContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'knockoutFormat',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition>
+      knockoutFormatMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'knockoutFormat',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition>
+      knockoutFormatIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'knockoutFormat',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition>
+      knockoutFormatIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'knockoutFormat',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition> phaseEqualTo(
+    TournamentPhase value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'phase',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition> phaseGreaterThan(
+    TournamentPhase value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'phase',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition> phaseLessThan(
+    TournamentPhase value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'phase',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition> phaseBetween(
+    TournamentPhase lower,
+    TournamentPhase upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'phase',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition> phaseStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'phase',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition> phaseEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'phase',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition> phaseContains(
+      String value,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'phase',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition> phaseMatches(
+      String pattern,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'phase',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition> phaseIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'phase',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition>
+      phaseIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'phase',
+        value: '',
       ));
     });
   }
@@ -677,6 +1083,43 @@ extension TournamentQuerySortBy
     });
   }
 
+  QueryBuilder<Tournament, Tournament, QAfterSortBy> sortByGroupCount() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'groupCount', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterSortBy> sortByGroupCountDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'groupCount', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterSortBy> sortByKnockoutFormat() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'knockoutFormat', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterSortBy>
+      sortByKnockoutFormatDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'knockoutFormat', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterSortBy> sortByPhase() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'phase', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterSortBy> sortByPhaseDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'phase', Sort.desc);
+    });
+  }
+
   QueryBuilder<Tournament, Tournament, QAfterSortBy> sortByStatus() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'status', Sort.asc);
@@ -716,6 +1159,18 @@ extension TournamentQuerySortThenBy
     });
   }
 
+  QueryBuilder<Tournament, Tournament, QAfterSortBy> thenByGroupCount() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'groupCount', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterSortBy> thenByGroupCountDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'groupCount', Sort.desc);
+    });
+  }
+
   QueryBuilder<Tournament, Tournament, QAfterSortBy> thenById() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'id', Sort.asc);
@@ -725,6 +1180,31 @@ extension TournamentQuerySortThenBy
   QueryBuilder<Tournament, Tournament, QAfterSortBy> thenByIdDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'id', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterSortBy> thenByKnockoutFormat() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'knockoutFormat', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterSortBy>
+      thenByKnockoutFormatDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'knockoutFormat', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterSortBy> thenByPhase() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'phase', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterSortBy> thenByPhaseDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'phase', Sort.desc);
     });
   }
 
@@ -761,6 +1241,27 @@ extension TournamentQueryWhereDistinct
     });
   }
 
+  QueryBuilder<Tournament, Tournament, QDistinct> distinctByGroupCount() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'groupCount');
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QDistinct> distinctByKnockoutFormat(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'knockoutFormat',
+          caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QDistinct> distinctByPhase(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'phase', caseSensitive: caseSensitive);
+    });
+  }
+
   QueryBuilder<Tournament, Tournament, QDistinct> distinctByStatus(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -787,6 +1288,24 @@ extension TournamentQueryProperty
   QueryBuilder<Tournament, DateTime, QQueryOperations> dateProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'date');
+    });
+  }
+
+  QueryBuilder<Tournament, int?, QQueryOperations> groupCountProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'groupCount');
+    });
+  }
+
+  QueryBuilder<Tournament, String?, QQueryOperations> knockoutFormatProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'knockoutFormat');
+    });
+  }
+
+  QueryBuilder<Tournament, TournamentPhase, QQueryOperations> phaseProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'phase');
     });
   }
 

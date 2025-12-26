@@ -17,14 +17,29 @@ const MatchSchema = CollectionSchema(
   name: r'Match',
   id: -4384922031457139852,
   properties: {
-    r'loserDestinationMatchId': PropertySchema(
+    r'carASeriesWins': PropertySchema(
       id: 0,
+      name: r'carASeriesWins',
+      type: IsarType.long,
+    ),
+    r'carBSeriesWins': PropertySchema(
+      id: 1,
+      name: r'carBSeriesWins',
+      type: IsarType.long,
+    ),
+    r'loserDestinationMatchId': PropertySchema(
+      id: 2,
       name: r'loserDestinationMatchId',
       type: IsarType.long,
     ),
     r'matchPosition': PropertySchema(
-      id: 1,
+      id: 3,
       name: r'matchPosition',
+      type: IsarType.long,
+    ),
+    r'seriesLength': PropertySchema(
+      id: 4,
+      name: r'seriesLength',
       type: IsarType.long,
     )
   },
@@ -83,8 +98,11 @@ void _matchSerialize(
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
-  writer.writeLong(offsets[0], object.loserDestinationMatchId);
-  writer.writeLong(offsets[1], object.matchPosition);
+  writer.writeLong(offsets[0], object.carASeriesWins);
+  writer.writeLong(offsets[1], object.carBSeriesWins);
+  writer.writeLong(offsets[2], object.loserDestinationMatchId);
+  writer.writeLong(offsets[3], object.matchPosition);
+  writer.writeLong(offsets[4], object.seriesLength);
 }
 
 Match _matchDeserialize(
@@ -94,9 +112,12 @@ Match _matchDeserialize(
   Map<Type, List<int>> allOffsets,
 ) {
   final object = Match();
+  object.carASeriesWins = reader.readLong(offsets[0]);
+  object.carBSeriesWins = reader.readLong(offsets[1]);
   object.id = id;
-  object.loserDestinationMatchId = reader.readLongOrNull(offsets[0]);
-  object.matchPosition = reader.readLong(offsets[1]);
+  object.loserDestinationMatchId = reader.readLongOrNull(offsets[2]);
+  object.matchPosition = reader.readLong(offsets[3]);
+  object.seriesLength = reader.readLong(offsets[4]);
   return object;
 }
 
@@ -108,8 +129,14 @@ P _matchDeserializeProp<P>(
 ) {
   switch (propertyId) {
     case 0:
-      return (reader.readLongOrNull(offset)) as P;
+      return (reader.readLong(offset)) as P;
     case 1:
+      return (reader.readLong(offset)) as P;
+    case 2:
+      return (reader.readLongOrNull(offset)) as P;
+    case 3:
+      return (reader.readLong(offset)) as P;
+    case 4:
       return (reader.readLong(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -208,6 +235,112 @@ extension MatchQueryWhere on QueryBuilder<Match, Match, QWhereClause> {
 }
 
 extension MatchQueryFilter on QueryBuilder<Match, Match, QFilterCondition> {
+  QueryBuilder<Match, Match, QAfterFilterCondition> carASeriesWinsEqualTo(
+      int value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'carASeriesWins',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Match, Match, QAfterFilterCondition> carASeriesWinsGreaterThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'carASeriesWins',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Match, Match, QAfterFilterCondition> carASeriesWinsLessThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'carASeriesWins',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Match, Match, QAfterFilterCondition> carASeriesWinsBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'carASeriesWins',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<Match, Match, QAfterFilterCondition> carBSeriesWinsEqualTo(
+      int value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'carBSeriesWins',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Match, Match, QAfterFilterCondition> carBSeriesWinsGreaterThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'carBSeriesWins',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Match, Match, QAfterFilterCondition> carBSeriesWinsLessThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'carBSeriesWins',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Match, Match, QAfterFilterCondition> carBSeriesWinsBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'carBSeriesWins',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
   QueryBuilder<Match, Match, QAfterFilterCondition> idEqualTo(Id value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
@@ -386,6 +519,59 @@ extension MatchQueryFilter on QueryBuilder<Match, Match, QFilterCondition> {
       ));
     });
   }
+
+  QueryBuilder<Match, Match, QAfterFilterCondition> seriesLengthEqualTo(
+      int value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'seriesLength',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Match, Match, QAfterFilterCondition> seriesLengthGreaterThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'seriesLength',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Match, Match, QAfterFilterCondition> seriesLengthLessThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'seriesLength',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Match, Match, QAfterFilterCondition> seriesLengthBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'seriesLength',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
 }
 
 extension MatchQueryObject on QueryBuilder<Match, Match, QFilterCondition> {}
@@ -442,6 +628,30 @@ extension MatchQueryLinks on QueryBuilder<Match, Match, QFilterCondition> {
 }
 
 extension MatchQuerySortBy on QueryBuilder<Match, Match, QSortBy> {
+  QueryBuilder<Match, Match, QAfterSortBy> sortByCarASeriesWins() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'carASeriesWins', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Match, Match, QAfterSortBy> sortByCarASeriesWinsDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'carASeriesWins', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Match, Match, QAfterSortBy> sortByCarBSeriesWins() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'carBSeriesWins', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Match, Match, QAfterSortBy> sortByCarBSeriesWinsDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'carBSeriesWins', Sort.desc);
+    });
+  }
+
   QueryBuilder<Match, Match, QAfterSortBy> sortByLoserDestinationMatchId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'loserDestinationMatchId', Sort.asc);
@@ -465,9 +675,45 @@ extension MatchQuerySortBy on QueryBuilder<Match, Match, QSortBy> {
       return query.addSortBy(r'matchPosition', Sort.desc);
     });
   }
+
+  QueryBuilder<Match, Match, QAfterSortBy> sortBySeriesLength() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'seriesLength', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Match, Match, QAfterSortBy> sortBySeriesLengthDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'seriesLength', Sort.desc);
+    });
+  }
 }
 
 extension MatchQuerySortThenBy on QueryBuilder<Match, Match, QSortThenBy> {
+  QueryBuilder<Match, Match, QAfterSortBy> thenByCarASeriesWins() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'carASeriesWins', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Match, Match, QAfterSortBy> thenByCarASeriesWinsDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'carASeriesWins', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Match, Match, QAfterSortBy> thenByCarBSeriesWins() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'carBSeriesWins', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Match, Match, QAfterSortBy> thenByCarBSeriesWinsDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'carBSeriesWins', Sort.desc);
+    });
+  }
+
   QueryBuilder<Match, Match, QAfterSortBy> thenById() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'id', Sort.asc);
@@ -503,9 +749,33 @@ extension MatchQuerySortThenBy on QueryBuilder<Match, Match, QSortThenBy> {
       return query.addSortBy(r'matchPosition', Sort.desc);
     });
   }
+
+  QueryBuilder<Match, Match, QAfterSortBy> thenBySeriesLength() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'seriesLength', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Match, Match, QAfterSortBy> thenBySeriesLengthDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'seriesLength', Sort.desc);
+    });
+  }
 }
 
 extension MatchQueryWhereDistinct on QueryBuilder<Match, Match, QDistinct> {
+  QueryBuilder<Match, Match, QDistinct> distinctByCarASeriesWins() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'carASeriesWins');
+    });
+  }
+
+  QueryBuilder<Match, Match, QDistinct> distinctByCarBSeriesWins() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'carBSeriesWins');
+    });
+  }
+
   QueryBuilder<Match, Match, QDistinct> distinctByLoserDestinationMatchId() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'loserDestinationMatchId');
@@ -517,12 +787,30 @@ extension MatchQueryWhereDistinct on QueryBuilder<Match, Match, QDistinct> {
       return query.addDistinctBy(r'matchPosition');
     });
   }
+
+  QueryBuilder<Match, Match, QDistinct> distinctBySeriesLength() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'seriesLength');
+    });
+  }
 }
 
 extension MatchQueryProperty on QueryBuilder<Match, Match, QQueryProperty> {
   QueryBuilder<Match, int, QQueryOperations> idProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'id');
+    });
+  }
+
+  QueryBuilder<Match, int, QQueryOperations> carASeriesWinsProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'carASeriesWins');
+    });
+  }
+
+  QueryBuilder<Match, int, QQueryOperations> carBSeriesWinsProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'carBSeriesWins');
     });
   }
 
@@ -536,6 +824,12 @@ extension MatchQueryProperty on QueryBuilder<Match, Match, QQueryProperty> {
   QueryBuilder<Match, int, QQueryOperations> matchPositionProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'matchPosition');
+    });
+  }
+
+  QueryBuilder<Match, int, QQueryOperations> seriesLengthProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'seriesLength');
     });
   }
 }
