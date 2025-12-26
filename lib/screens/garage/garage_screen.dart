@@ -91,80 +91,80 @@ class _GarageScreenState extends ConsumerState<GarageScreen> {
               // Search and sort row
               Padding(
                 padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  children: [
-                    // Search bar
-                    Expanded(
-                      child: TextField(
-                        controller: _searchController,
-                        decoration: InputDecoration(
-                          hintText: 'Search cars...',
-                          prefixIcon: const Icon(Icons.search),
-                          suffixIcon: _searchQuery.isNotEmpty
-                              ? IconButton(
-                                  icon: const Icon(Icons.clear),
-                                  onPressed: () {
-                                    _searchController.clear();
-                                    setState(() => _searchQuery = '');
-                                  },
-                                )
-                              : null,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          filled: true,
-                          fillColor: AppTheme.surfaceColor,
-                        ),
-                        onChanged: (value) =>
-                            setState(() => _searchQuery = value),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    // Sort dropdown
-                    PopupMenuButton<GarageSortOption>(
-                      initialValue: currentSort,
-                      onSelected: (option) {
-                        ref.read(garageSortProvider.notifier).setSort(option);
-                      },
-                      itemBuilder: (context) => GarageSortOption.values
-                          .map((option) => PopupMenuItem(
-                                value: option,
-                                child: Row(
-                                  children: [
-                                    if (option == currentSort)
-                                      const Icon(Icons.check, size: 20)
-                                    else
-                                      const SizedBox(width: 20),
-                                    const SizedBox(width: 8),
-                                    Text(_getSortLabel(option)),
-                                  ],
-                                ),
-                              ))
-                          .toList(),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 14,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppTheme.surfaceColor,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppTheme.textSecondary),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.sort, size: 20),
-                            const SizedBox(width: 4),
-                            Text(
-                              _getSortLabel(currentSort),
-                              style: Theme.of(context).textTheme.bodyMedium,
+                child: IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Search bar
+                      Expanded(
+                        child: TextField(
+                          controller: _searchController,
+                          decoration: InputDecoration(
+                            hintText: 'Search cars...',
+                            prefixIcon: const Icon(Icons.search),
+                            suffixIcon: _searchQuery.isNotEmpty
+                                ? IconButton(
+                                    icon: const Icon(Icons.clear),
+                                    onPressed: () {
+                                      _searchController.clear();
+                                      setState(() => _searchQuery = '');
+                                    },
+                                  )
+                                : null,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                          ],
+                            filled: true,
+                            fillColor: AppTheme.surfaceColor,
+                          ),
+                          onChanged: (value) =>
+                              setState(() => _searchQuery = value),
                         ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 12),
+                      // Sort dropdown
+                      PopupMenuButton<GarageSortOption>(
+                        initialValue: currentSort,
+                        onSelected: (option) {
+                          ref.read(garageSortProvider.notifier).setSort(option);
+                        },
+                        itemBuilder: (context) => GarageSortOption.values
+                            .map((option) => PopupMenuItem(
+                                  value: option,
+                                  child: Row(
+                                    children: [
+                                      if (option == currentSort)
+                                        const Icon(Icons.check, size: 20)
+                                      else
+                                        const SizedBox(width: 20),
+                                      const SizedBox(width: 8),
+                                      Text(_getSortLabel(option)),
+                                    ],
+                                  ),
+                                ))
+                            .toList(),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          decoration: BoxDecoration(
+                            color: AppTheme.surfaceColor,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppTheme.textSecondary),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.sort, size: 20),
+                              const SizedBox(width: 4),
+                              Text(
+                                _getSortLabel(currentSort),
+                                style: Theme.of(context).textTheme.bodyMedium,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
               // Results
