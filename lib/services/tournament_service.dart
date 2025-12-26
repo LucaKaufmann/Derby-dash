@@ -302,12 +302,30 @@ class TournamentService {
       await _handleKnockoutRoundComplete(tournament, round, allMatches);
     } else if (tournament.type == TournamentType.doubleElimination) {
       await _handleDoubleEliminationRoundComplete(tournament, round, allMatches);
+    } else if (tournament.type == TournamentType.groupKnockout) {
+      await _handleGroupKnockoutRoundComplete(tournament, round, allMatches);
     } else {
       // Round robin - tournament complete when all matches done
       await _isar.writeTxn(() async {
         tournament.status = TournamentStatus.completed;
         await _isar.tournaments.put(tournament);
       });
+    }
+  }
+
+  /// Handle groupKnockout round completion
+  Future<void> _handleGroupKnockoutRoundComplete(
+    Tournament tournament,
+    Round round,
+    List<Match> allMatches,
+  ) async {
+    // Check if this is a group stage round
+    if (round.groupIndex != null) {
+      // Group stage round completed, check if all groups are done
+      await _checkGroupStageCompletion(tournament);
+    } else {
+      // This is a knockout phase round - handled in Commit 4
+      // For now, just mark as placeholder
     }
   }
 
@@ -883,6 +901,202 @@ class TournamentService {
     return carIds.length;
   }
 
+  /// Get standings for a specific group in a groupKnockout tournament
+  Future<List<GroupStanding>> getGroupStandings(
+    int tournamentId,
+    int groupIndex,
+  ) async {
+    final tournament = await _isar.tournaments.get(tournamentId);
+    if (tournament == null) return [];
+
+    await tournament.rounds.load();
+
+    // Find the round for this group
+    final groupRound = tournament.rounds.firstWhere(
+      (r) => r.groupIndex == groupIndex,
+      orElse: () => Round()..id = -1,
+    );
+    if (groupRound.id == -1) return [];
+
+    await groupRound.matches.load();
+    final matches = groupRound.matches.toList();
+
+    // Build stats for each car in the group
+    final carStats = <int, _GroupCarStats>{};
+
+    for (final match in matches) {
+      await match.carA.load();
+      await match.carB.load();
+      await match.winner.load();
+
+      final carA = match.carA.value;
+      final carB = match.carB.value;
+      final winner = match.winner.value;
+
+      if (carA == null || carB == null) continue;
+
+      // Initialize stats if not present
+      carStats.putIfAbsent(
+        carA.id,
+        () => _GroupCarStats(car: carA),
+      );
+      carStats.putIfAbsent(
+        carB.id,
+        () => _GroupCarStats(car: carB),
+      );
+
+      // Record result if match is complete
+      if (winner != null) {
+        if (winner.id == carA.id) {
+          carStats[carA.id]!.wins++;
+          carStats[carB.id]!.losses++;
+          carStats[carA.id]!.headToHead[carB.id] = true;
+          carStats[carB.id]!.headToHead[carA.id] = false;
+        } else {
+          carStats[carB.id]!.wins++;
+          carStats[carA.id]!.losses++;
+          carStats[carB.id]!.headToHead[carA.id] = true;
+          carStats[carA.id]!.headToHead[carB.id] = false;
+        }
+      }
+    }
+
+    // Convert to standings and sort
+    final standingsList = carStats.values.map((stats) {
+      return GroupStanding(
+        car: stats.car,
+        wins: stats.wins,
+        losses: stats.losses,
+        points: stats.wins * 3,
+        groupIndex: groupIndex,
+        seed: 0, // Will be assigned after sorting
+        headToHead: Map.from(stats.headToHead),
+      );
+    }).toList();
+
+    // Sort by points (desc), then by head-to-head if tied
+    standingsList.sort((a, b) {
+      final pointsCompare = b.points.compareTo(a.points);
+      if (pointsCompare != 0) return pointsCompare;
+
+      // Head-to-head tiebreaker
+      if (a.headToHead.containsKey(b.car.id)) {
+        return a.headToHead[b.car.id]! ? -1 : 1;
+      }
+      return 0;
+    });
+
+    // Assign seeds (1, 2, 3, 4)
+    final result = <GroupStanding>[];
+    for (int i = 0; i < standingsList.length; i++) {
+      result.add(standingsList[i].copyWith(seed: i + 1));
+    }
+
+    return result;
+  }
+
+  /// Check if group stage is complete and transition to knockout
+  Future<void> _checkGroupStageCompletion(Tournament tournament) async {
+    if (tournament.type != TournamentType.groupKnockout) return;
+    if (tournament.phase != TournamentPhase.group) return;
+
+    await tournament.rounds.load();
+
+    // Get all group rounds
+    final groupRounds = tournament.rounds
+        .where((r) => r.groupIndex != null)
+        .toList();
+
+    // Check if all groups are complete
+    final allGroupsComplete = groupRounds.every((r) => r.isCompleted);
+    if (!allGroupsComplete) return;
+
+    // Transition to knockout phase
+    await _isar.writeTxn(() async {
+      tournament.phase = TournamentPhase.knockout;
+      await _isar.tournaments.put(tournament);
+    });
+
+    // Get top 2 from each group and create knockout bracket
+    await _createKnockoutFromGroups(tournament);
+  }
+
+  /// Create knockout bracket from group stage results
+  Future<void> _createKnockoutFromGroups(Tournament tournament) async {
+    final groupCount = tournament.groupCount ?? 2;
+
+    // Collect top 2 from each group
+    final qualifiers = <(Car, int, int)>[]; // (car, seed, groupIndex)
+
+    for (int g = 0; g < groupCount; g++) {
+      final standings = await getGroupStandings(tournament.id, g);
+      if (standings.length >= 2) {
+        qualifiers.add((standings[0].car, 1, g)); // Group winner
+        qualifiers.add((standings[1].car, 2, g)); // Group runner-up
+      }
+    }
+
+    // Create cross-seeding pairings
+    // Pattern: 1A vs 2B, 1B vs 2A, 1C vs 2D, 1D vs 2C, etc.
+    final pairings = <(Car, Car)>[];
+    for (int i = 0; i < groupCount; i += 2) {
+      if (i + 1 < groupCount) {
+        // Find 1st from group i and 2nd from group i+1
+        final g1First = qualifiers.firstWhere((q) => q.$2 == 1 && q.$3 == i);
+        final g2Second = qualifiers.firstWhere((q) => q.$2 == 2 && q.$3 == i + 1);
+        pairings.add((g1First.$1, g2Second.$1));
+
+        // Find 1st from group i+1 and 2nd from group i
+        final g2First = qualifiers.firstWhere((q) => q.$2 == 1 && q.$3 == i + 1);
+        final g1Second = qualifiers.firstWhere((q) => q.$2 == 2 && q.$3 == i);
+        pairings.add((g2First.$1, g1Second.$1));
+      }
+    }
+
+    // Determine first knockout round name based on qualifier count
+    final qualifierCount = pairings.length * 2;
+    String roundName;
+    if (qualifierCount == 4) {
+      roundName = 'sf'; // 8 cars -> 4 qualifiers -> Semifinals
+    } else if (qualifierCount == 8) {
+      roundName = 'qf'; // 16 cars -> 8 qualifiers -> Quarterfinals
+    } else {
+      roundName = 'ro16'; // 32 cars -> 16 qualifiers -> Round of 16
+    }
+
+    // Get series length from format
+    final format = jsonDecode(tournament.knockoutFormat ?? '{}') as Map<String, dynamic>;
+    final seriesLength = (format[roundName] as int?) ?? 1;
+
+    // Create knockout round
+    final round = Round()
+      ..roundNumber = 1
+      ..bracketType = BracketType.knockout
+      ..knockoutRoundName = roundName
+      ..isCompleted = false;
+
+    await _isar.writeTxn(() async {
+      await _isar.rounds.put(round);
+      tournament.rounds.add(round);
+      await tournament.rounds.save();
+
+      for (int i = 0; i < pairings.length; i++) {
+        final (carA, carB) = pairings[i];
+        final match = Match()
+          ..matchPosition = i
+          ..seriesLength = seriesLength;
+        match.carA.value = carA;
+        match.carB.value = carB;
+
+        await _isar.matchs.put(match);
+        await match.carA.save();
+        await match.carB.save();
+        round.matches.add(match);
+      }
+      await round.matches.save();
+    });
+  }
+
   /// Get win/loss stats for all cars in a tournament
   /// Returns a map of carId -> {car, wins, losses}
   Future<List<TournamentCarStats>> getTournamentStats(int tournamentId) async {
@@ -966,4 +1180,55 @@ class TournamentCarStats {
       losses: losses ?? this.losses,
     );
   }
+}
+
+/// Standings for a car within a group
+class GroupStanding {
+  final Car car;
+  final int wins;
+  final int losses;
+  final int points; // 3 per win
+  final int groupIndex;
+  final int seed; // 1 or 2 (position within group)
+  final Map<int, bool> headToHead; // carId -> won?
+
+  const GroupStanding({
+    required this.car,
+    required this.wins,
+    required this.losses,
+    required this.points,
+    required this.groupIndex,
+    required this.seed,
+    required this.headToHead,
+  });
+
+  GroupStanding copyWith({
+    Car? car,
+    int? wins,
+    int? losses,
+    int? points,
+    int? groupIndex,
+    int? seed,
+    Map<int, bool>? headToHead,
+  }) {
+    return GroupStanding(
+      car: car ?? this.car,
+      wins: wins ?? this.wins,
+      losses: losses ?? this.losses,
+      points: points ?? this.points,
+      groupIndex: groupIndex ?? this.groupIndex,
+      seed: seed ?? this.seed,
+      headToHead: headToHead ?? this.headToHead,
+    );
+  }
+}
+
+/// Helper class for calculating group standings
+class _GroupCarStats {
+  final Car car;
+  int wins = 0;
+  int losses = 0;
+  final Map<int, bool> headToHead = {};
+
+  _GroupCarStats({required this.car});
 }
