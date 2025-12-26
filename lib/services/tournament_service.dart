@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:isar/isar.dart';
 import '../data/models/models.dart';
 
@@ -9,10 +10,24 @@ class TournamentService {
   /// Check if a number is a power of 2 (2, 4, 8, 16, 32, 64, etc.)
   bool _isPowerOfTwo(int n) => n > 0 && (n & (n - 1)) == 0;
 
+  /// Check if a number is valid for groupKnockout (8, 16, or 32)
+  bool _isValidGroupKnockoutCount(int n) => n == 8 || n == 16 || n == 32;
+
+  /// Get default knockout format based on car count
+  Map<String, int> _defaultKnockoutFormat(int carCount) {
+    return {
+      'ro16': 1,
+      'qf': 3,
+      'sf': 5,
+      'gf': 7,
+    };
+  }
+
   /// Create a new tournament with the given cars
   Future<int> createTournament({
     required List<int> carIds,
     required TournamentType type,
+    Map<String, int>? knockoutFormat,
   }) async {
     // Validate car count
     if (type == TournamentType.knockout || type == TournamentType.doubleElimination) {
@@ -24,6 +39,13 @@ class TournamentService {
       }
       if (type == TournamentType.doubleElimination && carIds.length < 4) {
         throw ArgumentError('Double elimination requires at least 4 cars');
+      }
+    }
+
+    // Validate groupKnockout car count
+    if (type == TournamentType.groupKnockout) {
+      if (!_isValidGroupKnockoutCount(carIds.length)) {
+        throw ArgumentError('Group + Knockout requires exactly 8, 16, or 32 cars');
       }
     }
 
@@ -43,6 +65,14 @@ class TournamentService {
       ..type = type
       ..status = TournamentStatus.active;
 
+    // Set groupKnockout specific fields
+    if (type == TournamentType.groupKnockout) {
+      tournament
+        ..phase = TournamentPhase.group
+        ..groupCount = cars.length ~/ 4
+        ..knockoutFormat = jsonEncode(knockoutFormat ?? _defaultKnockoutFormat(cars.length));
+    }
+
     await _isar.writeTxn(() async {
       await _isar.tournaments.put(tournament);
     });
@@ -52,6 +82,8 @@ class TournamentService {
       await _createKnockoutRound(tournament, cars, 1);
     } else if (type == TournamentType.doubleElimination) {
       await _createDoubleEliminationBrackets(tournament, cars);
+    } else if (type == TournamentType.groupKnockout) {
+      await _createGroupStage(tournament, cars);
     } else {
       await _createRoundRobinRounds(tournament, cars);
     }
@@ -141,6 +173,59 @@ class TournamentService {
         await match.carA.save();
         await match.carB.save();
         round.matches.add(match);
+      }
+      await round.matches.save();
+    });
+  }
+
+  /// Create group stage for groupKnockout tournament
+  Future<void> _createGroupStage(Tournament tournament, List<Car> cars) async {
+    final groupCount = tournament.groupCount ?? (cars.length ~/ 4);
+    const carsPerGroup = 4;
+
+    // Distribute shuffled cars to groups
+    for (int g = 0; g < groupCount; g++) {
+      final groupCars = cars.sublist(g * carsPerGroup, (g + 1) * carsPerGroup);
+      await _createGroupRoundRobin(tournament, groupCars, g);
+    }
+  }
+
+  /// Create round-robin matches for a single group
+  Future<void> _createGroupRoundRobin(
+    Tournament tournament,
+    List<Car> cars,
+    int groupIndex,
+  ) async {
+    // Determine bracket type based on group index
+    final bracketType = BracketType.values[BracketType.groupA.index + groupIndex];
+
+    // Create round for this group (single round with all 6 matches)
+    final round = Round()
+      ..roundNumber = 1
+      ..bracketType = bracketType
+      ..groupIndex = groupIndex
+      ..isCompleted = false;
+
+    await _isar.writeTxn(() async {
+      await _isar.rounds.put(round);
+      tournament.rounds.add(round);
+      await tournament.rounds.save();
+
+      // Generate all pairings within the group (4 cars = 6 matches)
+      int position = 0;
+      for (int i = 0; i < cars.length; i++) {
+        for (int j = i + 1; j < cars.length; j++) {
+          final match = Match()
+            ..matchPosition = position++
+            ..seriesLength = 1; // Group stage is always Best-of-1
+          match.carA.value = cars[i];
+          match.carB.value = cars[j];
+
+          await _isar.matchs.put(match);
+          await match.carA.save();
+          await match.carB.save();
+          round.matches.add(match);
+        }
       }
       await round.matches.save();
     });
