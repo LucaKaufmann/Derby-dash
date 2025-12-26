@@ -261,6 +261,81 @@ class TournamentService {
     });
   }
 
+  /// Record a single game win in a Best-of-X series
+  Future<void> recordSeriesGameWin(int matchId, int winnerId) async {
+    final match = await _isar.matchs.get(matchId);
+    if (match == null) return;
+
+    await match.carA.load();
+    await match.carB.load();
+
+    final isCarAWinner = winnerId == match.carA.value?.id;
+
+    await _isar.writeTxn(() async {
+      if (isCarAWinner) {
+        match.carASeriesWins += 1;
+      } else {
+        match.carBSeriesWins += 1;
+      }
+
+      // Check if series is complete
+      final winsNeeded = match.winsNeeded;
+      if (match.carASeriesWins >= winsNeeded) {
+        match.winner.value = match.carA.value;
+        await match.winner.save();
+      } else if (match.carBSeriesWins >= winsNeeded) {
+        match.winner.value = match.carB.value;
+        await match.winner.save();
+      }
+
+      await _isar.matchs.put(match);
+    });
+
+    // Only check round completion when series is done
+    if (match.isSeriesComplete) {
+      await _checkRoundCompletion(matchId);
+    }
+  }
+
+  /// Undo the last game in a Best-of-X series
+  Future<void> undoSeriesGame(int matchId) async {
+    final match = await _isar.matchs.get(matchId);
+    if (match == null) return;
+
+    // Can't undo if no games played
+    if (match.carASeriesWins == 0 && match.carBSeriesWins == 0) return;
+
+    await match.carA.load();
+    await match.carB.load();
+
+    await _isar.writeTxn(() async {
+      // If winner was set, clear it first
+      if (match.winner.value != null) {
+        // Determine which car won and decrement their wins
+        if (match.winner.value?.id == match.carA.value?.id) {
+          match.carASeriesWins = (match.carASeriesWins - 1).clamp(0, 999);
+        } else {
+          match.carBSeriesWins = (match.carBSeriesWins - 1).clamp(0, 999);
+        }
+        match.winner.value = null;
+        await match.winner.save();
+      } else {
+        // No winner set, decrement the most recent (higher score wins last game)
+        // This is a heuristic - we assume last game went to leading car
+        if (match.carASeriesWins > match.carBSeriesWins) {
+          match.carASeriesWins -= 1;
+        } else if (match.carBSeriesWins > match.carASeriesWins) {
+          match.carBSeriesWins -= 1;
+        } else if (match.carASeriesWins > 0) {
+          // Tied, just decrement carA (arbitrary)
+          match.carASeriesWins -= 1;
+        }
+      }
+
+      await _isar.matchs.put(match);
+    });
+  }
+
   /// Check if the current round is complete and generate next round
   Future<void> _checkRoundCompletion(int matchId) async {
     // Get the match and its round
@@ -324,8 +399,79 @@ class TournamentService {
       // Group stage round completed, check if all groups are done
       await _checkGroupStageCompletion(tournament);
     } else {
-      // This is a knockout phase round - handled in Commit 4
-      // For now, just mark as placeholder
+      // This is a knockout phase round
+      await _handleKnockoutPhaseRoundComplete(tournament, round, allMatches);
+    }
+  }
+
+  /// Handle knockout phase round completion for groupKnockout tournaments
+  Future<void> _handleKnockoutPhaseRoundComplete(
+    Tournament tournament,
+    Round round,
+    List<Match> allMatches,
+  ) async {
+    // Collect series winners
+    final winners = <Car>[];
+    for (final m in allMatches) {
+      await m.winner.load();
+      if (m.winner.value != null) {
+        winners.add(m.winner.value!);
+      }
+    }
+
+    if (winners.length <= 1) {
+      // Tournament complete - we have a champion
+      await _isar.writeTxn(() async {
+        tournament.status = TournamentStatus.completed;
+        await _isar.tournaments.put(tournament);
+      });
+      return;
+    }
+
+    // Create next knockout round
+    final nextRoundName = _getNextKnockoutRound(round.knockoutRoundName ?? 'qf');
+    final format = jsonDecode(tournament.knockoutFormat ?? '{}') as Map<String, dynamic>;
+    final seriesLength = (format[nextRoundName] as int?) ?? 1;
+
+    final nextRound = Round()
+      ..roundNumber = round.roundNumber + 1
+      ..bracketType = BracketType.knockout
+      ..knockoutRoundName = nextRoundName
+      ..isCompleted = false;
+
+    await _isar.writeTxn(() async {
+      await _isar.rounds.put(nextRound);
+      tournament.rounds.add(nextRound);
+      await tournament.rounds.save();
+
+      // Pair winners
+      for (int i = 0; i < winners.length; i += 2) {
+        final match = Match()
+          ..matchPosition = i ~/ 2
+          ..seriesLength = seriesLength;
+        match.carA.value = winners[i];
+        match.carB.value = winners[i + 1];
+
+        await _isar.matchs.put(match);
+        await match.carA.save();
+        await match.carB.save();
+        nextRound.matches.add(match);
+      }
+      await nextRound.matches.save();
+    });
+  }
+
+  /// Get next knockout round name
+  String _getNextKnockoutRound(String current) {
+    switch (current) {
+      case 'ro16':
+        return 'qf';
+      case 'qf':
+        return 'sf';
+      case 'sf':
+        return 'gf';
+      default:
+        return 'gf';
     }
   }
 
@@ -701,9 +847,11 @@ class TournamentService {
     await tournament.rounds.load();
     final rounds = tournament.rounds.toList();
 
-    // For double elimination, sort by bracket type then round number
-    // Order: Winners -> Losers -> Grand Finals
-    if (tournament.type == TournamentType.doubleElimination) {
+    // For double elimination and groupKnockout, sort by bracket type then round number
+    // Double elimination: Winners -> Losers -> Grand Finals
+    // GroupKnockout: Group A -> Group B -> ... -> Knockout
+    if (tournament.type == TournamentType.doubleElimination ||
+        tournament.type == TournamentType.groupKnockout) {
       rounds.sort((a, b) {
         // First sort by bracket type
         final bracketOrder = _bracketTypeOrder(a.bracketType)
@@ -804,7 +952,9 @@ class TournamentService {
       return null;
     }
 
-    if (tournament.type == TournamentType.knockout) {
+    if (tournament.type == TournamentType.knockout ||
+        tournament.type == TournamentType.doubleElimination ||
+        tournament.type == TournamentType.groupKnockout) {
       // Winner is the winner of the final match
       final rounds = await getRounds(tournamentId);
       if (rounds.isEmpty) return null;
