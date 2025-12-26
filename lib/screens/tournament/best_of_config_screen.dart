@@ -1,25 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../data/models/tournament.dart';
-import '../../providers/tournament_provider.dart';
 import '../../theme/app_theme.dart';
 
-class BestOfConfigScreen extends ConsumerStatefulWidget {
-  final List<int> carIds;
-
-  const BestOfConfigScreen({
-    super.key,
-    required this.carIds,
-  });
+/// Screen for configuring Best-of-X format for knockout rounds.
+/// Second step in tournament creation flow for Group+Knockout type.
+class BestOfConfigScreen extends StatefulWidget {
+  const BestOfConfigScreen({super.key});
 
   @override
-  ConsumerState<BestOfConfigScreen> createState() => _BestOfConfigScreenState();
+  State<BestOfConfigScreen> createState() => _BestOfConfigScreenState();
 }
 
-class _BestOfConfigScreenState extends ConsumerState<BestOfConfigScreen> {
+class _BestOfConfigScreenState extends State<BestOfConfigScreen> {
+  // Configure all possible knockout rounds - only relevant ones will be used
+  // based on car count selected in the next step
   late Map<String, int> _knockoutFormat;
-  bool _isCreating = false;
 
   @override
   void initState() {
@@ -27,40 +23,14 @@ class _BestOfConfigScreenState extends ConsumerState<BestOfConfigScreen> {
     _knockoutFormat = _getDefaultFormat();
   }
 
-  /// Get the knockout rounds based on car count
-  List<String> get _knockoutRounds {
-    final count = widget.carIds.length;
-    if (count == 32) {
-      return ['ro16', 'qf', 'sf', 'gf'];
-    } else if (count == 16) {
-      return ['qf', 'sf', 'gf'];
-    } else {
-      // 8 cars
-      return ['sf', 'gf'];
-    }
-  }
-
-  /// Get default Best-of format based on car count
+  /// All possible knockout rounds with default Best-of values
   Map<String, int> _getDefaultFormat() {
-    final rounds = _knockoutRounds;
-    final format = <String, int>{};
-    for (final round in rounds) {
-      switch (round) {
-        case 'ro16':
-          format['ro16'] = 1;
-          break;
-        case 'qf':
-          format['qf'] = 3;
-          break;
-        case 'sf':
-          format['sf'] = 5;
-          break;
-        case 'gf':
-          format['gf'] = 7;
-          break;
-      }
-    }
-    return format;
+    return {
+      'ro16': 1, // Round of 16 - Best of 1 (quick rounds)
+      'qf': 3, // Quarterfinals - Best of 3
+      'sf': 5, // Semifinals - Best of 5
+      'gf': 7, // Grand Finals - Best of 7
+    };
   }
 
   String _getRoundLabel(String round) {
@@ -78,48 +48,36 @@ class _BestOfConfigScreenState extends ConsumerState<BestOfConfigScreen> {
     }
   }
 
-  String _getGroupInfo() {
-    final count = widget.carIds.length;
-    final groupCount = count ~/ 4;
-    final groupLetters = List.generate(
-      groupCount,
-      (i) => String.fromCharCode('A'.codeUnitAt(0) + i),
-    ).join(', ');
-    return '$groupCount groups ($groupLetters) of 4 cars each';
+  String _getRoundInfo(String round) {
+    switch (round) {
+      case 'ro16':
+        return 'Only used with 32 cars';
+      case 'qf':
+        return 'Used with 16 or 32 cars';
+      case 'sf':
+        return 'Used with 8, 16, or 32 cars';
+      case 'gf':
+        return 'Always the final match';
+      default:
+        return '';
+    }
   }
 
-  Future<void> _startTournament() async {
-    setState(() {
-      _isCreating = true;
-    });
-
-    try {
-      final tournamentId = await ref.read(tournamentServiceProvider).createTournament(
-            carIds: widget.carIds,
-            type: TournamentType.groupKnockout,
-            knockoutFormat: _knockoutFormat,
-          );
-
-      if (mounted) {
-        context.go('/tournament/$tournamentId');
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
-        setState(() {
-          _isCreating = false;
-        });
-      }
-    }
+  void _continueToCarSelection() {
+    context.push(
+      '/tournament/setup/cars',
+      extra: {
+        'type': TournamentType.groupKnockout,
+        'knockoutFormat': _knockoutFormat,
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('CONFIGURE TOURNAMENT'),
+        title: const Text('CONFIGURE FORMAT'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
@@ -145,12 +103,12 @@ class _BestOfConfigScreenState extends ConsumerState<BestOfConfigScreen> {
                               Container(
                                 padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
-                                  color: AppTheme.primaryColor.withValues(alpha: 0.2),
+                                  color: Colors.purple.withValues(alpha: 0.2),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: const Icon(
                                   Icons.view_module,
-                                  color: AppTheme.primaryColor,
+                                  color: Colors.purple,
                                   size: 32,
                                 ),
                               ),
@@ -167,7 +125,7 @@ class _BestOfConfigScreenState extends ConsumerState<BestOfConfigScreen> {
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      '${widget.carIds.length} cars selected',
+                                      'Configure knockout round formats',
                                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                             color: AppTheme.textSecondary,
                                           ),
@@ -180,76 +138,19 @@ class _BestOfConfigScreenState extends ConsumerState<BestOfConfigScreen> {
                           const SizedBox(height: 16),
                           const Divider(),
                           const SizedBox(height: 16),
-                          // Group stage info
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.groups,
-                                color: AppTheme.secondaryColor,
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text(
-                                      'GROUP STAGE',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 12,
-                                        letterSpacing: 1,
-                                      ),
-                                    ),
-                                    Text(
-                                      _getGroupInfo(),
-                                      style: const TextStyle(
-                                        color: AppTheme.textSecondary,
-                                        fontSize: 13,
-                                      ),
-                                    ),
-                                    const Text(
-                                      'Round-robin within each group (Best-of-1)',
-                                      style: TextStyle(
-                                        color: AppTheme.textSecondary,
-                                        fontSize: 13,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
+                          // How it works
+                          _InfoRow(
+                            icon: Icons.groups,
+                            color: AppTheme.secondaryColor,
+                            title: 'GROUP STAGE',
+                            subtitle: 'Round-robin in groups of 4 (Best-of-1)',
                           ),
-                          const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.emoji_events,
-                                color: AppTheme.winnerColor,
-                              ),
-                              const SizedBox(width: 12),
-                              const Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'KNOCKOUT STAGE',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 12,
-                                        letterSpacing: 1,
-                                      ),
-                                    ),
-                                    Text(
-                                      'Top 2 from each group advance',
-                                      style: TextStyle(
-                                        color: AppTheme.textSecondary,
-                                        fontSize: 13,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
+                          const SizedBox(height: 12),
+                          _InfoRow(
+                            icon: Icons.emoji_events,
+                            color: AppTheme.winnerColor,
+                            title: 'KNOCKOUT STAGE',
+                            subtitle: 'Top 2 from each group advance to brackets',
                           ),
                         ],
                       ),
@@ -275,10 +176,11 @@ class _BestOfConfigScreenState extends ConsumerState<BestOfConfigScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Round configuration cards
-                  ..._knockoutRounds.map((round) => _RoundConfigCard(
+                  // Round configuration cards (all 4 rounds)
+                  ...['gf', 'sf', 'qf', 'ro16'].map((round) => _RoundConfigCard(
                         roundKey: round,
                         roundLabel: _getRoundLabel(round),
+                        roundInfo: _getRoundInfo(round),
                         selectedValue: _knockoutFormat[round]!,
                         onChanged: (value) {
                           setState(() {
@@ -286,27 +188,46 @@ class _BestOfConfigScreenState extends ConsumerState<BestOfConfigScreen> {
                           });
                         },
                       )),
+
+                  const SizedBox(height: 16),
+
+                  // Info card about car counts
+                  Card(
+                    color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.info_outline,
+                            color: AppTheme.primaryColor.withValues(alpha: 0.8),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'You\'ll select cars in the next step. The knockout rounds used depend on car count:\n• 8 cars → Semifinals + Finals\n• 16 cars → Quarterfinals + Semi + Finals\n• 32 cars → All rounds',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: AppTheme.textPrimary.withValues(alpha: 0.8),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
           ),
 
-          // Start button
+          // Continue button
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: ElevatedButton(
-                onPressed: _isCreating ? null : _startTournament,
-                child: _isCreating
-                    ? const SizedBox(
-                        height: 24,
-                        width: 24,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 3,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Text('START TOURNAMENT'),
+                onPressed: _continueToCarSelection,
+                child: const Text('SELECT CARS'),
               ),
             ),
           ),
@@ -316,15 +237,63 @@ class _BestOfConfigScreenState extends ConsumerState<BestOfConfigScreen> {
   }
 }
 
+class _InfoRow extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final String title;
+  final String subtitle;
+
+  const _InfoRow({
+    required this.icon,
+    required this.color,
+    required this.title,
+    required this.subtitle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, color: color),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                  letterSpacing: 1,
+                ),
+              ),
+              Text(
+                subtitle,
+                style: const TextStyle(
+                  color: AppTheme.textSecondary,
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _RoundConfigCard extends StatelessWidget {
   final String roundKey;
   final String roundLabel;
+  final String roundInfo;
   final int selectedValue;
   final ValueChanged<int> onChanged;
 
   const _RoundConfigCard({
     required this.roundKey,
     required this.roundLabel,
+    required this.roundInfo,
     required this.selectedValue,
     required this.onChanged,
   });
@@ -394,11 +363,10 @@ class _RoundConfigCard extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    'Best of $selectedValue',
+                    roundInfo,
                     style: TextStyle(
-                      color: color,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
+                      color: AppTheme.textSecondary.withValues(alpha: 0.7),
+                      fontSize: 11,
                     ),
                   ),
                 ],
@@ -417,15 +385,15 @@ class _RoundConfigCard extends StatelessWidget {
                       onTap: () => onChanged(value),
                       borderRadius: BorderRadius.circular(8),
                       child: Container(
-                        width: 40,
-                        height: 40,
+                        width: 36,
+                        height: 36,
                         alignment: Alignment.center,
                         child: Text(
                           '$value',
                           style: TextStyle(
                             color: isSelected ? Colors.white : AppTheme.textSecondary,
                             fontWeight: FontWeight.bold,
-                            fontSize: 16,
+                            fontSize: 14,
                           ),
                         ),
                       ),

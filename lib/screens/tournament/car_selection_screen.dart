@@ -8,21 +8,36 @@ import '../../providers/car_provider.dart';
 import '../../providers/tournament_provider.dart';
 import '../../theme/app_theme.dart';
 
-class TournamentSetupScreen extends ConsumerStatefulWidget {
-  const TournamentSetupScreen({super.key});
+/// Screen for selecting cars for a tournament.
+/// Second (or third for groupKnockout) step in tournament creation flow.
+class CarSelectionScreen extends ConsumerStatefulWidget {
+  final TournamentType tournamentType;
+  final Map<String, int>? knockoutFormat; // Only for groupKnockout
+
+  const CarSelectionScreen({
+    super.key,
+    required this.tournamentType,
+    this.knockoutFormat,
+  });
 
   @override
-  ConsumerState<TournamentSetupScreen> createState() =>
-      _TournamentSetupScreenState();
+  ConsumerState<CarSelectionScreen> createState() => _CarSelectionScreenState();
 }
 
-class _TournamentSetupScreenState extends ConsumerState<TournamentSetupScreen> {
+class _CarSelectionScreenState extends ConsumerState<CarSelectionScreen> {
   final Set<int> _selectedCarIds = {};
-  TournamentType _tournamentType = TournamentType.knockout;
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
   bool _isCreating = false;
 
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   int get _minCarsRequired {
-    switch (_tournamentType) {
+    switch (widget.tournamentType) {
       case TournamentType.doubleElimination:
         return 4;
       case TournamentType.groupKnockout:
@@ -42,12 +57,12 @@ class _TournamentSetupScreenState extends ConsumerState<TournamentSetupScreen> {
     final count = _selectedCarIds.length;
     if (count < _minCarsRequired) return false;
     // Require power of 2 for knockout/double elimination (4, 8, 16, 32, etc.)
-    if (_tournamentType == TournamentType.knockout ||
-        _tournamentType == TournamentType.doubleElimination) {
+    if (widget.tournamentType == TournamentType.knockout ||
+        widget.tournamentType == TournamentType.doubleElimination) {
       return _isPowerOfTwo(count);
     }
     // Require 8, 16, or 32 for groupKnockout
-    if (_tournamentType == TournamentType.groupKnockout) {
+    if (widget.tournamentType == TournamentType.groupKnockout) {
       return _isValidGroupKnockoutCount(count);
     }
     return true; // Round robin allows any count >= 2
@@ -63,16 +78,30 @@ class _TournamentSetupScreenState extends ConsumerState<TournamentSetupScreen> {
     return power;
   }
 
+  String get _requirementText {
+    switch (widget.tournamentType) {
+      case TournamentType.knockout:
+        return 'Requires 2, 4, 8, 16, or 32 cars';
+      case TournamentType.doubleElimination:
+        return 'Requires 4, 8, 16, or 32 cars';
+      case TournamentType.roundRobin:
+        return 'Requires at least 2 cars';
+      case TournamentType.groupKnockout:
+        return 'Requires exactly 8, 16, or 32 cars';
+    }
+  }
+
   String? get _validationMessage {
     final count = _selectedCarIds.length;
+    if (count == 0) return null;
     if (count < _minCarsRequired) {
-      if (_tournamentType == TournamentType.groupKnockout) {
-        return 'Select exactly 8, 16, or 32 cars';
+      if (widget.tournamentType == TournamentType.groupKnockout) {
+        return 'Need ${8 - count} more cars (8, 16, or 32 required)';
       }
-      return 'Select at least $_minCarsRequired cars';
+      return 'Need ${_minCarsRequired - count} more cars';
     }
-    if ((_tournamentType == TournamentType.knockout ||
-            _tournamentType == TournamentType.doubleElimination) &&
+    if ((widget.tournamentType == TournamentType.knockout ||
+            widget.tournamentType == TournamentType.doubleElimination) &&
         !_isPowerOfTwo(count)) {
       final next = _nextPowerOfTwo(count);
       final prev = next ~/ 2;
@@ -81,10 +110,10 @@ class _TournamentSetupScreenState extends ConsumerState<TournamentSetupScreen> {
       }
       return 'Select $next cars (power of 2 required)';
     }
-    if (_tournamentType == TournamentType.groupKnockout &&
+    if (widget.tournamentType == TournamentType.groupKnockout &&
         !_isValidGroupKnockoutCount(count)) {
       if (count < 8) {
-        return 'Select 8, 16, or 32 cars';
+        return 'Need ${8 - count} more cars';
       } else if (count < 16) {
         return 'Select 8 or 16 cars (currently $count)';
       } else if (count < 32) {
@@ -94,6 +123,19 @@ class _TournamentSetupScreenState extends ConsumerState<TournamentSetupScreen> {
       }
     }
     return null;
+  }
+
+  String get _tournamentTypeName {
+    switch (widget.tournamentType) {
+      case TournamentType.knockout:
+        return 'Knockout';
+      case TournamentType.doubleElimination:
+        return 'Double Elimination';
+      case TournamentType.roundRobin:
+        return 'Round Robin';
+      case TournamentType.groupKnockout:
+        return 'Group + Knockout';
+    }
   }
 
   Future<void> _startTournament() async {
@@ -106,15 +148,6 @@ class _TournamentSetupScreenState extends ConsumerState<TournamentSetupScreen> {
       return;
     }
 
-    // For groupKnockout, navigate to config screen first
-    if (_tournamentType == TournamentType.groupKnockout) {
-      context.push(
-        '/tournament/setup/config',
-        extra: _selectedCarIds.toList(),
-      );
-      return;
-    }
-
     setState(() {
       _isCreating = true;
     });
@@ -122,10 +155,12 @@ class _TournamentSetupScreenState extends ConsumerState<TournamentSetupScreen> {
     try {
       final tournamentId = await ref.read(tournamentServiceProvider).createTournament(
             carIds: _selectedCarIds.toList(),
-            type: _tournamentType,
+            type: widget.tournamentType,
+            knockoutFormat: widget.knockoutFormat,
           );
 
       if (mounted) {
+        // Navigate to tournament, replacing the entire setup flow
         context.go('/tournament/$tournamentId');
       }
     } catch (e) {
@@ -140,13 +175,25 @@ class _TournamentSetupScreenState extends ConsumerState<TournamentSetupScreen> {
     }
   }
 
+  void _selectAll(List<Car> cars) {
+    setState(() {
+      _selectedCarIds.addAll(cars.map((c) => c.id));
+    });
+  }
+
+  void _deselectAll() {
+    setState(() {
+      _selectedCarIds.clear();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final carsAsync = ref.watch(carsProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('NEW TOURNAMENT'),
+        title: const Text('SELECT CARS'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
@@ -154,104 +201,142 @@ class _TournamentSetupScreenState extends ConsumerState<TournamentSetupScreen> {
       ),
       body: Column(
         children: [
-          // Tournament Type Selection (2x2 grid)
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
+          // Tournament type indicator
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            color: AppTheme.primaryColor.withValues(alpha: 0.1),
+            child: Row(
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: _TypeButton(
-                        label: 'KNOCKOUT',
-                        subtitle: 'Single elimination',
-                        icon: Icons.emoji_events,
-                        isSelected: _tournamentType == TournamentType.knockout,
-                        onTap: () => setState(() {
-                          _tournamentType = TournamentType.knockout;
-                        }),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _TypeButton(
-                        label: 'DOUBLE ELIM',
-                        subtitle: 'Lose twice = out',
-                        icon: Icons.repeat,
-                        isSelected: _tournamentType == TournamentType.doubleElimination,
-                        onTap: () => setState(() {
-                          _tournamentType = TournamentType.doubleElimination;
-                        }),
-                      ),
-                    ),
-                  ],
+                Icon(
+                  _getTypeIcon(),
+                  color: AppTheme.primaryColor,
+                  size: 20,
                 ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _TypeButton(
-                        label: 'ROUND ROBIN',
-                        subtitle: 'Everyone plays',
-                        icon: Icons.loop,
-                        isSelected: _tournamentType == TournamentType.roundRobin,
-                        onTap: () => setState(() {
-                          _tournamentType = TournamentType.roundRobin;
-                        }),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _TypeButton(
-                        label: 'GROUP + KO',
-                        subtitle: 'Groups then bracket',
-                        icon: Icons.view_module,
-                        isSelected: _tournamentType == TournamentType.groupKnockout,
-                        onTap: () => setState(() {
-                          _tournamentType = TournamentType.groupKnockout;
-                        }),
-                      ),
-                    ),
-                  ],
+                const SizedBox(width: 8),
+                Text(
+                  _tournamentTypeName.toUpperCase(),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.primaryColor,
+                    letterSpacing: 1,
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  _requirementText,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppTheme.textSecondary.withValues(alpha: 0.8),
+                  ),
                 ),
               ],
             ),
           ),
 
-          // Selection Count
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  'SELECT CARS: ',
-                  style: Theme.of(context).textTheme.titleLarge,
+          // Search bar
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Search cars...',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          setState(() {
+                            _searchController.clear();
+                            _searchQuery = '';
+                          });
+                        },
+                      )
+                    : null,
+                filled: true,
+                fillColor: AppTheme.surfaceColor,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
                 ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              ),
+              onChanged: (value) {
+                setState(() {
+                  _searchQuery = value.toLowerCase();
+                });
+              },
+            ),
+          ),
+
+          // Selection count and actions
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
-                    color: _selectedCarIds.length >= 2
+                    color: _isValidCarCount
                         ? AppTheme.successColor
-                        : AppTheme.surfaceColor,
-                    borderRadius: BorderRadius.circular(12),
+                        : _selectedCarIds.isNotEmpty
+                            ? Colors.orange
+                            : AppTheme.surfaceColor,
+                    borderRadius: BorderRadius.circular(20),
                   ),
-                  child: Text(
-                    '${_selectedCarIds.length}',
-                    style: Theme.of(context).textTheme.headlineMedium,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        _isValidCarCount ? Icons.check : Icons.directions_car,
+                        size: 18,
+                        color: _selectedCarIds.isNotEmpty ? Colors.white : AppTheme.textSecondary,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '${_selectedCarIds.length} selected',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: _selectedCarIds.isNotEmpty ? Colors.white : AppTheme.textSecondary,
+                        ),
+                      ),
+                    ],
                   ),
+                ),
+                const Spacer(),
+                carsAsync.maybeWhen(
+                  data: (cars) {
+                    final filteredCars = _filterCars(cars);
+                    return Row(
+                      children: [
+                        TextButton(
+                          onPressed: _selectedCarIds.isEmpty ? null : _deselectAll,
+                          child: const Text('Clear'),
+                        ),
+                        const SizedBox(width: 8),
+                        TextButton(
+                          onPressed: filteredCars.length == _selectedCarIds.length
+                              ? null
+                              : () => _selectAll(filteredCars),
+                          child: const Text('Select All'),
+                        ),
+                      ],
+                    );
+                  },
+                  orElse: () => const SizedBox.shrink(),
                 ),
               ],
             ),
           ),
+
+          const SizedBox(height: 8),
 
           // Car Grid
           Expanded(
             child: carsAsync.when(
               data: (cars) {
+                final filteredCars = _filterCars(cars);
+
                 if (cars.isEmpty) {
                   return Center(
                     child: Column(
@@ -280,6 +365,28 @@ class _TournamentSetupScreenState extends ConsumerState<TournamentSetupScreen> {
                   );
                 }
 
+                if (filteredCars.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.search_off,
+                          size: 64,
+                          color: AppTheme.textSecondary,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'No cars match "$_searchQuery"',
+                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                color: AppTheme.textSecondary,
+                              ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
                 return GridView.builder(
                   padding: const EdgeInsets.all(16),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -288,9 +395,9 @@ class _TournamentSetupScreenState extends ConsumerState<TournamentSetupScreen> {
                     mainAxisSpacing: 12,
                     childAspectRatio: 0.75,
                   ),
-                  itemCount: cars.length,
+                  itemCount: filteredCars.length,
                   itemBuilder: (context, index) {
-                    final car = cars[index];
+                    final car = filteredCars[index];
                     final isSelected = _selectedCarIds.contains(car.id);
 
                     return _SelectableCarCard(
@@ -315,15 +422,23 @@ class _TournamentSetupScreenState extends ConsumerState<TournamentSetupScreen> {
           ),
 
           // Validation message
-          if (_validationMessage != null && _selectedCarIds.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                _validationMessage!,
-                style: TextStyle(
-                  color: Colors.orange[700],
-                  fontWeight: FontWeight.w500,
-                ),
+          if (_validationMessage != null)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              color: Colors.orange.withValues(alpha: 0.1),
+              child: Row(
+                children: [
+                  const Icon(Icons.info_outline, color: Colors.orange, size: 18),
+                  const SizedBox(width: 8),
+                  Text(
+                    _validationMessage!,
+                    style: const TextStyle(
+                      color: Colors.orange,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
               ),
             ),
 
@@ -332,9 +447,7 @@ class _TournamentSetupScreenState extends ConsumerState<TournamentSetupScreen> {
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: ElevatedButton(
-                onPressed: _isValidCarCount && !_isCreating
-                    ? _startTournament
-                    : null,
+                onPressed: _isValidCarCount && !_isCreating ? _startTournament : null,
                 child: _isCreating
                     ? const SizedBox(
                         height: 24,
@@ -344,9 +457,7 @@ class _TournamentSetupScreenState extends ConsumerState<TournamentSetupScreen> {
                           color: Colors.white,
                         ),
                       )
-                    : Text(_tournamentType == TournamentType.groupKnockout
-                        ? 'CONFIGURE FORMAT'
-                        : 'START TOURNAMENT'),
+                    : const Text('START TOURNAMENT'),
               ),
             ),
           ),
@@ -354,68 +465,23 @@ class _TournamentSetupScreenState extends ConsumerState<TournamentSetupScreen> {
       ),
     );
   }
-}
 
-class _TypeButton extends StatelessWidget {
-  final String label;
-  final String? subtitle;
-  final IconData icon;
-  final bool isSelected;
-  final VoidCallback onTap;
+  List<Car> _filterCars(List<Car> cars) {
+    if (_searchQuery.isEmpty) return cars;
+    return cars.where((car) => car.name.toLowerCase().contains(_searchQuery)).toList();
+  }
 
-  const _TypeButton({
-    required this.label,
-    this.subtitle,
-    required this.icon,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: isSelected ? AppTheme.primaryColor : AppTheme.surfaceColor,
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          child: Column(
-            children: [
-              Icon(
-                icon,
-                size: 28,
-                color: isSelected ? Colors.white : AppTheme.textSecondary,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  color: isSelected ? Colors.white : AppTheme.textSecondary,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              if (subtitle != null) ...[
-                const SizedBox(height: 2),
-                Text(
-                  subtitle!,
-                  style: TextStyle(
-                    fontSize: 9,
-                    color: isSelected
-                        ? Colors.white.withValues(alpha: 0.8)
-                        : AppTheme.textSecondary.withValues(alpha: 0.7),
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
+  IconData _getTypeIcon() {
+    switch (widget.tournamentType) {
+      case TournamentType.knockout:
+        return Icons.emoji_events;
+      case TournamentType.doubleElimination:
+        return Icons.repeat;
+      case TournamentType.roundRobin:
+        return Icons.loop;
+      case TournamentType.groupKnockout:
+        return Icons.view_module;
+    }
   }
 }
 
@@ -453,8 +519,7 @@ class _SelectableCarCard extends StatelessWidget {
                 children: [
                   Expanded(
                     flex: 3,
-                    child: car.photoPath.isNotEmpty &&
-                            File(car.photoPath).existsSync()
+                    child: car.photoPath.isNotEmpty && File(car.photoPath).existsSync()
                         ? Image.file(
                             File(car.photoPath),
                             fit: BoxFit.cover,

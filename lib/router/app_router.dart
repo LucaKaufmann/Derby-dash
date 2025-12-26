@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../data/models/tournament.dart';
 import '../screens/garage/garage_screen.dart';
 import '../screens/garage/add_car_screen.dart';
 import '../screens/garage/car_detail_screen.dart';
-import '../screens/tournament/tournament_setup_screen.dart';
+import '../screens/tournament/tournament_type_screen.dart';
+import '../screens/tournament/car_selection_screen.dart';
 import '../screens/tournament/tournament_dashboard_screen.dart';
 import '../screens/tournament/tournament_history_screen.dart';
 import '../screens/tournament/champion_screen.dart';
@@ -50,14 +52,24 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/tournament/setup',
       name: 'tournamentSetup',
-      builder: (context, state) => const TournamentSetupScreen(),
+      builder: (context, state) => const TournamentTypeScreen(),
       routes: [
         GoRoute(
           path: 'config',
           name: 'bestOfConfig',
+          builder: (context, state) => const BestOfConfigScreen(),
+        ),
+        GoRoute(
+          path: 'cars',
+          name: 'carSelection',
           builder: (context, state) {
-            final carIds = state.extra as List<int>;
-            return BestOfConfigScreen(carIds: carIds);
+            final extra = state.extra as Map<String, dynamic>;
+            final type = extra['type'] as TournamentType;
+            final knockoutFormat = extra['knockoutFormat'] as Map<String, int>?;
+            return CarSelectionScreen(
+              tournamentType: type,
+              knockoutFormat: knockoutFormat,
+            );
           },
         ),
       ],
