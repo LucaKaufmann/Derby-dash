@@ -84,7 +84,7 @@ class TournamentDashboardScreen extends ConsumerWidget {
                 ),
               ),
 
-              // Rounds List
+              // Rounds List with Champion Card at top
               Expanded(
                 child: roundsAsync.when(
                   data: (rounds) {
@@ -94,9 +94,32 @@ class TournamentDashboardScreen extends ConsumerWidget {
 
                     return ListView.builder(
                       padding: const EdgeInsets.all(16),
-                      itemCount: rounds.length,
+                      // Add 1 for champion card if tournament is completed
+                      itemCount: tournament.status == TournamentStatus.completed
+                          ? rounds.length + 1
+                          : rounds.length,
                       itemBuilder: (context, index) {
-                        final round = rounds[index];
+                        // First item is champion card for completed tournaments
+                        if (tournament.status == TournamentStatus.completed &&
+                            index == 0) {
+                          return winnerAsync.when(
+                            data: (winner) => winner != null
+                                ? _ChampionCard(
+                                    winner: winner,
+                                    tournamentId: tournamentId,
+                                  )
+                                : const SizedBox.shrink(),
+                            loading: () => const SizedBox.shrink(),
+                            error: (_, __) => const SizedBox.shrink(),
+                          );
+                        }
+
+                        // Adjust index for rounds when champion card is shown
+                        final roundIndex =
+                            tournament.status == TournamentStatus.completed
+                                ? index - 1
+                                : index;
+                        final round = rounds[roundIndex];
                         return _RoundCard(
                           round: round,
                           tournamentId: tournamentId,
@@ -110,16 +133,6 @@ class TournamentDashboardScreen extends ConsumerWidget {
                   error: (error, _) => Center(child: Text('Error: $error')),
                 ),
               ),
-
-              // Champion Card at bottom
-              if (tournament.status == TournamentStatus.completed)
-                winnerAsync.when(
-                  data: (winner) => winner != null
-                      ? _ChampionCard(winner: winner)
-                      : const SizedBox.shrink(),
-                  loading: () => const SizedBox.shrink(),
-                  error: (_, __) => const SizedBox.shrink(),
-                ),
             ],
           );
         },
@@ -472,82 +485,206 @@ class _CarAvatar extends StatelessWidget {
   }
 }
 
-class _ChampionCard extends StatelessWidget {
+class _ChampionCard extends ConsumerWidget {
   final Car winner;
+  final int tournamentId;
 
-  const _ChampionCard({required this.winner});
+  const _ChampionCard({
+    required this.winner,
+    required this.tournamentId,
+  });
 
   @override
-  Widget build(BuildContext context) {
-    final hasPhoto = winner.photoPath.isNotEmpty &&
-        File(winner.photoPath).existsSync();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final hasPhoto =
+        winner.photoPath.isNotEmpty && File(winner.photoPath).existsSync();
+    final statsAsync = ref.watch(tournamentStatsProvider(tournamentId));
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            AppTheme.winnerColor.withOpacity(0.3),
-            AppTheme.winnerColor.withOpacity(0.5),
-          ],
-        ),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              '🏆 CHAMPION 🏆',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-                letterSpacing: 2,
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        children: [
+          // Champion Header
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppTheme.winnerColor.withValues(alpha: 0.3),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(16),
               ),
             ),
-            const SizedBox(height: 12),
-            Container(
-              width: 100,
-              height: 100,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.white, width: 4),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.3),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              clipBehavior: Clip.antiAlias,
-              child: hasPhoto
-                  ? Image.file(File(winner.photoPath), fit: BoxFit.cover)
-                  : Container(
-                      color: AppTheme.backgroundColor,
-                      child: const Icon(
-                        Icons.directions_car,
-                        size: 48,
-                        color: AppTheme.textSecondary,
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.emoji_events,
+                  color: AppTheme.winnerColor,
+                  size: 24,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'CHAMPION',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        color: AppTheme.winnerColor,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.5,
                       ),
+                ),
+              ],
+            ),
+          ),
+          // Champion Content
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                // Car photo
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: AppTheme.winnerColor,
+                      width: 3,
                     ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppTheme.winnerColor.withValues(alpha: 0.3),
+                        blurRadius: 8,
+                        spreadRadius: 1,
+                      ),
+                    ],
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: hasPhoto
+                      ? Image.file(File(winner.photoPath), fit: BoxFit.cover)
+                      : Container(
+                          color: AppTheme.backgroundColor,
+                          child: const Icon(
+                            Icons.directions_car,
+                            size: 40,
+                            color: AppTheme.textSecondary,
+                          ),
+                        ),
+                ),
+                const SizedBox(width: 16),
+                // Car info and stats
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        winner.name,
+                        style:
+                            Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 8),
+                      // Stats row
+                      statsAsync.when(
+                        data: (stats) {
+                          final winnerStats = stats.firstWhere(
+                            (s) => s.car.id == winner.id,
+                            orElse: () => TournamentCarStats(
+                              car: winner,
+                              wins: 0,
+                              losses: 0,
+                            ),
+                          );
+                          final total =
+                              winnerStats.wins + winnerStats.losses;
+                          final winRate = total > 0
+                              ? (winnerStats.wins / total * 100).round()
+                              : 0;
+
+                          return Row(
+                            children: [
+                              // Win/Loss record
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.successColor
+                                      .withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      '${winnerStats.wins}W',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: AppTheme.successColor,
+                                      ),
+                                    ),
+                                    const Text(
+                                      ' - ',
+                                      style: TextStyle(
+                                        color: AppTheme.textSecondary,
+                                      ),
+                                    ),
+                                    Text(
+                                      '${winnerStats.losses}L',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: winnerStats.losses > 0
+                                            ? AppTheme.errorColor
+                                            : AppTheme.textSecondary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              // Win rate
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.winnerColor
+                                      .withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  '$winRate%',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: AppTheme.winnerColor,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                        loading: () => const SizedBox(
+                          height: 32,
+                          child: Center(
+                            child: SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          ),
+                        ),
+                        error: (_, __) => const SizedBox.shrink(),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 12),
-            Text(
-              winner.name,
-              style: const TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
