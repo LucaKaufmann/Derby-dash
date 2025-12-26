@@ -316,7 +316,7 @@ class _MatchRow extends ConsumerWidget {
               : null,
           borderRadius: BorderRadius.circular(12),
           child: Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
             decoration: BoxDecoration(
               color: winner != null
                   ? AppTheme.successColor.withOpacity(0.1)
@@ -344,6 +344,7 @@ class _MatchRow extends ConsumerWidget {
     final carBWon = winner?.id == carB?.id;
 
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         // Car A
         Expanded(
@@ -355,19 +356,22 @@ class _MatchRow extends ConsumerWidget {
         ),
 
         // VS
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-          decoration: BoxDecoration(
-            color: winner != null
-                ? AppTheme.successColor.withOpacity(0.2)
-                : AppTheme.primaryColor.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Text(
-            winner != null ? '!' : 'VS',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: winner != null ? AppTheme.successColor : AppTheme.primaryColor,
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: winner != null
+                  ? AppTheme.successColor.withValues(alpha: 0.2)
+                  : AppTheme.primaryColor.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              winner != null ? '!' : 'VS',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: winner != null ? AppTheme.successColor : AppTheme.primaryColor,
+              ),
             ),
           ),
         ),
@@ -401,54 +405,25 @@ class _CarInfo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment:
-          alignRight ? MainAxisAlignment.end : MainAxisAlignment.start,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        if (!alignRight) ...[
-          _CarAvatar(photoPath: car?.photoPath, isWinner: isWinner),
-          const SizedBox(width: 8),
-        ],
-        Flexible(
-          child: Column(
-            crossAxisAlignment:
-                alignRight ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-            children: [
-              Text(
-                car?.name ?? 'Unknown',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: isLoser
-                      ? AppTheme.textSecondary.withOpacity(0.5)
-                      : null,
-                  decoration: isLoser ? TextDecoration.lineThrough : null,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              if (isWinner)
-                const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.emoji_events, size: 14, color: AppTheme.winnerColor),
-                    SizedBox(width: 4),
-                    Text(
-                      'WINNER',
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: AppTheme.winnerColor,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-            ],
+        // Photo with winner badge
+        _CarAvatar(photoPath: car?.photoPath, isWinner: isWinner),
+        const SizedBox(height: 8),
+        // Name
+        Text(
+          car?.name ?? 'Unknown',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 13,
+            color: isLoser ? AppTheme.textSecondary.withValues(alpha: 0.5) : null,
+            decoration: isLoser ? TextDecoration.lineThrough : null,
           ),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
         ),
-        if (alignRight) ...[
-          const SizedBox(width: 8),
-          _CarAvatar(photoPath: car?.photoPath, isWinner: isWinner),
-        ],
       ],
     );
   }
@@ -465,22 +440,54 @@ class _CarAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 48,
-      height: 48,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
-        border: isWinner
-            ? Border.all(color: AppTheme.winnerColor, width: 3)
-            : null,
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: photoPath != null && File(photoPath!).existsSync()
-          ? Image.file(File(photoPath!), fit: BoxFit.cover)
-          : Container(
-              color: AppTheme.backgroundColor,
-              child: const Icon(Icons.directions_car, size: 24),
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        // Photo
+        Container(
+          width: 56,
+          height: 56,
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: photoPath != null && File(photoPath!).existsSync()
+              ? Image.file(File(photoPath!), fit: BoxFit.cover)
+              : Container(
+                  color: AppTheme.backgroundColor,
+                  child: const Icon(Icons.directions_car, size: 24),
+                ),
+        ),
+        // Winner border overlay
+        if (isWinner)
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: AppTheme.winnerColor, width: 3),
             ),
+          ),
+        // Winner trophy badge
+        if (isWinner)
+          Positioned(
+            right: -6,
+            top: -6,
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: AppTheme.surfaceColor,
+                shape: BoxShape.circle,
+                border: Border.all(color: AppTheme.winnerColor, width: 2),
+              ),
+              child: const Icon(
+                Icons.emoji_events,
+                size: 12,
+                color: AppTheme.winnerColor,
+              ),
+            ),
+          ),
+      ],
     );
   }
 }
@@ -539,35 +546,48 @@ class _ChampionCard extends ConsumerWidget {
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                // Car photo
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: AppTheme.winnerColor,
-                      width: 3,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppTheme.winnerColor.withValues(alpha: 0.3),
-                        blurRadius: 8,
-                        spreadRadius: 1,
-                      ),
-                    ],
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: hasPhoto
-                      ? Image.file(File(winner.photoPath), fit: BoxFit.cover)
-                      : Container(
-                          color: AppTheme.backgroundColor,
-                          child: const Icon(
-                            Icons.directions_car,
-                            size: 40,
-                            color: AppTheme.textSecondary,
+                // Car photo with border overlay
+                Stack(
+                  children: [
+                    // Photo
+                    Container(
+                      width: 80,
+                      height: 80,
+                      clipBehavior: Clip.antiAlias,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppTheme.winnerColor.withValues(alpha: 0.3),
+                            blurRadius: 8,
+                            spreadRadius: 1,
                           ),
+                        ],
+                      ),
+                      child: hasPhoto
+                          ? Image.file(File(winner.photoPath), fit: BoxFit.cover)
+                          : Container(
+                              color: AppTheme.backgroundColor,
+                              child: const Icon(
+                                Icons.directions_car,
+                                size: 40,
+                                color: AppTheme.textSecondary,
+                              ),
+                            ),
+                    ),
+                    // Border overlay
+                    Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: AppTheme.winnerColor,
+                          width: 3,
                         ),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(width: 16),
                 // Car info and stats
