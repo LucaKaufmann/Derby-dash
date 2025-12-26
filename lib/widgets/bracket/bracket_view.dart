@@ -126,6 +126,12 @@ class BracketView extends StatelessWidget {
         return 'SEMIFINALS';
       case 3:
         return 'QUARTERFINALS';
+      case 4:
+        return 'ROUND OF 16';
+      case 5:
+        return 'ROUND OF 32';
+      case 6:
+        return 'ROUND OF 64';
       default:
         return 'ROUND ${roundIndex + 1}';
     }

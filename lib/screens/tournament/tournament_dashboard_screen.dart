@@ -187,8 +187,37 @@ class _RoundCard extends ConsumerWidget {
       return '$bracketLabel - Round ${round.roundNumber}';
     }
 
-    // For knockout, just use round numbers
-    return 'Round ${round.roundNumber}';
+    // For group knockout, use proper round names
+    if (tournamentType == TournamentType.groupKnockout) {
+      if (round.bracketType == BracketType.knockout) {
+        // Use knockout round names (Quarterfinals, Semifinals, etc.)
+        return _getBracketLabel();
+      }
+      // For group phase rounds, use group name
+      return _getBracketLabel();
+    }
+
+    // For knockout, use proper round names based on position
+    return _getKnockoutRoundName();
+  }
+
+  String _getKnockoutRoundName() {
+    // Calculate round name based on number of matches
+    // For standard knockout: Final, Semifinals, Quarterfinals, Round of 16, etc.
+    switch (round.knockoutRoundName) {
+      case 'gf':
+        return 'Grand Finals';
+      case 'sf':
+        return 'Semifinals';
+      case 'qf':
+        return 'Quarterfinals';
+      case 'ro16':
+        return 'Round of 16';
+      case 'ro32':
+        return 'Round of 32';
+      default:
+        return 'Round ${round.roundNumber}';
+    }
   }
 
   String _getBracketLabel() {
