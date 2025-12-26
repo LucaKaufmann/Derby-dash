@@ -27,6 +27,7 @@ class _GarageScreenState extends ConsumerState<GarageScreen> {
       GarageSortOption.wins => 'Most Wins',
       GarageSortOption.losses => 'Most Losses',
       GarageSortOption.winRate => 'Win Rate',
+      GarageSortOption.tournamentWins => 'Championships',
       GarageSortOption.name => 'Name',
       GarageSortOption.newest => 'Newest',
       GarageSortOption.oldest => 'Oldest',
@@ -302,15 +303,35 @@ class _CarCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      '${stats.wins}W - ${stats.losses}L',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: stats.wins > stats.losses
-                                ? AppTheme.successColor
-                                : stats.losses > stats.wins
-                                    ? AppTheme.errorColor
-                                    : AppTheme.textSecondary,
+                    Row(
+                      children: [
+                        Text(
+                          '${stats.wins}W - ${stats.losses}L',
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: stats.wins > stats.losses
+                                    ? AppTheme.successColor
+                                    : stats.losses > stats.wins
+                                        ? AppTheme.errorColor
+                                        : AppTheme.textSecondary,
+                              ),
+                        ),
+                        if (stats.tournamentWins > 0) ...[
+                          const SizedBox(width: 8),
+                          Icon(
+                            Icons.emoji_events,
+                            size: 16,
+                            color: const Color(0xFFFFD700),
                           ),
+                          const SizedBox(width: 2),
+                          Text(
+                            '${stats.tournamentWins}',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  color: const Color(0xFFFFD700),
+                                  fontWeight: FontWeight.bold,
+                                ),
+                          ),
+                        ],
+                      ],
                     ),
                   ],
                 ),

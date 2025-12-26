@@ -6,7 +6,7 @@ part of 'car_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$sortedCarsHash() => r'b54e263c2945da24bd3078acb1766497edeb3396';
+String _$sortedCarsHash() => r'69e038327b86af1ed5d09a68911eb414d36e98b8';
 
 /// See also [sortedCars].
 @ProviderFor(sortedCars)
@@ -36,7 +36,7 @@ final carRepositoryProvider = Provider<CarRepository>.internal(
 );
 
 typedef CarRepositoryRef = ProviderRef<CarRepository>;
-String _$carStatsHash() => r'403f4bd10ca2c8bad6b029b8e6ac9368a0f3d2f6';
+String _$carStatsHash() => r'dff24a8fe37d6ff19b7e2b5c4d2a71c0d49fb2b6';
 
 /// Copied from Dart SDK
 class _SystemHash {

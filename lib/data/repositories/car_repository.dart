@@ -1,6 +1,7 @@
 import 'package:isar/isar.dart';
 import '../models/car.dart';
 import '../models/match.dart';
+import '../models/tournament.dart';
 
 class CarRepository {
   final Isar _isar;
@@ -82,6 +83,64 @@ class CarRepository {
         .count();
 
     return asCarA + asCarB;
+  }
+
+  // Get tournament win count for a car (dynamically calculated)
+  Future<int> getTournamentWinCount(Id carId) async {
+    final completedTournaments = await _isar.tournaments
+        .filter()
+        .statusEqualTo(TournamentStatus.completed)
+        .findAll();
+
+    int tournamentWins = 0;
+
+    for (final tournament in completedTournaments) {
+      await tournament.rounds.load();
+      final rounds = tournament.rounds.toList();
+      if (rounds.isEmpty) continue;
+
+      // Sort rounds to find the final round
+      rounds.sort((a, b) => a.roundNumber.compareTo(b.roundNumber));
+
+      if (tournament.type == TournamentType.knockout ||
+          tournament.type == TournamentType.doubleElimination ||
+          tournament.type == TournamentType.groupKnockout) {
+        // Winner is from the final match of the last round
+        final finalRound = rounds.last;
+        await finalRound.matches.load();
+        final matches = finalRound.matches.toList();
+        if (matches.isNotEmpty) {
+          final finalMatch = matches.first;
+          await finalMatch.winner.load();
+          if (finalMatch.winner.value?.id == carId) {
+            tournamentWins++;
+          }
+        }
+      } else {
+        // Round robin - winner is the car with most wins
+        final winCounts = <int, int>{};
+        for (final round in rounds) {
+          await round.matches.load();
+          for (final match in round.matches) {
+            await match.winner.load();
+            if (match.winner.value != null) {
+              final winnerId = match.winner.value!.id;
+              winCounts[winnerId] = (winCounts[winnerId] ?? 0) + 1;
+            }
+          }
+        }
+
+        if (winCounts.isNotEmpty) {
+          final sortedEntries = winCounts.entries.toList()
+            ..sort((a, b) => b.value.compareTo(a.value));
+          if (sortedEntries.first.key == carId) {
+            tournamentWins++;
+          }
+        }
+      }
+    }
+
+    return tournamentWins;
   }
 
   // Watch cars stream for real-time updates

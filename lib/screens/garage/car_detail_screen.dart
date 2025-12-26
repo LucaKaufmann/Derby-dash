@@ -288,6 +288,8 @@ class _CarDetailScreenState extends ConsumerState<CarDetailScreen> {
   }
 
   Widget _buildStats(BuildContext context, CarStats stats) {
+    const goldColor = Color(0xFFFFD700);
+
     return Column(
       children: [
         // Win/Loss record
@@ -312,7 +314,44 @@ class _CarDetailScreenState extends ConsumerState<CarDetailScreen> {
           ],
         ),
 
-        const SizedBox(height: 24),
+        const SizedBox(height: 16),
+
+        // Tournament wins
+        if (stats.tournamentWins > 0)
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+            decoration: BoxDecoration(
+              color: AppTheme.surfaceColor,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.emoji_events,
+                  size: 32,
+                  color: goldColor,
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  '${stats.tournamentWins}',
+                  style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: goldColor,
+                      ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  stats.tournamentWins == 1 ? 'CHAMPIONSHIP' : 'CHAMPIONSHIPS',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: AppTheme.textSecondary,
+                      ),
+                ),
+              ],
+            ),
+          ),
+
+        const SizedBox(height: 16),
 
         // Win rate
         if (stats.totalMatches > 0)

@@ -12,6 +12,7 @@ enum GarageSortOption {
   wins,
   losses,
   winRate,
+  tournamentWins,
   name,
   newest,
   oldest,
@@ -46,9 +47,15 @@ Future<List<CarWithStats>> sortedCars(SortedCarsRef ref) async {
       final wins = await repository.getWinCount(car.id);
       final losses = await repository.getLossCount(car.id);
       final matches = await repository.getMatchCount(car.id);
+      final tournamentWins = await repository.getTournamentWinCount(car.id);
       return CarWithStats(
         car: car,
-        stats: CarStats(wins: wins, losses: losses, totalMatches: matches),
+        stats: CarStats(
+          wins: wins,
+          losses: losses,
+          totalMatches: matches,
+          tournamentWins: tournamentWins,
+        ),
       );
     }),
   );
@@ -61,6 +68,9 @@ Future<List<CarWithStats>> sortedCars(SortedCarsRef ref) async {
       carsWithStats.sort((a, b) => b.stats.losses.compareTo(a.stats.losses));
     case GarageSortOption.winRate:
       carsWithStats.sort((a, b) => b.stats.winRate.compareTo(a.stats.winRate));
+    case GarageSortOption.tournamentWins:
+      carsWithStats.sort(
+          (a, b) => b.stats.tournamentWins.compareTo(a.stats.tournamentWins));
     case GarageSortOption.name:
       carsWithStats.sort(
           (a, b) => a.car.name.toLowerCase().compareTo(b.car.name.toLowerCase()));
@@ -165,19 +175,27 @@ Future<CarStats> carStats(CarStatsRef ref, int carId) async {
   final wins = await repository.getWinCount(carId);
   final losses = await repository.getLossCount(carId);
   final matches = await repository.getMatchCount(carId);
+  final tournamentWins = await repository.getTournamentWinCount(carId);
 
-  return CarStats(wins: wins, losses: losses, totalMatches: matches);
+  return CarStats(
+    wins: wins,
+    losses: losses,
+    totalMatches: matches,
+    tournamentWins: tournamentWins,
+  );
 }
 
 class CarStats {
   final int wins;
   final int losses;
   final int totalMatches;
+  final int tournamentWins;
 
   CarStats({
     required this.wins,
     required this.losses,
     required this.totalMatches,
+    this.tournamentWins = 0,
   });
 
   double get winRate => totalMatches > 0 ? wins / totalMatches : 0.0;
