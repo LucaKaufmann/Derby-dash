@@ -1249,11 +1249,20 @@ class TournamentService {
 
   /// Get win/loss stats for all cars in a tournament
   /// Returns a map of carId -> {car, wins, losses}
+  /// For knockout tournaments, respects bracket placement:
+  /// 1st: Grand finals winner, 2nd: Grand finals loser,
+  /// 3rd/4th: Semi-finals losers (by wins, then alphabetically)
   Future<List<TournamentCarStats>> getTournamentStats(int tournamentId) async {
+    final tournament = await getTournament(tournamentId);
     final rounds = await getRounds(tournamentId);
     if (rounds.isEmpty) return [];
 
     final carStats = <int, TournamentCarStats>{};
+
+    // Track placement for knockout tournaments
+    int? grandFinalsWinnerId;
+    int? grandFinalsLoserId;
+    final semiFinalsLoserIds = <int>[];
 
     for (final round in rounds) {
       final matches = await getMatches(round.id);
@@ -1291,17 +1300,77 @@ class TournamentService {
               losses: carStats[carA.id]!.losses + 1,
             );
           }
+
+          // Track knockout placement
+          final isKnockoutTournament = tournament?.type == TournamentType.knockout ||
+              tournament?.type == TournamentType.groupKnockout;
+
+          if (isKnockoutTournament) {
+            // Grand finals
+            if (round.knockoutRoundName == 'gf' ||
+                round.bracketType == BracketType.grandFinals ||
+                (tournament?.type == TournamentType.knockout && round.roundNumber == rounds.length)) {
+              grandFinalsWinnerId = winner.id;
+              grandFinalsLoserId = winner.id == carA.id ? carB.id : carA.id;
+            }
+            // Semifinals
+            else if (round.knockoutRoundName == 'sf' ||
+                (tournament?.type == TournamentType.knockout && round.roundNumber == rounds.length - 1 && rounds.length > 1)) {
+              final loserId = winner.id == carA.id ? carB.id : carA.id;
+              if (!semiFinalsLoserIds.contains(loserId)) {
+                semiFinalsLoserIds.add(loserId);
+              }
+            }
+          }
         }
       }
     }
 
-    // Sort by wins (descending), then by losses (ascending)
+    // Sort by wins (descending), then by losses (ascending), then by name
     final statsList = carStats.values.toList()
       ..sort((a, b) {
         final winCompare = b.wins.compareTo(a.wins);
         if (winCompare != 0) return winCompare;
-        return a.losses.compareTo(b.losses);
+        final lossCompare = a.losses.compareTo(b.losses);
+        if (lossCompare != 0) return lossCompare;
+        return a.car.name.compareTo(b.car.name);
       });
+
+    // For knockout tournaments, apply placement ordering
+    final isKnockoutTournament = tournament?.type == TournamentType.knockout ||
+        tournament?.type == TournamentType.groupKnockout;
+
+    if (isKnockoutTournament && grandFinalsWinnerId != null) {
+      final result = <TournamentCarStats>[];
+
+      // 1st: Grand finals winner
+      final gfWinner = statsList.firstWhere((s) => s.car.id == grandFinalsWinnerId);
+      result.add(gfWinner);
+
+      // 2nd: Grand finals loser
+      if (grandFinalsLoserId != null) {
+        final gfLoser = statsList.firstWhere((s) => s.car.id == grandFinalsLoserId);
+        result.add(gfLoser);
+      }
+
+      // 3rd/4th: Semi-finals losers, ordered by wins then alphabetically
+      final sfLosers = statsList
+          .where((s) => semiFinalsLoserIds.contains(s.car.id))
+          .toList()
+        ..sort((a, b) {
+          final winCompare = b.wins.compareTo(a.wins);
+          if (winCompare != 0) return winCompare;
+          return a.car.name.compareTo(b.car.name);
+        });
+      result.addAll(sfLosers);
+
+      // Rest: ordered by wins, then losses, then name
+      final usedIds = {grandFinalsWinnerId, grandFinalsLoserId, ...semiFinalsLoserIds};
+      final rest = statsList.where((s) => !usedIds.contains(s.car.id));
+      result.addAll(rest);
+
+      return result;
+    }
 
     return statsList;
   }
