@@ -6,6 +6,7 @@ import 'package:derby_dash/providers/tournament_provider.dart';
 import 'package:derby_dash/theme/app_theme.dart';
 import 'package:derby_dash/widgets/bracket/bracket_view.dart';
 import 'package:derby_dash/widgets/bracket/double_bracket_view.dart';
+import 'package:derby_dash/widgets/bracket/group_knockout_bracket_view.dart';
 
 /// Screen displaying the tournament bracket visualization.
 class BracketScreen extends ConsumerWidget {
@@ -146,6 +147,7 @@ class _BracketContent extends ConsumerWidget {
     }
 
     final isDoubleElimination = tournament.type == TournamentType.doubleElimination;
+    final isGroupKnockout = tournament.type == TournamentType.groupKnockout;
 
     return Column(
       children: [
@@ -154,17 +156,24 @@ class _BracketContent extends ConsumerWidget {
 
         // Bracket view - use appropriate view based on tournament type
         Expanded(
-          child: isDoubleElimination
-              ? DoubleBracketView(
+          child: isGroupKnockout
+              ? GroupKnockoutBracketView(
+                  tournament: tournament,
                   rounds: rounds,
                   matchesByRound: matchesByRound,
                   onMatchTap: (match) => _showMatchDetails(context, match),
                 )
-              : BracketView(
-                  rounds: rounds,
-                  matchesByRound: matchesByRound,
-                  onMatchTap: (match) => _showMatchDetails(context, match),
-                ),
+              : isDoubleElimination
+                  ? DoubleBracketView(
+                      rounds: rounds,
+                      matchesByRound: matchesByRound,
+                      onMatchTap: (match) => _showMatchDetails(context, match),
+                    )
+                  : BracketView(
+                      rounds: rounds,
+                      matchesByRound: matchesByRound,
+                      onMatchTap: (match) => _showMatchDetails(context, match),
+                    ),
         ),
 
         // Zoom hint
