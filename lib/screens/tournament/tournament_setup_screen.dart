@@ -21,11 +21,22 @@ class _TournamentSetupScreenState extends ConsumerState<TournamentSetupScreen> {
   TournamentType _tournamentType = TournamentType.knockout;
   bool _isCreating = false;
 
-  int get _minCarsRequired =>
-      _tournamentType == TournamentType.doubleElimination ? 4 : 2;
+  int get _minCarsRequired {
+    switch (_tournamentType) {
+      case TournamentType.doubleElimination:
+        return 4;
+      case TournamentType.groupKnockout:
+        return 8;
+      default:
+        return 2;
+    }
+  }
 
   /// Check if a number is a power of 2 (2, 4, 8, 16, 32, 64, etc.)
   bool _isPowerOfTwo(int n) => n > 0 && (n & (n - 1)) == 0;
+
+  /// Valid counts for groupKnockout (8, 16, or 32 cars = 2, 4, or 8 groups of 4)
+  bool _isValidGroupKnockoutCount(int n) => n == 8 || n == 16 || n == 32;
 
   bool get _isValidCarCount {
     final count = _selectedCarIds.length;
@@ -34,6 +45,10 @@ class _TournamentSetupScreenState extends ConsumerState<TournamentSetupScreen> {
     if (_tournamentType == TournamentType.knockout ||
         _tournamentType == TournamentType.doubleElimination) {
       return _isPowerOfTwo(count);
+    }
+    // Require 8, 16, or 32 for groupKnockout
+    if (_tournamentType == TournamentType.groupKnockout) {
+      return _isValidGroupKnockoutCount(count);
     }
     return true; // Round robin allows any count >= 2
   }
@@ -51,6 +66,9 @@ class _TournamentSetupScreenState extends ConsumerState<TournamentSetupScreen> {
   String? get _validationMessage {
     final count = _selectedCarIds.length;
     if (count < _minCarsRequired) {
+      if (_tournamentType == TournamentType.groupKnockout) {
+        return 'Select exactly 8, 16, or 32 cars';
+      }
       return 'Select at least $_minCarsRequired cars';
     }
     if ((_tournamentType == TournamentType.knockout ||
@@ -63,6 +81,18 @@ class _TournamentSetupScreenState extends ConsumerState<TournamentSetupScreen> {
       }
       return 'Select $next cars (power of 2 required)';
     }
+    if (_tournamentType == TournamentType.groupKnockout &&
+        !_isValidGroupKnockoutCount(count)) {
+      if (count < 8) {
+        return 'Select 8, 16, or 32 cars';
+      } else if (count < 16) {
+        return 'Select 8 or 16 cars (currently $count)';
+      } else if (count < 32) {
+        return 'Select 16 or 32 cars (currently $count)';
+      } else {
+        return 'Maximum 32 cars allowed';
+      }
+    }
     return null;
   }
 
@@ -72,6 +102,15 @@ class _TournamentSetupScreenState extends ConsumerState<TournamentSetupScreen> {
         SnackBar(
           content: Text(_validationMessage ?? 'Invalid car selection'),
         ),
+      );
+      return;
+    }
+
+    // For groupKnockout, navigate to config screen first
+    if (_tournamentType == TournamentType.groupKnockout) {
+      context.push(
+        '/tournament/setup/config',
+        extra: _selectedCarIds.toList(),
       );
       return;
     }
@@ -115,7 +154,7 @@ class _TournamentSetupScreenState extends ConsumerState<TournamentSetupScreen> {
       ),
       body: Column(
         children: [
-          // Tournament Type Selection
+          // Tournament Type Selection (2x2 grid)
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
@@ -145,7 +184,11 @@ class _TournamentSetupScreenState extends ConsumerState<TournamentSetupScreen> {
                         }),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
                     Expanded(
                       child: _TypeButton(
                         label: 'ROUND ROBIN',
@@ -154,6 +197,18 @@ class _TournamentSetupScreenState extends ConsumerState<TournamentSetupScreen> {
                         isSelected: _tournamentType == TournamentType.roundRobin,
                         onTap: () => setState(() {
                           _tournamentType = TournamentType.roundRobin;
+                        }),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _TypeButton(
+                        label: 'GROUP + KO',
+                        subtitle: 'Groups then bracket',
+                        icon: Icons.view_module,
+                        isSelected: _tournamentType == TournamentType.groupKnockout,
+                        onTap: () => setState(() {
+                          _tournamentType = TournamentType.groupKnockout;
                         }),
                       ),
                     ),
@@ -289,7 +344,9 @@ class _TournamentSetupScreenState extends ConsumerState<TournamentSetupScreen> {
                           color: Colors.white,
                         ),
                       )
-                    : const Text('START TOURNAMENT'),
+                    : Text(_tournamentType == TournamentType.groupKnockout
+                        ? 'CONFIGURE FORMAT'
+                        : 'START TOURNAMENT'),
               ),
             ),
           ),
