@@ -11,6 +11,7 @@ import '../screens/tournament/standings_screen.dart';
 import '../screens/match/match_screen.dart';
 import '../screens/home_screen.dart';
 import '../screens/tournament/bracket_screen.dart';
+import '../screens/tournament/best_of_config_screen.dart';
 import '../screens/settings/settings_screen.dart';
 
 final appRouter = GoRouter(
@@ -50,6 +51,16 @@ final appRouter = GoRouter(
       path: '/tournament/setup',
       name: 'tournamentSetup',
       builder: (context, state) => const TournamentSetupScreen(),
+      routes: [
+        GoRoute(
+          path: 'config',
+          name: 'bestOfConfig',
+          builder: (context, state) {
+            final carIds = state.extra as List<int>;
+            return BestOfConfigScreen(carIds: carIds);
+          },
+        ),
+      ],
     ),
     GoRoute(
       path: '/tournament/history',
