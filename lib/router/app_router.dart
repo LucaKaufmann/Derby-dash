@@ -63,8 +63,18 @@ final appRouter = GoRouter(
           path: 'cars',
           name: 'carSelection',
           builder: (context, state) {
-            final extra = state.extra as Map<String, dynamic>;
-            final type = extra['type'] as TournamentType;
+            final extra = state.extra;
+            if (extra is! Map<String, dynamic>) {
+              return _RouteErrorScreen(
+                message: 'Missing tournament configuration.',
+              );
+            }
+            final type = extra['type'];
+            if (type is! TournamentType) {
+              return _RouteErrorScreen(
+                message: 'Invalid tournament type.',
+              );
+            }
             final knockoutFormat = extra['knockoutFormat'] as Map<String, int>?;
             return CarSelectionScreen(
               tournamentType: type,
@@ -135,3 +145,22 @@ final appRouter = GoRouter(
     ),
   ),
 );
+
+class _RouteErrorScreen extends StatelessWidget {
+  final String message;
+
+  const _RouteErrorScreen({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: Text(
+          message,
+          style: Theme.of(context).textTheme.headlineMedium,
+          textAlign: TextAlign.center,
+        ),
+      ),
+    );
+  }
+}
