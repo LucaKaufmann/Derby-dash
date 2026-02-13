@@ -1,19 +1,16 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../data/models/models.dart';
 import '../../providers/tournament_provider.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/car_photo_frame.dart';
 import '../../widgets/group/group_stage_view.dart';
 
 class TournamentDashboardScreen extends ConsumerWidget {
   final int tournamentId;
 
-  const TournamentDashboardScreen({
-    super.key,
-    required this.tournamentId,
-  });
+  const TournamentDashboardScreen({super.key, required this.tournamentId});
 
   String _getTournamentTypeLabel(TournamentType type) {
     switch (type) {
@@ -50,13 +47,15 @@ class TournamentDashboardScreen extends ConsumerWidget {
                 return IconButton(
                   icon: const Icon(Icons.account_tree),
                   tooltip: 'View Bracket',
-                  onPressed: () => context.push('/tournament/$tournamentId/bracket'),
+                  onPressed: () =>
+                      context.push('/tournament/$tournamentId/bracket'),
                 );
               } else if (tournament?.type == TournamentType.roundRobin) {
                 return IconButton(
                   icon: const Icon(Icons.leaderboard),
                   tooltip: 'View Standings',
-                  onPressed: () => context.push('/tournament/$tournamentId/standings'),
+                  onPressed: () =>
+                      context.push('/tournament/$tournamentId/standings'),
                 );
               } else if (tournament?.type == TournamentType.groupKnockout) {
                 // Show bracket button in knockout phase
@@ -64,7 +63,8 @@ class TournamentDashboardScreen extends ConsumerWidget {
                   return IconButton(
                     icon: const Icon(Icons.account_tree),
                     tooltip: 'View Bracket',
-                    onPressed: () => context.push('/tournament/$tournamentId/bracket'),
+                    onPressed: () =>
+                        context.push('/tournament/$tournamentId/bracket'),
                   );
                 }
               }
@@ -137,8 +137,8 @@ class TournamentDashboardScreen extends ConsumerWidget {
                         // Adjust index for rounds when champion card is shown
                         final roundIndex =
                             tournament.status == TournamentStatus.completed
-                                ? index - 1
-                                : index;
+                            ? index - 1
+                            : index;
                         final round = rounds[roundIndex];
                         return _RoundCard(
                           round: round,
@@ -251,7 +251,9 @@ class _RoundCard extends ConsumerWidget {
       case BracketType.groupF:
       case BracketType.groupG:
       case BracketType.groupH:
-        final groupLetter = String.fromCharCode('A'.codeUnitAt(0) + (round.groupIndex ?? 0));
+        final groupLetter = String.fromCharCode(
+          'A'.codeUnitAt(0) + (round.groupIndex ?? 0),
+        );
         return 'Group $groupLetter';
     }
   }
@@ -276,9 +278,13 @@ class _RoundCard extends ConsumerWidget {
       case BracketType.knockout:
         // For groupKnockout knockout phase
         if (round.knockoutRoundName == 'gf') {
-          return round.isCompleted ? AppTheme.successColor : AppTheme.winnerColor;
+          return round.isCompleted
+              ? AppTheme.successColor
+              : AppTheme.winnerColor;
         }
-        return round.isCompleted ? AppTheme.successColor : AppTheme.primaryColor;
+        return round.isCompleted
+            ? AppTheme.successColor
+            : AppTheme.primaryColor;
       case BracketType.groupA:
       case BracketType.groupB:
       case BracketType.groupC:
@@ -287,7 +293,9 @@ class _RoundCard extends ConsumerWidget {
       case BracketType.groupF:
       case BracketType.groupG:
       case BracketType.groupH:
-        return round.isCompleted ? AppTheme.successColor : AppTheme.primaryColor;
+        return round.isCompleted
+            ? AppTheme.successColor
+            : AppTheme.primaryColor;
     }
   }
 
@@ -339,11 +347,7 @@ class _RoundCard extends ConsumerWidget {
               children: [
                 // Bracket icon for double elimination
                 if (tournamentType == TournamentType.doubleElimination) ...[
-                  Icon(
-                    _getBracketIcon(),
-                    color: _getBracketColor(),
-                    size: 20,
-                  ),
+                  Icon(_getBracketIcon(), color: _getBracketColor(), size: 20),
                   const SizedBox(width: 8),
                 ],
                 Expanded(
@@ -396,10 +400,7 @@ class _MatchRow extends ConsumerWidget {
   final Match match;
   final int tournamentId;
 
-  const _MatchRow({
-    required this.match,
-    required this.tournamentId,
-  });
+  const _MatchRow({required this.match, required this.tournamentId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -415,7 +416,8 @@ class _MatchRow extends ConsumerWidget {
 
         return InkWell(
           onTap: winner == null
-              ? () => context.push('/tournament/$tournamentId/match/${match.id}')
+              ? () =>
+                    context.push('/tournament/$tournamentId/match/${match.id}')
               : null,
           borderRadius: BorderRadius.circular(12),
           child: Container(
@@ -442,7 +444,11 @@ class _MatchRow extends ConsumerWidget {
   }
 
   Widget _buildMatchRow(
-      BuildContext context, Car? carA, Car? carB, Car? winner) {
+    BuildContext context,
+    Car? carA,
+    Car? carB,
+    Car? winner,
+  ) {
     final carAWon = winner?.id == carA?.id;
     final carBWon = winner?.id == carB?.id;
 
@@ -451,11 +457,7 @@ class _MatchRow extends ConsumerWidget {
       children: [
         // Car A
         Expanded(
-          child: _CarInfo(
-            car: carA,
-            isWinner: carAWon,
-            isLoser: carBWon,
-          ),
+          child: _CarInfo(car: carA, isWinner: carAWon, isLoser: carBWon),
         ),
 
         // VS
@@ -473,7 +475,9 @@ class _MatchRow extends ConsumerWidget {
               winner != null ? '!' : 'VS',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
-                color: winner != null ? AppTheme.successColor : AppTheme.primaryColor,
+                color: winner != null
+                    ? AppTheme.successColor
+                    : AppTheme.primaryColor,
               ),
             ),
           ),
@@ -520,7 +524,9 @@ class _CarInfo extends StatelessWidget {
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 13,
-            color: isLoser ? AppTheme.textSecondary.withValues(alpha: 0.5) : null,
+            color: isLoser
+                ? AppTheme.textSecondary.withValues(alpha: 0.5)
+                : null,
             decoration: isLoser ? TextDecoration.lineThrough : null,
           ),
           maxLines: 2,
@@ -536,10 +542,7 @@ class _CarAvatar extends StatelessWidget {
   final String? photoPath;
   final bool isWinner;
 
-  const _CarAvatar({
-    this.photoPath,
-    this.isWinner = false,
-  });
+  const _CarAvatar({this.photoPath, this.isWinner = false});
 
   @override
   Widget build(BuildContext context) {
@@ -547,19 +550,14 @@ class _CarAvatar extends StatelessWidget {
       clipBehavior: Clip.none,
       children: [
         // Photo
-        Container(
+        CarPhotoFrame(
+          photoPath: photoPath,
           width: 56,
           height: 56,
-          clipBehavior: Clip.antiAlias,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: photoPath != null && File(photoPath!).existsSync()
-              ? Image.file(File(photoPath!), fit: BoxFit.cover)
-              : Container(
-                  color: AppTheme.backgroundColor,
-                  child: const Icon(Icons.directions_car, size: 24),
-                ),
+          borderRadius: BorderRadius.circular(10),
+          imagePadding: 4,
+          imageFit: BoxFit.contain,
+          iconSize: 24,
         ),
         // Winner border overlay
         if (isWinner)
@@ -599,15 +597,10 @@ class _ChampionCard extends ConsumerWidget {
   final Car winner;
   final int tournamentId;
 
-  const _ChampionCard({
-    required this.winner,
-    required this.tournamentId,
-  });
+  const _ChampionCard({required this.winner, required this.tournamentId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final hasPhoto =
-        winner.photoPath.isNotEmpty && File(winner.photoPath).existsSync();
     final statsAsync = ref.watch(tournamentStatsProvider(tournamentId));
 
     return Card(
@@ -636,10 +629,10 @@ class _ChampionCard extends ConsumerWidget {
                 Text(
                   'CHAMPION',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: AppTheme.winnerColor,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.5,
-                      ),
+                    color: AppTheme.winnerColor,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.5,
+                  ),
                 ),
               ],
             ),
@@ -653,30 +646,21 @@ class _ChampionCard extends ConsumerWidget {
                 Stack(
                   children: [
                     // Photo
-                    Container(
+                    CarPhotoFrame(
+                      photoPath: winner.photoPath,
                       width: 80,
                       height: 80,
-                      clipBehavior: Clip.antiAlias,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppTheme.winnerColor.withValues(alpha: 0.3),
-                            blurRadius: 8,
-                            spreadRadius: 1,
-                          ),
-                        ],
-                      ),
-                      child: hasPhoto
-                          ? Image.file(File(winner.photoPath), fit: BoxFit.cover)
-                          : Container(
-                              color: AppTheme.backgroundColor,
-                              child: const Icon(
-                                Icons.directions_car,
-                                size: 40,
-                                color: AppTheme.textSecondary,
-                              ),
-                            ),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppTheme.winnerColor.withValues(alpha: 0.3),
+                          blurRadius: 8,
+                          spreadRadius: 1,
+                        ),
+                      ],
+                      imagePadding: 6,
+                      imageFit: BoxFit.contain,
+                      iconSize: 40,
                     ),
                     // Border overlay
                     Container(
@@ -700,10 +684,8 @@ class _ChampionCard extends ConsumerWidget {
                     children: [
                       Text(
                         winner.name,
-                        style:
-                            Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
+                        style: Theme.of(context).textTheme.headlineSmall
+                            ?.copyWith(fontWeight: FontWeight.bold),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -719,8 +701,7 @@ class _ChampionCard extends ConsumerWidget {
                               losses: 0,
                             ),
                           );
-                          final total =
-                              winnerStats.wins + winnerStats.losses;
+                          final total = winnerStats.wins + winnerStats.losses;
                           final winRate = total > 0
                               ? (winnerStats.wins / total * 100).round()
                               : 0;
@@ -734,8 +715,9 @@ class _ChampionCard extends ConsumerWidget {
                                   vertical: 6,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: AppTheme.successColor
-                                      .withValues(alpha: 0.2),
+                                  color: AppTheme.successColor.withValues(
+                                    alpha: 0.2,
+                                  ),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Row(
@@ -774,8 +756,9 @@ class _ChampionCard extends ConsumerWidget {
                                   vertical: 6,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: AppTheme.winnerColor
-                                      .withValues(alpha: 0.2),
+                                  color: AppTheme.winnerColor.withValues(
+                                    alpha: 0.2,
+                                  ),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Text(

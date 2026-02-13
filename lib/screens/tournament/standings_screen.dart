@@ -1,19 +1,16 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../data/models/tournament.dart';
 import '../../providers/tournament_provider.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/car_photo_frame.dart';
 
 /// Standings screen for round robin tournaments showing all cars ranked by score.
 class StandingsScreen extends ConsumerWidget {
   final int tournamentId;
 
-  const StandingsScreen({
-    super.key,
-    required this.tournamentId,
-  });
+  const StandingsScreen({super.key, required this.tournamentId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -41,7 +38,10 @@ class StandingsScreen extends ConsumerWidget {
 
               // Column headers
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 color: AppTheme.surfaceColor,
                 child: Row(
                   children: [
@@ -91,12 +91,9 @@ class StandingsScreen extends ConsumerWidget {
                       },
                     );
                   },
-                  loading: () => const Center(
-                    child: CircularProgressIndicator(),
-                  ),
-                  error: (error, _) => Center(
-                    child: Text('Error: $error'),
-                  ),
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
+                  error: (error, _) => Center(child: Text('Error: $error')),
                 ),
               ),
 
@@ -232,9 +229,6 @@ class _StandingsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasPhoto =
-        stat.car.photoPath.isNotEmpty && File(stat.car.photoPath).existsSync();
-
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       padding: const EdgeInsets.all(12),
@@ -246,11 +240,8 @@ class _StandingsRow extends StatelessWidget {
         border: isFirst
             ? Border.all(color: AppTheme.winnerColor, width: 2)
             : isSecond || isThird
-                ? Border.all(
-                    color: _rankColor!.withValues(alpha: 0.5),
-                    width: 1,
-                  )
-                : null,
+            ? Border.all(color: _rankColor!.withValues(alpha: 0.5), width: 1)
+            : null,
       ),
       child: Row(
         children: [
@@ -258,11 +249,7 @@ class _StandingsRow extends StatelessWidget {
           SizedBox(
             width: 40,
             child: _rankIcon != null
-                ? Icon(
-                    _rankIcon,
-                    color: _rankColor,
-                    size: 24,
-                  )
+                ? Icon(_rankIcon, color: _rankColor, size: 24)
                 : Text(
                     '#$rank',
                     style: TextStyle(
@@ -279,22 +266,17 @@ class _StandingsRow extends StatelessWidget {
             flex: 3,
             child: Row(
               children: [
-                Container(
+                CarPhotoFrame(
+                  photoPath: stat.car.photoPath,
                   width: 44,
                   height: 44,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
-                    border: isFirst
-                        ? Border.all(color: AppTheme.winnerColor, width: 2)
-                        : null,
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: hasPhoto
-                      ? Image.file(File(stat.car.photoPath), fit: BoxFit.cover)
-                      : Container(
-                          color: AppTheme.backgroundColor,
-                          child: const Icon(Icons.directions_car, size: 24),
-                        ),
+                  borderRadius: BorderRadius.circular(8),
+                  border: isFirst
+                      ? Border.all(color: AppTheme.winnerColor, width: 2)
+                      : null,
+                  imagePadding: 3,
+                  imageFit: BoxFit.contain,
+                  iconSize: 24,
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -314,16 +296,10 @@ class _StandingsRow extends StatelessWidget {
           ),
 
           // Wins
-          _StatCell(
-            value: '${stat.wins}',
-            color: AppTheme.successColor,
-          ),
+          _StatCell(value: '${stat.wins}', color: AppTheme.successColor),
 
           // Losses
-          _StatCell(
-            value: '${stat.losses}',
-            color: AppTheme.errorColor,
-          ),
+          _StatCell(value: '${stat.losses}', color: AppTheme.errorColor),
 
           // Win percentage
           _StatCell(
@@ -375,10 +351,7 @@ class _LegendItem extends StatelessWidget {
   final String label;
   final Color color;
 
-  const _LegendItem({
-    required this.label,
-    required this.color,
-  });
+  const _LegendItem({required this.label, required this.color});
 
   @override
   Widget build(BuildContext context) {
@@ -388,18 +361,12 @@ class _LegendItem extends StatelessWidget {
         Container(
           width: 8,
           height: 8,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-          ),
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         const SizedBox(width: 6),
         Text(
           label,
-          style: TextStyle(
-            fontSize: 11,
-            color: AppTheme.textSecondary,
-          ),
+          style: TextStyle(fontSize: 11, color: AppTheme.textSecondary),
         ),
       ],
     );

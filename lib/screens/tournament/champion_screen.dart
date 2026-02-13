@@ -1,17 +1,14 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../providers/tournament_provider.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/car_photo_frame.dart';
 
 class ChampionScreen extends ConsumerWidget {
   final int tournamentId;
 
-  const ChampionScreen({
-    super.key,
-    required this.tournamentId,
-  });
+  const ChampionScreen({super.key, required this.tournamentId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -37,9 +34,6 @@ class ChampionScreen extends ConsumerWidget {
               ),
             );
           }
-
-          final hasPhoto =
-              winner.photoPath.isNotEmpty && File(winner.photoPath).existsSync();
 
           return SafeArea(
             child: Column(
@@ -81,37 +75,24 @@ class ChampionScreen extends ConsumerWidget {
                         ),
                         const SizedBox(height: 24),
                         // Winner photo
-                        Container(
+                        CarPhotoFrame(
+                          photoPath: winner.photoPath,
                           width: 160,
                           height: 160,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: Colors.white,
-                              width: 5,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppTheme.winnerColor.withValues(alpha: 0.5),
-                                blurRadius: 30,
-                                spreadRadius: 10,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: Colors.white, width: 5),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppTheme.winnerColor.withValues(
+                                alpha: 0.5,
                               ),
-                            ],
-                          ),
-                          clipBehavior: Clip.antiAlias,
-                          child: hasPhoto
-                              ? Image.file(
-                                  File(winner.photoPath),
-                                  fit: BoxFit.cover,
-                                )
-                              : Container(
-                                  color: AppTheme.backgroundColor,
-                                  child: const Icon(
-                                    Icons.directions_car,
-                                    size: 80,
-                                    color: AppTheme.textSecondary,
-                                  ),
-                                ),
+                              blurRadius: 30,
+                              spreadRadius: 10,
+                            ),
+                          ],
+                          imagePadding: 10,
+                          imageFit: BoxFit.contain,
+                          iconSize: 80,
                         ),
                         const SizedBox(height: 20),
                         // Winner name
@@ -242,9 +223,6 @@ class _StatRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasPhoto =
-        stat.car.photoPath.isNotEmpty && File(stat.car.photoPath).existsSync();
-
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
@@ -281,22 +259,17 @@ class _StatRow extends StatelessWidget {
             const SizedBox(width: 8),
           ],
           // Car photo
-          Container(
+          CarPhotoFrame(
+            photoPath: stat.car.photoPath,
             width: 40,
             height: 40,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8),
-              border: isChampion
-                  ? Border.all(color: AppTheme.winnerColor, width: 2)
-                  : null,
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: hasPhoto
-                ? Image.file(File(stat.car.photoPath), fit: BoxFit.cover)
-                : Container(
-                    color: AppTheme.backgroundColor,
-                    child: const Icon(Icons.directions_car, size: 20),
-                  ),
+            borderRadius: BorderRadius.circular(8),
+            border: isChampion
+                ? Border.all(color: AppTheme.winnerColor, width: 2)
+                : null,
+            imagePadding: 3,
+            imageFit: BoxFit.contain,
+            iconSize: 20,
           ),
           const SizedBox(width: 12),
           // Car name
@@ -331,10 +304,7 @@ class _StatRow extends StatelessWidget {
                 ),
                 const Text(
                   ' W  ',
-                  style: TextStyle(
-                    color: AppTheme.textSecondary,
-                    fontSize: 12,
-                  ),
+                  style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
                 ),
                 Text(
                   '${stat.losses}',
@@ -346,10 +316,7 @@ class _StatRow extends StatelessWidget {
                 ),
                 const Text(
                   ' L',
-                  style: TextStyle(
-                    color: AppTheme.textSecondary,
-                    fontSize: 12,
-                  ),
+                  style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
                 ),
               ],
             ),
