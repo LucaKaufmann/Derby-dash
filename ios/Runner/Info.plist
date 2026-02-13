@@ -46,5 +46,7 @@
 	<string>Derby Dash needs photo library access to choose car photos.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Derby Dash needs access to save car photos to your library.</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 </dict>
 </plist>
