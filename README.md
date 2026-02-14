@@ -18,6 +18,8 @@ A local-first, offline-capable Flutter app for managing Hot Wheels car tournamen
 
 <!-- Add screenshots here -->
 
+For automated iOS screenshot capture workflows, see [IOS_SCREENSHOT_AUTOMATION.md](IOS_SCREENSHOT_AUTOMATION.md).
+
 ## Getting Started
 
 ### Prerequisites
