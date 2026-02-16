@@ -1,11 +1,13 @@
 import 'dart:convert';
+import 'dart:math';
 import 'package:isar/isar.dart';
 import '../data/models/models.dart';
 
 class TournamentService {
   final Isar _isar;
+  final Random _random;
 
-  TournamentService(this._isar);
+  TournamentService(this._isar, {Random? random}) : _random = random ?? Random();
 
   /// Check if a number is a power of 2 (2, 4, 8, 16, 32, 64, etc.)
   bool _isPowerOfTwo(int n) => n > 0 && (n & (n - 1)) == 0;
@@ -57,7 +59,7 @@ class TournamentService {
         cars.add(car);
       }
     }
-    cars.shuffle();
+    cars.shuffle(_random);
 
     // Create tournament
     final tournament = Tournament()
@@ -152,7 +154,7 @@ class TournamentService {
         allMatches.add((cars[i], cars[j]));
       }
     }
-    allMatches.shuffle();
+    allMatches.shuffle(_random);
 
     // Create a single round with all matches
     final round = Round()
@@ -724,8 +726,12 @@ class TournamentService {
       for (final match in lr.matches) {
         await match.carA.load();
         await match.carB.load();
-        if (match.carA.value != null) carsInLosersBracket.add(match.carA.value!.id);
-        if (match.carB.value != null) carsInLosersBracket.add(match.carB.value!.id);
+        if (match.carA.value != null) {
+          carsInLosersBracket.add(match.carA.value!.id);
+        }
+        if (match.carB.value != null) {
+          carsInLosersBracket.add(match.carB.value!.id);
+        }
       }
     }
 
