@@ -61,80 +61,98 @@ class TournamentTypeScreen extends ConsumerWidget {
         ),
       ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: 24),
-              Text(
-                'SELECT FORMAT',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1,
-                    ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Choose how your tournament will be played',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppTheme.textSecondary,
-                    ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 48),
-              Expanded(
-                child: Column(
-                  children: [
-                    // Basic tournament types (always visible)
-                    // Use fixed height when not in advanced mode, expand when in advanced mode
-                    if (advancedMode)
-                      Expanded(
-                        child: _buildBasicTypeRow(context),
-                      )
-                    else
-                      SizedBox(
-                        height: 240,
-                        child: _buildBasicTypeRow(context),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final contentPadding = constraints.maxWidth >= 900 ? 32.0 : 24.0;
+
+            return Align(
+              alignment: Alignment.topCenter,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 980),
+                child: Padding(
+                  padding: EdgeInsets.all(contentPadding),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const SizedBox(height: 24),
+                      Text(
+                        'SELECT FORMAT',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1,
+                            ),
+                        textAlign: TextAlign.center,
                       ),
-                    // Advanced tournament types (only visible in advanced mode)
-                    if (advancedMode) ...[
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Choose how your tournament will be played',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: AppTheme.textSecondary,
+                            ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 48),
                       Expanded(
-                        child: Row(
+                        child: Column(
                           children: [
-                            Expanded(
-                              child: _TypeCard(
-                                label: 'ROUND ROBIN',
-                                subtitle: 'Everyone plays everyone',
-                                description: 'Most wins takes the crown',
-                                icon: Icons.loop,
-                                color: AppTheme.secondaryColor,
-                                onTap: () => _selectType(context, TournamentType.roundRobin),
+                            // Basic tournament types (always visible)
+                            // Use fixed height when not in advanced mode, expand when in advanced mode
+                            if (advancedMode)
+                              Expanded(
+                                child: _buildBasicTypeRow(context),
+                              )
+                            else
+                              SizedBox(
+                                height: 240,
+                                child: _buildBasicTypeRow(context),
                               ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: _TypeCard(
-                                label: 'GROUP + KO',
-                                subtitle: 'Groups then playoffs',
-                                description: 'Best-of series in finals',
-                                icon: Icons.view_module,
-                                color: Colors.purple,
-                                onTap: () => _selectType(context, TournamentType.groupKnockout),
+                            // Advanced tournament types (only visible in advanced mode)
+                            if (advancedMode) ...[
+                              const SizedBox(height: 16),
+                              Expanded(
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: _TypeCard(
+                                        label: 'ROUND ROBIN',
+                                        subtitle: 'Everyone plays everyone',
+                                        description: 'Most wins takes the crown',
+                                        icon: Icons.loop,
+                                        color: AppTheme.secondaryColor,
+                                        onTap: () => _selectType(
+                                          context,
+                                          TournamentType.roundRobin,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 16),
+                                    Expanded(
+                                      child: _TypeCard(
+                                        label: 'GROUP + KO',
+                                        subtitle: 'Groups then playoffs',
+                                        description: 'Best-of series in finals',
+                                        icon: Icons.view_module,
+                                        color: Colors.purple,
+                                        onTap: () => _selectType(
+                                          context,
+                                          TournamentType.groupKnockout,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
+                            ],
                           ],
                         ),
                       ),
+                      const SizedBox(height: 24),
                     ],
-                  ],
+                  ),
                 ),
               ),
-              const SizedBox(height: 24),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );

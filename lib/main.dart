@@ -12,10 +12,21 @@ void main() async {
   // Initialize database
   await DatabaseService.instance;
 
-  // Lock to portrait mode for kid-friendly experience
-  await SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-  ]);
+  // Keep phones portrait-first, but allow iPad/tablet orientations.
+  final view = WidgetsBinding.instance.platformDispatcher.views.first;
+  final shortestSide = view.physicalSize.shortestSide / view.devicePixelRatio;
+  final isTablet = shortestSide >= 600;
+
+  await SystemChrome.setPreferredOrientations(
+    isTablet
+        ? const [
+            DeviceOrientation.portraitUp,
+            DeviceOrientation.portraitDown,
+            DeviceOrientation.landscapeLeft,
+            DeviceOrientation.landscapeRight,
+          ]
+        : const [DeviceOrientation.portraitUp],
+  );
 
   // Set system UI overlay style
   SystemChrome.setSystemUIOverlayStyle(

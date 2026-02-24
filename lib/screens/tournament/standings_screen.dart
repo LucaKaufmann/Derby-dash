@@ -31,97 +31,103 @@ class StandingsScreen extends ConsumerWidget {
             return const Center(child: Text('Tournament not found'));
           }
 
-          return Column(
-            children: [
-              // Status banner
-              _StatusBanner(tournament: tournament),
+          return Align(
+            alignment: Alignment.topCenter,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1100),
+              child: Column(
+                children: [
+                  // Status banner
+                  _StatusBanner(tournament: tournament),
 
-              // Column headers
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-                color: AppTheme.surfaceColor,
-                child: Row(
-                  children: [
-                    const SizedBox(width: 40), // Rank column
-                    const Expanded(
-                      flex: 3,
-                      child: Text(
-                        'CAR',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.textSecondary,
-                          letterSpacing: 1,
-                        ),
-                      ),
+                  // Column headers
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
                     ),
-                    _HeaderCell('W'),
-                    _HeaderCell('L'),
-                    _HeaderCell('WIN %'),
-                    _HeaderCell('PTS'),
-                  ],
-                ),
-              ),
+                    color: AppTheme.surfaceColor,
+                    child: Row(
+                      children: [
+                        const SizedBox(width: 40), // Rank column
+                        const Expanded(
+                          flex: 3,
+                          child: Text(
+                            'CAR',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.textSecondary,
+                              letterSpacing: 1,
+                            ),
+                          ),
+                        ),
+                        _HeaderCell('W'),
+                        _HeaderCell('L'),
+                        _HeaderCell('WIN %'),
+                        _HeaderCell('PTS'),
+                      ],
+                    ),
+                  ),
 
-              // Standings list
-              Expanded(
-                child: statsAsync.when(
-                  data: (stats) {
-                    if (stats.isEmpty) {
-                      return const Center(
-                        child: Text('No standings data available'),
-                      );
-                    }
+                  // Standings list
+                  Expanded(
+                    child: statsAsync.when(
+                      data: (stats) {
+                        if (stats.isEmpty) {
+                          return const Center(
+                            child: Text('No standings data available'),
+                          );
+                        }
 
-                    return ListView.builder(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      itemCount: stats.length,
-                      itemBuilder: (context, index) {
-                        final stat = stats[index];
-                        return _StandingsRow(
-                          stat: stat,
-                          rank: index + 1,
-                          isFirst: index == 0,
-                          isSecond: index == 1,
-                          isThird: index == 2,
+                        return ListView.builder(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          itemCount: stats.length,
+                          itemBuilder: (context, index) {
+                            final stat = stats[index];
+                            return _StandingsRow(
+                              stat: stat,
+                              rank: index + 1,
+                              isFirst: index == 0,
+                              isSecond: index == 1,
+                              isThird: index == 2,
+                            );
+                          },
                         );
                       },
-                    );
-                  },
-                  loading: () =>
-                      const Center(child: CircularProgressIndicator()),
-                  error: (error, _) => Center(child: Text('Error: $error')),
-                ),
-              ),
+                      loading: () =>
+                          const Center(child: CircularProgressIndicator()),
+                      error: (error, _) => Center(child: Text('Error: $error')),
+                    ),
+                  ),
 
-              // Legend
-              Container(
-                padding: const EdgeInsets.all(16),
-                color: AppTheme.surfaceColor.withValues(alpha: 0.5),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _LegendItem(
-                      label: 'W = Wins',
-                      color: AppTheme.successColor,
+                  // Legend
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    color: AppTheme.surfaceColor.withValues(alpha: 0.5),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _LegendItem(
+                          label: 'W = Wins',
+                          color: AppTheme.successColor,
+                        ),
+                        const SizedBox(width: 24),
+                        _LegendItem(
+                          label: 'L = Losses',
+                          color: AppTheme.errorColor,
+                        ),
+                        const SizedBox(width: 24),
+                        _LegendItem(
+                          label: 'PTS = Points',
+                          color: AppTheme.primaryColor,
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 24),
-                    _LegendItem(
-                      label: 'L = Losses',
-                      color: AppTheme.errorColor,
-                    ),
-                    const SizedBox(width: 24),
-                    _LegendItem(
-                      label: 'PTS = Points',
-                      color: AppTheme.primaryColor,
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
+            ),
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),

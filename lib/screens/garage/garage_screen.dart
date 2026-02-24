@@ -87,150 +87,202 @@ class _GarageScreenState extends ConsumerState<GarageScreen> {
                       .contains(_searchQuery.toLowerCase()))
                   .toList();
 
-          return Column(
-            children: [
-              // Search and sort row
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: IntrinsicHeight(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Search bar
-                      Expanded(
-                        child: TextField(
-                          controller: _searchController,
-                          decoration: InputDecoration(
-                            hintText: 'Search cars...',
-                            prefixIcon: const Icon(Icons.search),
-                            suffixIcon: _searchQuery.isNotEmpty
-                                ? IconButton(
-                                    icon: const Icon(Icons.clear),
-                                    onPressed: () {
-                                      _searchController.clear();
-                                      setState(() => _searchQuery = '');
-                                    },
-                                  )
-                                : null,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            filled: true,
-                            fillColor: AppTheme.surfaceColor,
-                          ),
-                          onChanged: (value) =>
-                              setState(() => _searchQuery = value),
-                        ),
+          final sortMenu = PopupMenuButton<GarageSortOption>(
+            initialValue: currentSort,
+            onSelected: (option) {
+              ref.read(garageSortProvider.notifier).setSort(option);
+            },
+            itemBuilder: (context) => GarageSortOption.values
+                .map((option) => PopupMenuItem(
+                      value: option,
+                      child: Row(
+                        children: [
+                          if (option == currentSort)
+                            const Icon(Icons.check, size: 20)
+                          else
+                            const SizedBox(width: 20),
+                          const SizedBox(width: 8),
+                          Text(_getSortLabel(option)),
+                        ],
                       ),
-                      const SizedBox(width: 12),
-                      // Sort dropdown
-                      PopupMenuButton<GarageSortOption>(
-                        initialValue: currentSort,
-                        onSelected: (option) {
-                          ref.read(garageSortProvider.notifier).setSort(option);
-                        },
-                        itemBuilder: (context) => GarageSortOption.values
-                            .map((option) => PopupMenuItem(
-                                  value: option,
-                                  child: Row(
-                                    children: [
-                                      if (option == currentSort)
-                                        const Icon(Icons.check, size: 20)
-                                      else
-                                        const SizedBox(width: 20),
-                                      const SizedBox(width: 8),
-                                      Text(_getSortLabel(option)),
-                                    ],
+                    ))
+                .toList(),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: AppTheme.surfaceColor,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppTheme.textSecondary),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.sort, size: 20),
+                  const SizedBox(width: 4),
+                  Text(
+                    _getSortLabel(currentSort),
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ],
+              ),
+            ),
+          );
+
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              final compactControls = constraints.maxWidth < 760;
+              final horizontalPadding = constraints.maxWidth >= 900 ? 24.0 : 16.0;
+
+              return Align(
+                alignment: Alignment.topCenter,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 1200),
+                  child: Column(
+                    children: [
+                      // Search and sort row
+                      Padding(
+                        padding: EdgeInsets.all(horizontalPadding),
+                        child: compactControls
+                            ? Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  TextField(
+                                    controller: _searchController,
+                                    decoration: InputDecoration(
+                                      hintText: 'Search cars...',
+                                      prefixIcon: const Icon(Icons.search),
+                                      suffixIcon: _searchQuery.isNotEmpty
+                                          ? IconButton(
+                                              icon: const Icon(Icons.clear),
+                                              onPressed: () {
+                                                _searchController.clear();
+                                                setState(() => _searchQuery = '');
+                                              },
+                                            )
+                                          : null,
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      filled: true,
+                                      fillColor: AppTheme.surfaceColor,
+                                    ),
+                                    onChanged: (value) =>
+                                        setState(() => _searchQuery = value),
                                   ),
-                                ))
-                            .toList(),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          decoration: BoxDecoration(
-                            color: AppTheme.surfaceColor,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: AppTheme.textSecondary),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.sort, size: 20),
-                              const SizedBox(width: 4),
-                              Text(
-                                _getSortLabel(currentSort),
-                                style: Theme.of(context).textTheme.bodyMedium,
+                                  const SizedBox(height: 12),
+                                  Align(
+                                    alignment: Alignment.centerRight,
+                                    child: sortMenu,
+                                  ),
+                                ],
+                              )
+                            : IntrinsicHeight(
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  children: [
+                                    Expanded(
+                                      child: TextField(
+                                        controller: _searchController,
+                                        decoration: InputDecoration(
+                                          hintText: 'Search cars...',
+                                          prefixIcon: const Icon(Icons.search),
+                                          suffixIcon: _searchQuery.isNotEmpty
+                                              ? IconButton(
+                                                  icon: const Icon(Icons.clear),
+                                                  onPressed: () {
+                                                    _searchController.clear();
+                                                    setState(() => _searchQuery = '');
+                                                  },
+                                                )
+                                              : null,
+                                          border: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                          filled: true,
+                                          fillColor: AppTheme.surfaceColor,
+                                        ),
+                                        onChanged: (value) =>
+                                            setState(() => _searchQuery = value),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    sortMenu,
+                                  ],
+                                ),
                               ),
-                            ],
-                          ),
-                        ),
+                      ),
+                      // Results
+                      Expanded(
+                        child: filteredCars.isEmpty
+                            ? Center(
+                                child: Text(
+                                  'No cars match "$_searchQuery"',
+                                  style: Theme.of(context).textTheme.bodyLarge,
+                                ),
+                              )
+                            : GridView.builder(
+                                padding: EdgeInsets.fromLTRB(
+                                  horizontalPadding,
+                                  0,
+                                  horizontalPadding,
+                                  16,
+                                ),
+                                gridDelegate:
+                                    const SliverGridDelegateWithMaxCrossAxisExtent(
+                                  maxCrossAxisExtent: 280,
+                                  crossAxisSpacing: 16,
+                                  mainAxisSpacing: 16,
+                                  childAspectRatio: 0.82,
+                                ),
+                                itemCount: filteredCars.length,
+                                itemBuilder: (context, index) {
+                                  final item = filteredCars[index];
+                                  return _CarCard(
+                                    name: item.car.name,
+                                    photoPath: item.car.photoPath,
+                                    stats: item.stats,
+                                    onTap: () =>
+                                        context.push('/garage/car/${item.car.id}'),
+                                    onDelete: () async {
+                                      final confirmed = await showDialog<bool>(
+                                        context: context,
+                                        builder: (context) => AlertDialog(
+                                          title: const Text('Delete Car?'),
+                                          content: Text(
+                                              'Remove ${item.car.name} from your garage?'),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () =>
+                                                  Navigator.pop(context, false),
+                                              child: const Text('CANCEL'),
+                                            ),
+                                            TextButton(
+                                              onPressed: () =>
+                                                  Navigator.pop(context, true),
+                                              style: TextButton.styleFrom(
+                                                foregroundColor: AppTheme.errorColor,
+                                              ),
+                                              child: const Text('DELETE'),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+
+                                      if (confirmed == true) {
+                                        ref
+                                            .read(carsProvider.notifier)
+                                            .deleteCar(item.car.id);
+                                      }
+                                    },
+                                  );
+                                },
+                              ),
                       ),
                     ],
                   ),
                 ),
-              ),
-              // Results
-              Expanded(
-                child: filteredCars.isEmpty
-                    ? Center(
-                        child: Text(
-                          'No cars match "$_searchQuery"',
-                          style: Theme.of(context).textTheme.bodyLarge,
-                        ),
-                      )
-                    : GridView.builder(
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          crossAxisSpacing: 16,
-                          mainAxisSpacing: 16,
-                          childAspectRatio: 0.8,
-                        ),
-                        itemCount: filteredCars.length,
-                        itemBuilder: (context, index) {
-                          final item = filteredCars[index];
-                          return _CarCard(
-                            name: item.car.name,
-                            photoPath: item.car.photoPath,
-                            stats: item.stats,
-                            onTap: () =>
-                                context.push('/garage/car/${item.car.id}'),
-                            onDelete: () async {
-                              final confirmed = await showDialog<bool>(
-                                context: context,
-                                builder: (context) => AlertDialog(
-                                  title: const Text('Delete Car?'),
-                                  content: Text(
-                                      'Remove ${item.car.name} from your garage?'),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () =>
-                                          Navigator.pop(context, false),
-                                      child: const Text('CANCEL'),
-                                    ),
-                                    TextButton(
-                                      onPressed: () =>
-                                          Navigator.pop(context, true),
-                                      style: TextButton.styleFrom(
-                                        foregroundColor: AppTheme.errorColor,
-                                      ),
-                                      child: const Text('DELETE'),
-                                    ),
-                                  ],
-                                ),
-                              );
-
-                              if (confirmed == true) {
-                                ref
-                                    .read(carsProvider.notifier)
-                                    .deleteCar(item.car.id);
-                              }
-                            },
-                          );
-                        },
-                      ),
-              ),
-            ],
+              );
+            },
           );
         },
         loading: () => const Center(

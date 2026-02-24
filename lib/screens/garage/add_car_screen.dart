@@ -119,109 +119,140 @@ class _AddCarScreenState extends ConsumerState<AddCarScreen> {
         ),
       ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            children: [
-              // Photo area (optional)
-              Expanded(
-                child: GestureDetector(
-                  onTap: _takePhoto,
-                  child: Container(
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: AppTheme.surfaceColor,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: _photoPath != null
-                            ? AppTheme.primaryColor
-                            : AppTheme.textSecondary.withValues(alpha: 0.3),
-                        width: 3,
-                      ),
-                    ),
-                    clipBehavior: Clip.antiAlias,
-                    child: _photoPath != null
-                        ? Stack(
-                            fit: StackFit.expand,
-                            children: [
-                              Image.file(
-                                File(_photoPath!),
-                                fit: BoxFit.cover,
-                              ),
-                              Positioned(
-                                bottom: 12,
-                                right: 12,
-                                child: FloatingActionButton.small(
-                                  onPressed: _takePhoto,
-                                  backgroundColor: AppTheme.surfaceColor,
-                                  child: const Icon(Icons.camera_alt),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final contentPadding = constraints.maxWidth >= 900 ? 32.0 : 24.0;
+
+            return Align(
+              alignment: Alignment.topCenter,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 700),
+                child: Padding(
+                  padding: EdgeInsets.all(contentPadding),
+                  child: Column(
+                    children: [
+                      // Photo area (optional)
+                      Expanded(
+                        child: Center(
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(
+                              maxWidth: 520,
+                              maxHeight: 520,
+                            ),
+                            child: AspectRatio(
+                              aspectRatio: 1,
+                              child: GestureDetector(
+                                onTap: _takePhoto,
+                                child: Container(
+                                  width: double.infinity,
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.surfaceColor,
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                      color: _photoPath != null
+                                          ? AppTheme.primaryColor
+                                          : AppTheme.textSecondary
+                                              .withValues(alpha: 0.3),
+                                      width: 3,
+                                    ),
+                                  ),
+                                  clipBehavior: Clip.antiAlias,
+                                  child: _photoPath != null
+                                      ? Stack(
+                                          fit: StackFit.expand,
+                                          children: [
+                                            Image.file(
+                                              File(_photoPath!),
+                                              fit: BoxFit.cover,
+                                            ),
+                                            Positioned(
+                                              bottom: 12,
+                                              right: 12,
+                                              child: FloatingActionButton.small(
+                                                onPressed: _takePhoto,
+                                                backgroundColor:
+                                                    AppTheme.surfaceColor,
+                                                child: const Icon(
+                                                  Icons.camera_alt,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        )
+                                      : Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Icon(
+                                              Icons.add_a_photo,
+                                              size: 64,
+                                              color: AppTheme.textSecondary
+                                                  .withValues(alpha: 0.5),
+                                            ),
+                                            const SizedBox(height: 16),
+                                            Text(
+                                              'TAP TO ADD PHOTO',
+                                              style: TextStyle(
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.bold,
+                                                color: AppTheme.textSecondary
+                                                    .withValues(alpha: 0.5),
+                                                letterSpacing: 1,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 8),
+                                            Text(
+                                              '(optional)',
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                color: AppTheme.textSecondary
+                                                    .withValues(alpha: 0.4),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                 ),
                               ),
-                            ],
-                          )
-                        : Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.add_a_photo,
-                                size: 64,
-                                color: AppTheme.textSecondary.withValues(alpha: 0.5),
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                'TAP TO ADD PHOTO',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppTheme.textSecondary.withValues(alpha: 0.5),
-                                  letterSpacing: 1,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                '(optional)',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: AppTheme.textSecondary.withValues(alpha: 0.4),
-                                ),
-                              ),
-                            ],
+                            ),
                           ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Name input
+                      TextField(
+                        controller: _nameController,
+                        autofocus: true,
+                        textCapitalization: TextCapitalization.words,
+                        style: const TextStyle(fontSize: 24),
+                        decoration: const InputDecoration(
+                          hintText: 'Enter car name',
+                          prefixIcon: Icon(Icons.edit, size: 28),
+                        ),
+                        onSubmitted: (_) => _saveCar(),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Save button
+                      ElevatedButton(
+                        onPressed: _isLoading ? null : _saveCar,
+                        child: _isLoading
+                            ? const SizedBox(
+                                height: 24,
+                                width: 24,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 3,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Text('SAVE CAR'),
+                      ),
+                    ],
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
-
-              // Name input
-              TextField(
-                controller: _nameController,
-                autofocus: true,
-                textCapitalization: TextCapitalization.words,
-                style: const TextStyle(fontSize: 24),
-                decoration: const InputDecoration(
-                  hintText: 'Enter car name',
-                  prefixIcon: Icon(Icons.edit, size: 28),
-                ),
-                onSubmitted: (_) => _saveCar(),
-              ),
-              const SizedBox(height: 24),
-
-              // Save button
-              ElevatedButton(
-                onPressed: _isLoading ? null : _saveCar,
-                child: _isLoading
-                    ? const SizedBox(
-                        height: 24,
-                        width: 24,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 3,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Text('SAVE CAR'),
-              ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );

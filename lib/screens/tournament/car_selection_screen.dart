@@ -199,279 +199,331 @@ class _CarSelectionScreenState extends ConsumerState<CarSelectionScreen> {
           onPressed: () => context.pop(),
         ),
       ),
-      body: Column(
-        children: [
-          // Tournament type indicator
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            color: AppTheme.primaryColor.withValues(alpha: 0.1),
-            child: Row(
-              children: [
-                Icon(
-                  _getTypeIcon(),
-                  color: AppTheme.primaryColor,
-                  size: 20,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        _tournamentTypeName.toUpperCase(),
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.primaryColor,
-                          letterSpacing: 1,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        _requirementText,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppTheme.textSecondary.withValues(alpha: 0.8),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final horizontalPadding = constraints.maxWidth >= 900 ? 24.0 : 16.0;
 
-          // Search bar
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Search cars...',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: _searchQuery.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          setState(() {
-                            _searchController.clear();
-                            _searchQuery = '';
-                          });
-                        },
-                      )
-                    : null,
-                filled: true,
-                fillColor: AppTheme.surfaceColor,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              ),
-              onChanged: (value) {
-                setState(() {
-                  _searchQuery = value.toLowerCase();
-                });
-              },
-            ),
-          ),
-
-          // Selection count and actions (hidden when searching)
-          if (_searchQuery.isEmpty) ...[
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
+          return Align(
+            alignment: Alignment.topCenter,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1200),
+              child: Column(
                 children: [
+                  // Tournament type indicator
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: _isValidCarCount
-                          ? AppTheme.successColor
-                          : _selectedCarIds.isNotEmpty
-                              ? Colors.orange
-                              : AppTheme.surfaceColor,
-                      borderRadius: BorderRadius.circular(20),
+                    width: double.infinity,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: horizontalPadding,
+                      vertical: 12,
                     ),
+                    color: AppTheme.primaryColor.withValues(alpha: 0.1),
                     child: Row(
-                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
-                          _isValidCarCount ? Icons.check : Icons.directions_car,
-                          size: 18,
-                          color: _selectedCarIds.isNotEmpty ? Colors.white : AppTheme.textSecondary,
+                          _getTypeIcon(),
+                          color: AppTheme.primaryColor,
+                          size: 20,
                         ),
-                        const SizedBox(width: 8),
-                        Text(
-                          '${_selectedCarIds.length} selected',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: _selectedCarIds.isNotEmpty ? Colors.white : AppTheme.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Spacer(),
-                  carsAsync.maybeWhen(
-                    data: (cars) {
-                      final filteredCars = _filterCars(cars);
-                      return Row(
-                        children: [
-                          TextButton(
-                            onPressed: _selectedCarIds.isEmpty ? null : _deselectAll,
-                            child: const Text('Clear'),
-                          ),
-                          const SizedBox(width: 8),
-                          TextButton(
-                            onPressed: filteredCars.length == _selectedCarIds.length
-                                ? null
-                                : () => _selectAll(filteredCars),
-                            child: const Text('Select All'),
-                          ),
-                        ],
-                      );
-                    },
-                    orElse: () => const SizedBox.shrink(),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 8),
-          ],
-
-          // Car Grid
-          Expanded(
-            child: carsAsync.when(
-              data: (cars) {
-                final filteredCars = _filterCars(cars);
-
-                if (cars.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.directions_car,
-                          size: 80,
-                          color: AppTheme.textSecondary,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'No cars in garage!',
-                          style: Theme.of(context).textTheme.headlineMedium,
-                        ),
-                        const SizedBox(height: 16),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: ElevatedButton(
-                            onPressed: () => context.push('/garage'),
-                            child: const Text('GO TO GARAGE'),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-
-                if (filteredCars.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.search_off,
-                          size: 64,
-                          color: AppTheme.textSecondary,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'No cars match "$_searchQuery"',
-                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                color: AppTheme.textSecondary,
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _tournamentTypeName.toUpperCase(),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: AppTheme.primaryColor,
+                                  letterSpacing: 1,
+                                ),
                               ),
+                              const SizedBox(height: 2),
+                              Text(
+                                _requirementText,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppTheme.textSecondary
+                                      .withValues(alpha: 0.8),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
-                  );
-                }
-
-                return GridView.builder(
-                  padding: const EdgeInsets.all(16),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                    childAspectRatio: 0.75,
                   ),
-                  itemCount: filteredCars.length,
-                  itemBuilder: (context, index) {
-                    final car = filteredCars[index];
-                    final isSelected = _selectedCarIds.contains(car.id);
 
-                    return _SelectableCarCard(
-                      car: car,
-                      isSelected: isSelected,
-                      onTap: () {
+                  // Search bar
+                  Padding(
+                    padding: EdgeInsets.all(horizontalPadding),
+                    child: TextField(
+                      controller: _searchController,
+                      decoration: InputDecoration(
+                        hintText: 'Search cars...',
+                        prefixIcon: const Icon(Icons.search),
+                        suffixIcon: _searchQuery.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(Icons.clear),
+                                onPressed: () {
+                                  setState(() {
+                                    _searchController.clear();
+                                    _searchQuery = '';
+                                  });
+                                },
+                              )
+                            : null,
+                        filled: true,
+                        fillColor: AppTheme.surfaceColor,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                      ),
+                      onChanged: (value) {
                         setState(() {
-                          if (isSelected) {
-                            _selectedCarIds.remove(car.id);
-                          } else {
-                            _selectedCarIds.add(car.id);
-                          }
+                          _searchQuery = value.toLowerCase();
                         });
                       },
-                    );
-                  },
-                );
-              },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (error, _) => Center(child: Text('Error: $error')),
-            ),
-          ),
+                    ),
+                  ),
 
-          // Validation message and Start Button (hidden when searching)
-          if (_searchQuery.isEmpty) ...[
-            if (_validationMessage != null)
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                color: Colors.orange.withValues(alpha: 0.1),
-                child: Row(
-                  children: [
-                    const Icon(Icons.info_outline, color: Colors.orange, size: 18),
-                    const SizedBox(width: 8),
-                    Text(
-                      _validationMessage!,
-                      style: const TextStyle(
-                        color: Colors.orange,
-                        fontWeight: FontWeight.w500,
+                  // Selection count and actions (hidden when searching)
+                  if (_searchQuery.isEmpty) ...[
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: _isValidCarCount
+                                  ? AppTheme.successColor
+                                  : _selectedCarIds.isNotEmpty
+                                      ? Colors.orange
+                                      : AppTheme.surfaceColor,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  _isValidCarCount
+                                      ? Icons.check
+                                      : Icons.directions_car,
+                                  size: 18,
+                                  color: _selectedCarIds.isNotEmpty
+                                      ? Colors.white
+                                      : AppTheme.textSecondary,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  '${_selectedCarIds.length} selected',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: _selectedCarIds.isNotEmpty
+                                        ? Colors.white
+                                        : AppTheme.textSecondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Spacer(),
+                          carsAsync.maybeWhen(
+                            data: (cars) {
+                              final filteredCars = _filterCars(cars);
+                              return Row(
+                                children: [
+                                  TextButton(
+                                    onPressed:
+                                        _selectedCarIds.isEmpty ? null : _deselectAll,
+                                    child: const Text('Clear'),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  TextButton(
+                                    onPressed: filteredCars.length ==
+                                            _selectedCarIds.length
+                                        ? null
+                                        : () => _selectAll(filteredCars),
+                                    child: const Text('Select All'),
+                                  ),
+                                ],
+                              );
+                            },
+                            orElse: () => const SizedBox.shrink(),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+
+                  // Car Grid
+                  Expanded(
+                    child: carsAsync.when(
+                      data: (cars) {
+                        final filteredCars = _filterCars(cars);
+
+                        if (cars.isEmpty) {
+                          return Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(
+                                  Icons.directions_car,
+                                  size: 80,
+                                  color: AppTheme.textSecondary,
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'No cars in garage!',
+                                  style:
+                                      Theme.of(context).textTheme.headlineMedium,
+                                ),
+                                const SizedBox(height: 16),
+                                Padding(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: horizontalPadding,
+                                  ),
+                                  child: ElevatedButton(
+                                    onPressed: () => context.push('/garage'),
+                                    child: const Text('GO TO GARAGE'),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+
+                        if (filteredCars.isEmpty) {
+                          return Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(
+                                  Icons.search_off,
+                                  size: 64,
+                                  color: AppTheme.textSecondary,
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'No cars match "$_searchQuery"',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyLarge
+                                      ?.copyWith(
+                                        color: AppTheme.textSecondary,
+                                      ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+
+                        return GridView.builder(
+                          padding: EdgeInsets.all(horizontalPadding),
+                          gridDelegate:
+                              const SliverGridDelegateWithMaxCrossAxisExtent(
+                            maxCrossAxisExtent: 220,
+                            crossAxisSpacing: 12,
+                            mainAxisSpacing: 12,
+                            childAspectRatio: 0.75,
+                          ),
+                          itemCount: filteredCars.length,
+                          itemBuilder: (context, index) {
+                            final car = filteredCars[index];
+                            final isSelected = _selectedCarIds.contains(car.id);
+
+                            return _SelectableCarCard(
+                              car: car,
+                              isSelected: isSelected,
+                              onTap: () {
+                                setState(() {
+                                  if (isSelected) {
+                                    _selectedCarIds.remove(car.id);
+                                  } else {
+                                    _selectedCarIds.add(car.id);
+                                  }
+                                });
+                              },
+                            );
+                          },
+                        );
+                      },
+                      loading: () =>
+                          const Center(child: CircularProgressIndicator()),
+                      error: (error, _) => Center(child: Text('Error: $error')),
+                    ),
+                  ),
+
+                  // Validation message and Start Button (hidden when searching)
+                  if (_searchQuery.isEmpty) ...[
+                    if (_validationMessage != null)
+                      Container(
+                        width: double.infinity,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: horizontalPadding,
+                          vertical: 8,
+                        ),
+                        color: Colors.orange.withValues(alpha: 0.1),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.info_outline,
+                              color: Colors.orange,
+                              size: 18,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              _validationMessage!,
+                              style: const TextStyle(
+                                color: Colors.orange,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                    // Start Button
+                    SafeArea(
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(
+                          horizontalPadding,
+                          16,
+                          horizontalPadding,
+                          16,
+                        ),
+                        child: ElevatedButton(
+                          onPressed: _isValidCarCount && !_isCreating
+                              ? _startTournament
+                              : null,
+                          child: _isCreating
+                              ? const SizedBox(
+                                  height: 24,
+                                  width: 24,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 3,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Text('START TOURNAMENT'),
+                        ),
                       ),
                     ),
                   ],
-                ),
-              ),
-
-            // Start Button
-            SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: ElevatedButton(
-                  onPressed: _isValidCarCount && !_isCreating ? _startTournament : null,
-                  child: _isCreating
-                      ? const SizedBox(
-                          height: 24,
-                          width: 24,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 3,
-                            color: Colors.white,
-                          ),
-                        )
-                      : const Text('START TOURNAMENT'),
-                ),
+                ],
               ),
             ),
-          ],
-        ],
+          );
+        },
       ),
     );
   }
