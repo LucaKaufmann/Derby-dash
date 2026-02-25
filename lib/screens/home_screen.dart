@@ -11,17 +11,6 @@ class HomeScreen extends StatelessWidget {
       body: SafeArea(
         child: Stack(
           children: [
-            // Settings button in top-right corner
-            Positioned(
-              top: 8,
-              right: 8,
-              child: IconButton(
-                icon: const Icon(Icons.settings),
-                iconSize: 32,
-                color: AppTheme.textSecondary,
-                onPressed: () => context.push('/settings'),
-              ),
-            ),
             // Main content
             LayoutBuilder(
               builder: (context, constraints) {
@@ -90,6 +79,17 @@ class HomeScreen extends StatelessWidget {
                   ),
                 );
               },
+            ),
+            // Keep settings button above scrollable content for reliable taps.
+            Positioned(
+              top: 8,
+              right: 8,
+              child: IconButton(
+                icon: const Icon(Icons.settings),
+                iconSize: 32,
+                color: AppTheme.textSecondary,
+                onPressed: () => context.push('/settings'),
+              ),
             ),
           ],
         ),
