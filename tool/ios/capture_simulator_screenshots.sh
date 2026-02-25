@@ -31,7 +31,14 @@ fi
 find_simulator_udid() {
   local device_name="$1"
   xcrun simctl list devices available \
-    | awk -v name="$device_name" -F '[()]' '$0 ~ name {print $2; exit}'
+    | awk -v name="$device_name" '
+        index($0, name) {
+          if (match($0, /[0-9A-F-]{36}/)) {
+            print substr($0, RSTART, RLENGTH)
+            exit
+          }
+        }
+      '
 }
 
 SIMULATOR_UDID="$(find_simulator_udid "$DEVICE_NAME")"
