@@ -50,4 +50,4 @@ android/key.properties
 upload_certificate.pem
 
 # iOS screenshot automation output
-ios/app_store_screenshots/
+# Keep this folder in git for README/App Store documentation assets.
