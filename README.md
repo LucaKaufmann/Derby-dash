@@ -86,6 +86,32 @@ flutter test
 flutter analyze
 ```
 
+### Google Play Upload Automation
+
+This repo includes Fastlane + GitHub Actions automation for Play uploads.
+
+Local one-command upload to Internal testing:
+
+```bash
+bundle install
+# First time setup:
+cp .env.example .env
+# Then edit .env and set GOOGLE_PLAY_JSON_KEY_PATH
+./tool/android/upload_play_internal.sh
+```
+
+Manual CI upload from GitHub Actions:
+
+1. Add repository secret `PLAY_SERVICE_ACCOUNT_JSON` with the full JSON key content.
+2. Run workflow: `.github/workflows/google-play-upload.yml`.
+3. Choose `internal` or `production` track in workflow dispatch.
+
+Play Console/API requirements:
+
+- Create a Google Cloud service account with Android Publisher API enabled.
+- In Play Console, grant that service account app access (Release manager or Admin).
+- Use the same app package name configured in Android: `com.codable.derbydash`.
+
 ## Architecture
 
 Derby Dash follows a clean architecture with clear separation of concerns:

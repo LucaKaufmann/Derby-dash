@@ -1,0 +1,44 @@
+default_platform(:android)
+
+def default_aab_path
+  File.expand_path("../build/app/outputs/bundle/release/app-release.aab", __dir__)
+end
+
+platform :android do
+  desc "Upload an existing AAB to the internal testing track"
+  lane :internal do |options|
+    aab_path = options[:aab] || default_aab_path
+
+    upload_to_play_store(
+      track: "internal",
+      aab: aab_path,
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+      release_status: "completed"
+    )
+  end
+
+  desc "Build release AAB and upload to internal testing track"
+  lane :build_and_internal do
+    sh("flutter", "pub", "get")
+    sh("flutter", "build", "appbundle", "--release")
+    internal(aab: default_aab_path)
+  end
+
+  desc "Upload an existing AAB to production with staged rollout"
+  lane :production do |options|
+    aab_path = options[:aab] || default_aab_path
+    rollout = (options[:rollout] || "0.1").to_f
+
+    upload_to_play_store(
+      track: "production",
+      rollout: rollout,
+      aab: aab_path,
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+      release_status: "inProgress"
+    )
+  end
+end

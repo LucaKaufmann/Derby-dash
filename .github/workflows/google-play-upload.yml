@@ -1,0 +1,64 @@
+name: Google Play Upload
+
+on:
+  workflow_dispatch:
+    inputs:
+      track:
+        description: "Play track to upload to"
+        required: true
+        default: "internal"
+        type: choice
+        options:
+          - internal
+          - production
+      rollout:
+        description: "Production rollout fraction (0.0-1.0), ignored for internal"
+        required: false
+        default: "0.1"
+        type: string
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "17"
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: "stable"
+
+      - name: Set up Ruby + Bundler cache
+        uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+
+      - name: Flutter dependencies
+        run: flutter pub get
+
+      - name: Build Android App Bundle
+        run: flutter build appbundle --release
+
+      - name: Write Google Play key
+        env:
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          test -n "$PLAY_SERVICE_ACCOUNT_JSON"
+          printf '%s' "$PLAY_SERVICE_ACCOUNT_JSON" > /tmp/google-play-key.json
+          echo "GOOGLE_PLAY_JSON_KEY_PATH=/tmp/google-play-key.json" >> "$GITHUB_ENV"
+
+      - name: Upload to Play Internal
+        if: ${{ github.event.inputs.track == 'internal' }}
+        run: bundle exec fastlane android internal
+
+      - name: Upload to Play Production
+        if: ${{ github.event.inputs.track == 'production' }}
+        run: bundle exec fastlane android production rollout:${{ github.event.inputs.rollout }}
