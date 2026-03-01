@@ -52,7 +52,7 @@ class TournamentDashboardScreen extends ConsumerWidget {
                 );
               } else if (tournament?.type == TournamentType.roundRobin) {
                 return IconButton(
-                  icon: const Icon(Icons.leaderboard),
+                  icon: const Icon(Icons.emoji_events),
                   tooltip: 'View Standings',
                   onPressed: () =>
                       context.push('/tournament/$tournamentId/standings'),

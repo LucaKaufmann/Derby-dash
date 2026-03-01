@@ -333,7 +333,7 @@ class _TournamentHistoryCard extends ConsumerWidget {
                       // Standings button for round robin tournaments
                       else if (tournament.type == TournamentType.roundRobin)
                         IconButton(
-                          icon: const Icon(Icons.leaderboard),
+                          icon: const Icon(Icons.emoji_events),
                           iconSize: 24,
                           tooltip: 'View Standings',
                           color: AppTheme.primaryColor,
