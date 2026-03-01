@@ -16,7 +16,18 @@ A local-first, offline-capable Flutter app for managing Hot Wheels car tournamen
 
 ## Screenshots
 
-<!-- Add screenshots here -->
+| Screen | Screenshot | Screen | Screenshot |
+| --- | --- | --- | --- |
+| Home | ![Home](ios/app_store_screenshots/home_iphone_16_pro_max.png) | Garage | ![Garage](ios/app_store_screenshots/garage_iphone_16_pro_max.png) |
+| Dashboard | ![Dashboard](ios/app_store_screenshots/dashboard_iphone_16_pro_max.png) | Bracket | ![Bracket](ios/app_store_screenshots/bracket_iphone_16_pro_max.png) |
+| History | ![History](ios/app_store_screenshots/history_iphone_16_pro_max.png) | Standings | ![Standings](ios/app_store_screenshots/standings_iphone_16_pro_max.png) |
+| Champion | ![Champion](ios/app_store_screenshots/champion_iphone_16_pro_max.png) |  |  |
+
+Generate or refresh screenshots:
+
+```bash
+./tool/ios/capture_simulator_screenshots.sh
+```
 
 For automated iOS screenshot capture workflows, see [IOS_SCREENSHOT_AUTOMATION.md](IOS_SCREENSHOT_AUTOMATION.md).
 
