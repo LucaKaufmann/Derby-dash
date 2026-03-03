@@ -1,3 +1,5 @@
+import com.android.build.gradle.LibraryExtension
+
 allprojects {
     repositories {
         google()
@@ -17,6 +19,19 @@ subprojects {
 }
 subprojects {
     project.evaluationDependsOn(":app")
+}
+
+subprojects {
+    plugins.withId("com.android.library") {
+        extensions.configure<LibraryExtension>("android") {
+            if (namespace == null) {
+                val groupNamespace = project.group.toString()
+                    .takeIf { it.isNotBlank() && it != "unspecified" }
+                val safeName = project.name.replace(Regex("[^A-Za-z0-9_]"), "_")
+                namespace = groupNamespace ?: "com.derbydash.thirdparty.$safeName"
+            }
+        }
+    }
 }
 
 tasks.register<Delete>("clean") {
