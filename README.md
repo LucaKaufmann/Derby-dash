@@ -26,7 +26,16 @@ Generate or refresh screenshots:
 ./tool/ios/capture_simulator_screenshots.sh
 ```
 
-For automated iOS screenshot capture workflows, see [IOS_SCREENSHOT_AUTOMATION.md](IOS_SCREENSHOT_AUTOMATION.md).
+Generate Android Play Store screenshots:
+
+```bash
+./tool/android/capture_emulator_screenshots.sh
+```
+
+Automation docs:
+
+- iOS: [IOS_SCREENSHOT_AUTOMATION.md](IOS_SCREENSHOT_AUTOMATION.md)
+- Android: [ANDROID_SCREENSHOT_AUTOMATION.md](ANDROID_SCREENSHOT_AUTOMATION.md)
 
 ## Getting Started
 

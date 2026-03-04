@@ -7,6 +7,8 @@ This repo now includes a screenshot-specific Flutter entrypoint:
 
 That entrypoint seeds deterministic mock data and opens a requested screen scenario.
 
+For Android automation with the same scenario-driven flow, see [ANDROID_SCREENSHOT_AUTOMATION.md](ANDROID_SCREENSHOT_AUTOMATION.md).
+
 ## Option 1 (Implemented): Simulator Automation With Mocked Data
 
 Use the script below to generate App Store screenshots from an iOS simulator:

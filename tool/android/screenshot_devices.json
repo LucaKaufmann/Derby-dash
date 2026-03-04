@@ -1,0 +1,23 @@
+[
+  {
+    "id": "phone",
+    "avd_name": "Pixel_9_Pro_XL_API_35",
+    "tag": "pixel_9_pro_xl",
+    "output_subdir": "phone",
+    "required": true
+  },
+  {
+    "id": "tablet7",
+    "avd_name": "Tablet_7in_API_35",
+    "tag": "tablet_7_inch",
+    "output_subdir": "tablet7",
+    "required": true
+  },
+  {
+    "id": "tablet10",
+    "avd_name": "Tablet_10in_API_35",
+    "tag": "tablet_10_inch",
+    "output_subdir": "tablet10",
+    "required": true
+  }
+]
