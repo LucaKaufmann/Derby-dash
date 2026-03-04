@@ -10,6 +10,7 @@ SCENARIOS_CSV="${ANDROID_SCREENSHOT_SCENARIOS:-home,garage,dashboard,bracket,his
 LOCALE="${ANDROID_SCREENSHOT_LOCALE:-en-US}"
 SKIP_BUILD="${ANDROID_SCREENSHOT_SKIP_BUILD:-0}"
 PARALLEL_DEVICES="${ANDROID_SCREENSHOT_PARALLEL_DEVICES:-0}"
+EMULATOR_ARGS_RAW="${ANDROID_SCREENSHOT_EMULATOR_ARGS:--no-snapshot -no-boot-anim -noaudio -netfast -gpu swiftshader_indirect}"
 LOGS_DIR="$OUTPUT_DIR/logs"
 
 VALID_SCENARIOS=(
@@ -21,6 +22,19 @@ VALID_SCENARIOS=(
   champion
   standings
 )
+
+read -r -a EMULATOR_ARGS <<<"$EMULATOR_ARGS_RAW"
+
+capture_screenshot() {
+  local serial="$1"
+  local scenario="$2"
+  local destination_path="$3"
+  local remote_path="/sdcard/derby_dash_${scenario}.png"
+
+  adb -s "$serial" shell screencap -p "$remote_path" >/dev/null
+  adb -s "$serial" pull "$remote_path" "$destination_path" >/dev/null
+  adb -s "$serial" shell rm -f "$remote_path" >/dev/null 2>&1 || true
+}
 
 log() {
   printf '[android-shots] %s\n' "$*"
@@ -131,7 +145,7 @@ run_device_capture() {
     log "Using running emulator $serial for AVD '$avd_name'"
   else
     log "Starting emulator for AVD '$avd_name'"
-    emulator -avd "$avd_name" -no-snapshot -no-boot-anim -noaudio -netfast -gpu swiftshader_indirect >"$emulator_log" 2>&1 &
+    emulator -avd "$avd_name" "${EMULATOR_ARGS[@]}" >"$emulator_log" 2>&1 </dev/null &
     started_by_script=1
 
     local attempts=0
@@ -179,13 +193,13 @@ run_device_capture() {
         --no-resident \
         --target lib/main_screenshot.dart \
         --dart-define SCREENSHOT_SCENARIO="$scenario"
-    ) >"$scenario_log" 2>&1; then
+    ) >"$scenario_log" 2>&1 </dev/null; then
       handle_device_failure "$required" "flutter run failed for $device_id/$scenario. See $scenario_log" || return 1
       return 0
     fi
 
     sleep "$SETTLE_SECONDS"
-    if ! adb -s "$serial" exec-out screencap -p >"$screenshot_path"; then
+    if ! capture_screenshot "$serial" "$scenario" "$screenshot_path"; then
       handle_device_failure "$required" "screencap failed for $device_id/$scenario" || return 1
       return 0
     fi
@@ -290,17 +304,21 @@ if [[ "$SKIP_BUILD" != "1" ]]; then
 fi
 
 active_devices_file="$(mktemp)"
-trap 'rm -f "$active_devices_file"' EXIT
+device_rows_file="$(mktemp)"
+trap 'rm -f "$active_devices_file" "$device_rows_file"' EXIT
 printf '%s\n' "$active_devices_json" >"$active_devices_file"
+jq -c '.[]' "$active_devices_file" >"$device_rows_file"
 
 overall_failure=0
 if [[ "$PARALLEL_DEVICES" == "1" ]]; then
   log "Running device captures in parallel"
   pids=()
-  while IFS= read -r device_row; do
+  exec 3<"$device_rows_file"
+  while IFS= read -r -u 3 device_row; do
     run_device_capture "$device_row" &
     pids+=("$!")
-  done < <(jq -c '.[]' "$active_devices_file")
+  done
+  exec 3<&-
 
   for pid in "${pids[@]}"; do
     if ! wait "$pid"; then
@@ -308,12 +326,14 @@ if [[ "$PARALLEL_DEVICES" == "1" ]]; then
     fi
   done
 else
-  while IFS= read -r device_row; do
+  exec 3<"$device_rows_file"
+  while IFS= read -r -u 3 device_row; do
     if ! run_device_capture "$device_row"; then
       overall_failure=1
       break
     fi
-  done < <(jq -c '.[]' "$active_devices_file")
+  done
+  exec 3<&-
 fi
 
 SCENARIOS_CSV_NORMALIZED="$(join_by ',' "${SCENARIOS[@]}")"
