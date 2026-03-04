@@ -36,6 +36,30 @@ capture_screenshot() {
   adb -s "$serial" shell rm -f "$remote_path" >/dev/null 2>&1 || true
 }
 
+dismiss_known_popups() {
+  local serial="$1"
+  local dump_path="/sdcard/derby_dash_window_dump.xml"
+  local line bounds x1 y1 x2 y2 x y
+  local xml=""
+
+  adb -s "$serial" shell uiautomator dump "$dump_path" >/dev/null 2>&1 || return 0
+  xml="$(adb -s "$serial" shell cat "$dump_path" 2>/dev/null | tr -d '\r')"
+  line="$(printf '%s\n' "$xml" | rg -i 'text="Got it"|content-desc="Got it"' -m1 || true)"
+  if [[ -z "$line" ]]; then
+    return 0
+  fi
+
+  bounds="$(printf '%s\n' "$line" | sed -E 's/.*bounds="\[([0-9]+),([0-9]+)\]\[([0-9]+),([0-9]+)\]".*/\1 \2 \3 \4/')"
+  read -r x1 y1 x2 y2 <<<"$bounds"
+  if [[ -n "${x1:-}" && -n "${y1:-}" && -n "${x2:-}" && -n "${y2:-}" ]]; then
+    x=$(( (x1 + x2) / 2 ))
+    y=$(( (y1 + y2) / 2 ))
+    log "Dismissing system popup via tap at $x,$y"
+    adb -s "$serial" shell input tap "$x" "$y" >/dev/null 2>&1 || true
+    sleep 1
+  fi
+}
+
 log() {
   printf '[android-shots] %s\n' "$*"
 }
@@ -92,6 +116,51 @@ disable_animations() {
   adb -s "$serial" shell settings put global window_animation_scale 0 >/dev/null 2>&1 || true
   adb -s "$serial" shell settings put global transition_animation_scale 0 >/dev/null 2>&1 || true
   adb -s "$serial" shell settings put global animator_duration_scale 0 >/dev/null 2>&1 || true
+}
+
+set_user_rotation() {
+  local serial="$1"
+  local rotation="$2"
+  adb -s "$serial" shell wm user-rotation lock "$rotation" >/dev/null 2>&1 || true
+  adb -s "$serial" shell settings put system user_rotation "$rotation" >/dev/null 2>&1 || true
+}
+
+get_logical_display_size() {
+  local serial="$1"
+  local line size
+  line="$(adb -s "$serial" shell dumpsys input 2>/dev/null | awk '/Viewport INTERNAL: displayId=0/{print; exit}')"
+  size="$(printf '%s\n' "$line" | sed -nE 's/.*logicalFrame=\[0, 0, ([0-9]+), ([0-9]+)\].*/\1 \2/p')"
+  if [[ -z "$size" ]]; then
+    return 1
+  fi
+  printf '%s\n' "$size"
+}
+
+force_portrait_orientation() {
+  local serial="$1"
+  local rotation width height size
+
+  # Large-screen emulators default to landscape; combined with portrait-locked
+  # activities this triggers letterboxing + education popups in screenshots.
+  adb -s "$serial" shell settings put system accelerometer_rotation 0 >/dev/null 2>&1 || true
+  adb -s "$serial" shell settings put secure show_rotation_suggestions 0 >/dev/null 2>&1 || true
+
+  for rotation in 0 1 3 2; do
+    set_user_rotation "$serial" "$rotation"
+    sleep 1
+
+    if ! size="$(get_logical_display_size "$serial")"; then
+      continue
+    fi
+
+    read -r width height <<<"$size"
+    if [[ -n "${width:-}" && -n "${height:-}" && "$height" -gt "$width" ]]; then
+      log "Locked portrait orientation on $serial (rotation=$rotation, ${width}x${height})"
+      return 0
+    fi
+  done
+
+  warn "Could not confirm portrait orientation on $serial; screenshots may be letterboxed."
 }
 
 join_by() {
@@ -171,6 +240,9 @@ run_device_capture() {
   fi
 
   disable_animations "$serial"
+  force_portrait_orientation "$serial"
+  adb -s "$serial" shell input keyevent KEYCODE_HOME >/dev/null 2>&1 || true
+  sleep 1
   adb -s "$serial" shell pm clear "$BUNDLE_ID" >/dev/null 2>&1 || true
 
   if [[ "$LOCALE" != "en-US" ]]; then
@@ -198,6 +270,7 @@ run_device_capture() {
       return 0
     fi
 
+    dismiss_known_popups "$serial"
     sleep "$SETTLE_SECONDS"
     if ! capture_screenshot "$serial" "$scenario" "$screenshot_path"; then
       handle_device_failure "$required" "screencap failed for $device_id/$scenario" || return 1
