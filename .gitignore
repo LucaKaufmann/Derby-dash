@@ -49,5 +49,6 @@ android/key.properties
 *.keystore
 upload_certificate.pem
 
-# iOS screenshot automation output
-# Keep this folder in git for README/App Store documentation assets.
+# Screenshot automation outputs (generated artifacts)
+android/play_store_screenshots_*/
+ios/app_store_screenshots/
