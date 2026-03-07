@@ -52,3 +52,9 @@ upload_certificate.pem
 # Screenshot automation outputs (generated artifacts)
 android/play_store_screenshots_*/
 ios/app_store_screenshots/
+
+# Local environment config
+.env
+
+# fastlane generated artifacts
+fastlane/report.xml
