@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../data/models/tournament.dart';
 import '../theme/app_theme.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -52,41 +51,17 @@ class HomeScreen extends StatelessWidget {
 
                           // Main Menu Buttons
                           _MenuButton(
+                            icon: Icons.play_arrow,
+                            label: 'PLAY',
+                            color: AppTheme.primaryColor,
+                            onTap: () => context.push('/play'),
+                          ),
+                          const SizedBox(height: 24),
+                          _MenuButton(
                             icon: Icons.garage,
                             label: 'GARAGE',
                             color: AppTheme.secondaryColor,
                             onTap: () => context.push('/garage'),
-                          ),
-                          const SizedBox(height: 24),
-                          _MenuButton(
-                            icon: Icons.emoji_events,
-                            label: 'NEW TOURNAMENT',
-                            color: AppTheme.primaryColor,
-                            onTap: () => context.push('/tournament/setup'),
-                          ),
-                          const SizedBox(height: 24),
-                          _MenuButton(
-                            icon: Icons.flash_on,
-                            label: 'TINY TOURNAMENT',
-                            color: AppTheme.winnerColor,
-                            onTap: () => context.push(
-                              '/tournament/setup/cars',
-                              extra: {'type': TournamentType.tinyTournament},
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          _MenuButton(
-                            icon: Icons.shuffle,
-                            label: 'MYSTERY RACE',
-                            color: AppTheme.primaryColor,
-                            onTap: () => context.push('/mystery-race'),
-                          ),
-                          const SizedBox(height: 24),
-                          _MenuButton(
-                            icon: Icons.groups,
-                            label: 'TEAM BATTLE',
-                            color: AppTheme.secondaryColor,
-                            onTap: () => context.push('/team-battle/setup'),
                           ),
                           const SizedBox(height: 24),
                           _MenuButton(
