@@ -41,13 +41,15 @@ class PlayModeScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Quick modes first, bigger tournaments last.',
+                      'Pick a mode and start setting up.',
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         color: AppTheme.textSecondary,
                       ),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 32),
+                    const _SectionLabel(label: 'QUICK PLAY'),
+                    const SizedBox(height: 12),
                     _PlayModeCard(
                       icon: Icons.shuffle,
                       label: 'MYSTERY RACE',
@@ -74,13 +76,48 @@ class PlayModeScreen extends StatelessWidget {
                       color: AppTheme.secondaryColor,
                       onTap: () => context.push('/team-battle/setup'),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 28),
+                    const _SectionLabel(label: 'TOURNAMENTS'),
+                    const SizedBox(height: 12),
                     _PlayModeCard(
                       icon: Icons.emoji_events,
-                      label: 'TOURNAMENT',
-                      subtitle: 'Knockout, round robin, and more',
-                      color: AppTheme.surfaceColor,
-                      onTap: () => context.push('/tournament/setup'),
+                      label: 'KNOCKOUT',
+                      subtitle: 'Single elimination bracket',
+                      color: AppTheme.primaryColor,
+                      onTap: () => context.push(
+                        '/tournament/setup/cars',
+                        extra: {'type': TournamentType.knockout},
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    _PlayModeCard(
+                      icon: Icons.repeat,
+                      label: 'DOUBLE ELIM',
+                      subtitle: 'Second chance bracket',
+                      color: AppTheme.primaryColor,
+                      onTap: () => context.push(
+                        '/tournament/setup/cars',
+                        extra: {'type': TournamentType.doubleElimination},
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    _PlayModeCard(
+                      icon: Icons.loop,
+                      label: 'ROUND ROBIN',
+                      subtitle: 'Everyone races everyone',
+                      color: AppTheme.secondaryColor,
+                      onTap: () => context.push(
+                        '/tournament/setup/cars',
+                        extra: {'type': TournamentType.roundRobin},
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    _PlayModeCard(
+                      icon: Icons.view_module,
+                      label: 'GROUP + KO',
+                      subtitle: 'Group stage then playoffs',
+                      color: Colors.purple,
+                      onTap: () => context.push('/tournament/setup/config'),
                     ),
                   ],
                 ),
@@ -88,6 +125,24 @@ class PlayModeScreen extends StatelessWidget {
             );
           },
         ),
+      ),
+    );
+  }
+}
+
+class _SectionLabel extends StatelessWidget {
+  final String label;
+
+  const _SectionLabel({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      label,
+      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+        color: AppTheme.textSecondary,
+        fontWeight: FontWeight.bold,
+        letterSpacing: 1.2,
       ),
     );
   }
