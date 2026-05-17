@@ -102,6 +102,61 @@ class TournamentService {
     return tournament.id;
   }
 
+  /// Create one persisted random race for Mystery Race mode.
+  Future<Match> createMysteryRace({
+    int? previousCarAId,
+    int? previousCarBId,
+  }) async {
+    final cars = await _isar.cars.filter().isDeletedEqualTo(false).findAll();
+    if (cars.length < 2) {
+      throw StateError('Mystery Race requires at least 2 cars');
+    }
+
+    final previousPair = {
+      if (previousCarAId != null) previousCarAId,
+      if (previousCarBId != null) previousCarBId,
+    };
+
+    List<Car> racers;
+    var attempts = 0;
+    do {
+      racers = [...cars]..shuffle(_random);
+      racers = racers.take(2).toList();
+      attempts++;
+    } while (previousPair.length == 2 &&
+        cars.length > 2 &&
+        attempts < 8 &&
+        racers.map((car) => car.id).toSet().containsAll(previousPair));
+
+    final tournament = Tournament()
+      ..date = DateTime.now()
+      ..type = TournamentType.mysteryRace
+      ..status = TournamentStatus.active;
+
+    final round = Round()
+      ..roundNumber = 1
+      ..isCompleted = false;
+
+    final match = Match()..matchPosition = 0;
+    match.carA.value = racers[0];
+    match.carB.value = racers[1];
+
+    await _isar.writeTxn(() async {
+      await _isar.tournaments.put(tournament);
+      await _isar.rounds.put(round);
+      tournament.rounds.add(round);
+      await tournament.rounds.save();
+
+      await _isar.matchs.put(match);
+      await match.carA.save();
+      await match.carB.save();
+      round.matches.add(match);
+      await round.matches.save();
+    });
+
+    return (await getMatch(match.id))!;
+  }
+
   /// Create all brackets for a double elimination tournament
   Future<void> _createDoubleEliminationBrackets(
     Tournament tournament,
@@ -396,6 +451,11 @@ class TournamentService {
       );
     } else if (tournament.type == TournamentType.groupKnockout) {
       await _handleGroupKnockoutRoundComplete(tournament, round, allMatches);
+    } else if (tournament.type == TournamentType.mysteryRace) {
+      await _isar.writeTxn(() async {
+        tournament.status = TournamentStatus.completed;
+        await _isar.tournaments.put(tournament);
+      });
     } else {
       // Round robin - tournament complete when all matches done
       await _isar.writeTxn(() async {
@@ -992,6 +1052,7 @@ class TournamentService {
 
     if (tournament.type == TournamentType.knockout ||
         tournament.type == TournamentType.tinyTournament ||
+        tournament.type == TournamentType.mysteryRace ||
         tournament.type == TournamentType.doubleElimination ||
         tournament.type == TournamentType.groupKnockout) {
       // Winner is the winner of the final match

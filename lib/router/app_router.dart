@@ -11,6 +11,7 @@ import '../screens/tournament/tournament_history_screen.dart';
 import '../screens/tournament/champion_screen.dart';
 import '../screens/tournament/standings_screen.dart';
 import '../screens/match/match_screen.dart';
+import '../screens/mystery/mystery_race_screen.dart';
 import '../screens/home_screen.dart';
 import '../screens/tournament/bracket_screen.dart';
 import '../screens/tournament/best_of_config_screen.dart';
@@ -29,6 +30,11 @@ GoRouter buildAppRouter({String initialLocation = '/'}) {
         path: '/settings',
         name: 'settings',
         builder: (context, state) => const SettingsScreen(),
+      ),
+      GoRoute(
+        path: '/mystery-race',
+        name: 'mysteryRace',
+        builder: (context, state) => const MysteryRaceScreen(),
       ),
       GoRoute(
         path: '/garage',

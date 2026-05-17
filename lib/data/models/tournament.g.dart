@@ -178,6 +178,7 @@ const _TournamenttypeEnumValueMap = {
   r'doubleElimination': r'doubleElimination',
   r'groupKnockout': r'groupKnockout',
   r'tinyTournament': r'tinyTournament',
+  r'mysteryRace': r'mysteryRace',
 };
 const _TournamenttypeValueEnumMap = {
   r'knockout': TournamentType.knockout,
@@ -185,6 +186,7 @@ const _TournamenttypeValueEnumMap = {
   r'doubleElimination': TournamentType.doubleElimination,
   r'groupKnockout': TournamentType.groupKnockout,
   r'tinyTournament': TournamentType.tinyTournament,
+  r'mysteryRace': TournamentType.mysteryRace,
 };
 
 Id _tournamentGetId(Tournament object) {

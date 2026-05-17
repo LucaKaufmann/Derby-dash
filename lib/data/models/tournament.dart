@@ -11,6 +11,7 @@ enum TournamentType {
   doubleElimination,
   groupKnockout,
   tinyTournament,
+  mysteryRace,
 }
 
 enum TournamentPhase { group, knockout }

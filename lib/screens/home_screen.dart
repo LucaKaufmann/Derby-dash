@@ -76,6 +76,13 @@ class HomeScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 24),
                           _MenuButton(
+                            icon: Icons.shuffle,
+                            label: 'MYSTERY RACE',
+                            color: AppTheme.primaryColor,
+                            onTap: () => context.push('/mystery-race'),
+                          ),
+                          const SizedBox(height: 24),
+                          _MenuButton(
                             icon: Icons.history,
                             label: 'HISTORY',
                             color: AppTheme.surfaceColor,
