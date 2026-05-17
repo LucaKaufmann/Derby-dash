@@ -43,8 +43,8 @@ class TournamentHistoryScreen extends ConsumerWidget {
                   Text(
                     'Complete a tournament to see it here',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppTheme.textSecondary,
-                        ),
+                      color: AppTheme.textSecondary,
+                    ),
                   ),
                 ],
               ),
@@ -78,7 +78,8 @@ class TournamentHistoryScreen extends ConsumerWidget {
                       ),
                     ),
                     confirmDismiss: (direction) async {
-                      final confirmed = await showDialog<bool>(
+                      final confirmed =
+                          await showDialog<bool>(
                             context: context,
                             builder: (context) => AlertDialog(
                               title: const Text('Delete Tournament?'),
@@ -133,10 +134,7 @@ class _TournamentHistoryCard extends ConsumerWidget {
   final Tournament tournament;
   final VoidCallback onTap;
 
-  const _TournamentHistoryCard({
-    required this.tournament,
-    required this.onTap,
-  });
+  const _TournamentHistoryCard({required this.tournament, required this.onTap});
 
   String _getTournamentTypeLabel(TournamentType type) {
     switch (type) {
@@ -148,6 +146,8 @@ class _TournamentHistoryCard extends ConsumerWidget {
         return 'ROUND ROBIN';
       case TournamentType.groupKnockout:
         return 'GROUP + KO';
+      case TournamentType.tinyTournament:
+        return 'TINY';
     }
   }
 
@@ -161,14 +161,17 @@ class _TournamentHistoryCard extends ConsumerWidget {
         return AppTheme.secondaryColor;
       case TournamentType.groupKnockout:
         return AppTheme.primaryColor;
+      case TournamentType.tinyTournament:
+        return AppTheme.winnerColor;
     }
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final winnerAsync = ref.watch(tournamentWinnerProvider(tournament.id));
-    final participantCountAsync =
-        ref.watch(tournamentParticipantCountProvider(tournament.id));
+    final participantCountAsync = ref.watch(
+      tournamentParticipantCountProvider(tournament.id),
+    );
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
@@ -224,14 +227,17 @@ class _TournamentHistoryCard extends ConsumerWidget {
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: AppTheme.winnerColor.withValues(alpha: 0.3),
+                              color: AppTheme.winnerColor.withValues(
+                                alpha: 0.3,
+                              ),
                               blurRadius: 8,
                               spreadRadius: 1,
                             ),
                           ],
                         ),
                         clipBehavior: Clip.antiAlias,
-                        child: winner.photoPath.isNotEmpty &&
+                        child:
+                            winner.photoPath.isNotEmpty &&
                                 File(winner.photoPath).existsSync()
                             ? Image.file(
                                 File(winner.photoPath),
@@ -264,12 +270,8 @@ class _TournamentHistoryCard extends ConsumerWidget {
                             const SizedBox(height: 2),
                             Text(
                               winner.name,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleLarge
-                                  ?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                              style: Theme.of(context).textTheme.titleLarge
+                                  ?.copyWith(fontWeight: FontWeight.bold),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -299,17 +301,15 @@ class _TournamentHistoryCard extends ConsumerWidget {
                     children: [
                       Text(
                         DateFormat('MMM d, yyyy').format(tournament.date),
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              color: AppTheme.textSecondary,
-                            ),
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(color: AppTheme.textSecondary),
                       ),
                       const SizedBox(height: 4),
                       participantCountAsync.when(
                         data: (count) => Text(
                           '$count cars competed',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: AppTheme.textSecondary,
-                              ),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: AppTheme.textSecondary),
                         ),
                         loading: () => const SizedBox.shrink(),
                         error: (_, __) => const SizedBox.shrink(),
@@ -321,14 +321,16 @@ class _TournamentHistoryCard extends ConsumerWidget {
                     children: [
                       // Bracket button for knockout and double elimination tournaments
                       if (tournament.type == TournamentType.knockout ||
+                          tournament.type == TournamentType.tinyTournament ||
                           tournament.type == TournamentType.doubleElimination)
                         IconButton(
                           icon: const Icon(Icons.account_tree),
                           iconSize: 24,
                           tooltip: 'View Bracket',
                           color: AppTheme.primaryColor,
-                          onPressed: () =>
-                              context.push('/tournament/${tournament.id}/bracket'),
+                          onPressed: () => context.push(
+                            '/tournament/${tournament.id}/bracket',
+                          ),
                         )
                       // Standings button for round robin tournaments
                       else if (tournament.type == TournamentType.roundRobin)
@@ -337,8 +339,9 @@ class _TournamentHistoryCard extends ConsumerWidget {
                           iconSize: 24,
                           tooltip: 'View Standings',
                           color: AppTheme.primaryColor,
-                          onPressed: () =>
-                              context.push('/tournament/${tournament.id}/standings'),
+                          onPressed: () => context.push(
+                            '/tournament/${tournament.id}/standings',
+                          ),
                         ),
                       Container(
                         padding: const EdgeInsets.symmetric(
@@ -346,8 +349,9 @@ class _TournamentHistoryCard extends ConsumerWidget {
                           vertical: 6,
                         ),
                         decoration: BoxDecoration(
-                          color: _getTournamentTypeColor(tournament.type)
-                              .withValues(alpha: 0.2),
+                          color: _getTournamentTypeColor(
+                            tournament.type,
+                          ).withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(

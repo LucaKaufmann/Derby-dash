@@ -123,6 +123,7 @@ class CarRepository {
       rounds.sort((a, b) => a.roundNumber.compareTo(b.roundNumber));
 
       if (tournament.type == TournamentType.knockout ||
+          tournament.type == TournamentType.tinyTournament ||
           tournament.type == TournamentType.doubleElimination ||
           tournament.type == TournamentType.groupKnockout) {
         // Winner is from the final match of the last round

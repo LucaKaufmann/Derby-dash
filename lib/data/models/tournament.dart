@@ -3,23 +3,17 @@ import 'round.dart';
 
 part 'tournament.g.dart';
 
-enum TournamentStatus {
-  setup,
-  active,
-  completed,
-}
+enum TournamentStatus { setup, active, completed }
 
 enum TournamentType {
   knockout,
   roundRobin,
   doubleElimination,
   groupKnockout,
+  tinyTournament,
 }
 
-enum TournamentPhase {
-  group,
-  knockout,
-}
+enum TournamentPhase { group, knockout }
 
 @collection
 class Tournament {
