@@ -91,17 +91,6 @@ class PlayModeScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                     _PlayModeCard(
-                      icon: Icons.repeat,
-                      label: 'DOUBLE ELIM',
-                      subtitle: 'Second chance bracket',
-                      color: AppTheme.primaryColor,
-                      onTap: () => context.push(
-                        '/tournament/setup/cars',
-                        extra: {'type': TournamentType.doubleElimination},
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    _PlayModeCard(
                       icon: Icons.loop,
                       label: 'ROUND ROBIN',
                       subtitle: 'Everyone races everyone',
@@ -109,6 +98,17 @@ class PlayModeScreen extends StatelessWidget {
                       onTap: () => context.push(
                         '/tournament/setup/cars',
                         extra: {'type': TournamentType.roundRobin},
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    _PlayModeCard(
+                      icon: Icons.repeat,
+                      label: 'DOUBLE ELIM',
+                      subtitle: 'Second chance bracket',
+                      color: AppTheme.primaryColor,
+                      onTap: () => context.push(
+                        '/tournament/setup/cars',
+                        extra: {'type': TournamentType.doubleElimination},
                       ),
                     ),
                     const SizedBox(height: 16),
