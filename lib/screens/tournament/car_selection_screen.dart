@@ -45,6 +45,8 @@ class _CarSelectionScreenState extends ConsumerState<CarSelectionScreen> {
         return 4;
       case TournamentType.mysteryRace:
         return 2;
+      case TournamentType.teamBattle:
+        return 2;
       case TournamentType.groupKnockout:
         return 8;
       default:
@@ -100,6 +102,8 @@ class _CarSelectionScreenState extends ConsumerState<CarSelectionScreen> {
         return 'Pick exactly 4 cars';
       case TournamentType.mysteryRace:
         return 'Mystery Race picks cars for you';
+      case TournamentType.teamBattle:
+        return 'Use Team Battle setup';
     }
   }
 
@@ -157,6 +161,8 @@ class _CarSelectionScreenState extends ConsumerState<CarSelectionScreen> {
         return 'Tiny Tournament';
       case TournamentType.mysteryRace:
         return 'Mystery Race';
+      case TournamentType.teamBattle:
+        return 'Team Battle';
     }
   }
 
@@ -608,6 +614,8 @@ class _CarSelectionScreenState extends ConsumerState<CarSelectionScreen> {
         return Icons.flash_on;
       case TournamentType.mysteryRace:
         return Icons.shuffle;
+      case TournamentType.teamBattle:
+        return Icons.groups;
     }
   }
 }

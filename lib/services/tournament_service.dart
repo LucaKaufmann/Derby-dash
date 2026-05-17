@@ -157,6 +157,97 @@ class TournamentService {
     return (await getMatch(match.id))!;
   }
 
+  /// Create a team battle where each completed race scores one team point.
+  Future<int> createTeamBattle({
+    required List<int> teamACarIds,
+    required List<int> teamBCarIds,
+    int targetScore = 3,
+  }) async {
+    if (teamACarIds.isEmpty || teamBCarIds.isEmpty) {
+      throw ArgumentError('Each team needs at least one car');
+    }
+    final overlap = teamACarIds.toSet().intersection(teamBCarIds.toSet());
+    if (overlap.isNotEmpty) {
+      throw ArgumentError('A car can only be on one team');
+    }
+    if (targetScore != 3 && targetScore != 5 && targetScore != 7) {
+      throw ArgumentError('Team Battle target score must be 3, 5, or 7');
+    }
+
+    final tournament = Tournament()
+      ..date = DateTime.now()
+      ..type = TournamentType.teamBattle
+      ..status = TournamentStatus.active
+      ..teamAName = 'Red Team'
+      ..teamBName = 'Blue Team'
+      ..teamAScore = 0
+      ..teamBScore = 0
+      ..targetScore = targetScore
+      ..teamAssignmentsJson = jsonEncode({
+        'teamA': teamACarIds,
+        'teamB': teamBCarIds,
+      });
+
+    await _isar.writeTxn(() async {
+      await _isar.tournaments.put(tournament);
+    });
+
+    await _createTeamBattleRound(tournament);
+    return tournament.id;
+  }
+
+  Future<void> _createTeamBattleRound(Tournament tournament) async {
+    final assignments =
+        jsonDecode(tournament.teamAssignmentsJson ?? '{}')
+            as Map<String, dynamic>;
+    final teamAIds = (assignments['teamA'] as List<dynamic>? ?? [])
+        .whereType<int>()
+        .toList();
+    final teamBIds = (assignments['teamB'] as List<dynamic>? ?? [])
+        .whereType<int>()
+        .toList();
+
+    if (teamAIds.isEmpty || teamBIds.isEmpty) return;
+
+    final teamACars = <Car>[];
+    for (final id in teamAIds) {
+      final car = await _isar.cars.get(id);
+      if (car != null && !car.isDeleted) teamACars.add(car);
+    }
+
+    final teamBCars = <Car>[];
+    for (final id in teamBIds) {
+      final car = await _isar.cars.get(id);
+      if (car != null && !car.isDeleted) teamBCars.add(car);
+    }
+
+    if (teamACars.isEmpty || teamBCars.isEmpty) return;
+
+    teamACars.shuffle(_random);
+    teamBCars.shuffle(_random);
+
+    await tournament.rounds.load();
+    final round = Round()
+      ..roundNumber = tournament.rounds.length + 1
+      ..isCompleted = false;
+
+    final match = Match()..matchPosition = 0;
+    match.carA.value = teamACars.first;
+    match.carB.value = teamBCars.first;
+
+    await _isar.writeTxn(() async {
+      await _isar.rounds.put(round);
+      tournament.rounds.add(round);
+      await tournament.rounds.save();
+
+      await _isar.matchs.put(match);
+      await match.carA.save();
+      await match.carB.save();
+      round.matches.add(match);
+      await round.matches.save();
+    });
+  }
+
   /// Create all brackets for a double elimination tournament
   Future<void> _createDoubleEliminationBrackets(
     Tournament tournament,
@@ -456,12 +547,52 @@ class TournamentService {
         tournament.status = TournamentStatus.completed;
         await _isar.tournaments.put(tournament);
       });
+    } else if (tournament.type == TournamentType.teamBattle) {
+      await _handleTeamBattleRoundComplete(tournament, allMatches);
     } else {
       // Round robin - tournament complete when all matches done
       await _isar.writeTxn(() async {
         tournament.status = TournamentStatus.completed;
         await _isar.tournaments.put(tournament);
       });
+    }
+  }
+
+  Future<void> _handleTeamBattleRoundComplete(
+    Tournament tournament,
+    List<Match> allMatches,
+  ) async {
+    if (allMatches.isEmpty) return;
+
+    final match = allMatches.first;
+    await match.winner.load();
+    await match.carA.load();
+    await match.carB.load();
+
+    final winner = match.winner.value;
+    final carA = match.carA.value;
+    final carB = match.carB.value;
+    if (winner == null || carA == null || carB == null) return;
+
+    final teamAWon = winner.id == carA.id;
+
+    await _isar.writeTxn(() async {
+      if (teamAWon) {
+        tournament.teamAScore += 1;
+      } else {
+        tournament.teamBScore += 1;
+      }
+
+      if (tournament.teamAScore >= tournament.targetScore ||
+          tournament.teamBScore >= tournament.targetScore) {
+        tournament.status = TournamentStatus.completed;
+      }
+
+      await _isar.tournaments.put(tournament);
+    });
+
+    if (tournament.status != TournamentStatus.completed) {
+      await _createTeamBattleRound(tournament);
     }
   }
 
@@ -1053,6 +1184,7 @@ class TournamentService {
     if (tournament.type == TournamentType.knockout ||
         tournament.type == TournamentType.tinyTournament ||
         tournament.type == TournamentType.mysteryRace ||
+        tournament.type == TournamentType.teamBattle ||
         tournament.type == TournamentType.doubleElimination ||
         tournament.type == TournamentType.groupKnockout) {
       // Winner is the winner of the final match

@@ -44,8 +44,38 @@ const TournamentSchema = CollectionSchema(
       type: IsarType.string,
       enumMap: _TournamentstatusEnumValueMap,
     ),
-    r'type': PropertySchema(
+    r'targetScore': PropertySchema(
       id: 5,
+      name: r'targetScore',
+      type: IsarType.long,
+    ),
+    r'teamAName': PropertySchema(
+      id: 6,
+      name: r'teamAName',
+      type: IsarType.string,
+    ),
+    r'teamAScore': PropertySchema(
+      id: 7,
+      name: r'teamAScore',
+      type: IsarType.long,
+    ),
+    r'teamAssignmentsJson': PropertySchema(
+      id: 8,
+      name: r'teamAssignmentsJson',
+      type: IsarType.string,
+    ),
+    r'teamBName': PropertySchema(
+      id: 9,
+      name: r'teamBName',
+      type: IsarType.string,
+    ),
+    r'teamBScore': PropertySchema(
+      id: 10,
+      name: r'teamBScore',
+      type: IsarType.long,
+    ),
+    r'type': PropertySchema(
+      id: 11,
       name: r'type',
       type: IsarType.string,
       enumMap: _TournamenttypeEnumValueMap,
@@ -86,6 +116,24 @@ int _tournamentEstimateSize(
   }
   bytesCount += 3 + object.phase.name.length * 3;
   bytesCount += 3 + object.status.name.length * 3;
+  {
+    final value = object.teamAName;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
+  {
+    final value = object.teamAssignmentsJson;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
+  {
+    final value = object.teamBName;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
   bytesCount += 3 + object.type.name.length * 3;
   return bytesCount;
 }
@@ -101,7 +149,13 @@ void _tournamentSerialize(
   writer.writeString(offsets[2], object.knockoutFormat);
   writer.writeString(offsets[3], object.phase.name);
   writer.writeString(offsets[4], object.status.name);
-  writer.writeString(offsets[5], object.type.name);
+  writer.writeLong(offsets[5], object.targetScore);
+  writer.writeString(offsets[6], object.teamAName);
+  writer.writeLong(offsets[7], object.teamAScore);
+  writer.writeString(offsets[8], object.teamAssignmentsJson);
+  writer.writeString(offsets[9], object.teamBName);
+  writer.writeLong(offsets[10], object.teamBScore);
+  writer.writeString(offsets[11], object.type.name);
 }
 
 Tournament _tournamentDeserialize(
@@ -121,8 +175,14 @@ Tournament _tournamentDeserialize(
   object.status =
       _TournamentstatusValueEnumMap[reader.readStringOrNull(offsets[4])] ??
           TournamentStatus.setup;
+  object.targetScore = reader.readLong(offsets[5]);
+  object.teamAName = reader.readStringOrNull(offsets[6]);
+  object.teamAScore = reader.readLong(offsets[7]);
+  object.teamAssignmentsJson = reader.readStringOrNull(offsets[8]);
+  object.teamBName = reader.readStringOrNull(offsets[9]);
+  object.teamBScore = reader.readLong(offsets[10]);
   object.type =
-      _TournamenttypeValueEnumMap[reader.readStringOrNull(offsets[5])] ??
+      _TournamenttypeValueEnumMap[reader.readStringOrNull(offsets[11])] ??
           TournamentType.knockout;
   return object;
 }
@@ -147,6 +207,18 @@ P _tournamentDeserializeProp<P>(
       return (_TournamentstatusValueEnumMap[reader.readStringOrNull(offset)] ??
           TournamentStatus.setup) as P;
     case 5:
+      return (reader.readLong(offset)) as P;
+    case 6:
+      return (reader.readStringOrNull(offset)) as P;
+    case 7:
+      return (reader.readLong(offset)) as P;
+    case 8:
+      return (reader.readStringOrNull(offset)) as P;
+    case 9:
+      return (reader.readStringOrNull(offset)) as P;
+    case 10:
+      return (reader.readLong(offset)) as P;
+    case 11:
       return (_TournamenttypeValueEnumMap[reader.readStringOrNull(offset)] ??
           TournamentType.knockout) as P;
     default:
@@ -179,6 +251,7 @@ const _TournamenttypeEnumValueMap = {
   r'groupKnockout': r'groupKnockout',
   r'tinyTournament': r'tinyTournament',
   r'mysteryRace': r'mysteryRace',
+  r'teamBattle': r'teamBattle',
 };
 const _TournamenttypeValueEnumMap = {
   r'knockout': TournamentType.knockout,
@@ -187,6 +260,7 @@ const _TournamenttypeValueEnumMap = {
   r'groupKnockout': TournamentType.groupKnockout,
   r'tinyTournament': TournamentType.tinyTournament,
   r'mysteryRace': TournamentType.mysteryRace,
+  r'teamBattle': TournamentType.teamBattle,
 };
 
 Id _tournamentGetId(Tournament object) {
@@ -876,6 +950,630 @@ extension TournamentQueryFilter
     });
   }
 
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition>
+      targetScoreEqualTo(int value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'targetScore',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition>
+      targetScoreGreaterThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'targetScore',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition>
+      targetScoreLessThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'targetScore',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition>
+      targetScoreBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'targetScore',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition>
+      teamANameIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'teamAName',
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition>
+      teamANameIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'teamAName',
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition> teamANameEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'teamAName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition>
+      teamANameGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'teamAName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition> teamANameLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'teamAName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition> teamANameBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'teamAName',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition>
+      teamANameStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'teamAName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition> teamANameEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'teamAName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition> teamANameContains(
+      String value,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'teamAName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition> teamANameMatches(
+      String pattern,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'teamAName',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition>
+      teamANameIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'teamAName',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition>
+      teamANameIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'teamAName',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition> teamAScoreEqualTo(
+      int value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'teamAScore',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition>
+      teamAScoreGreaterThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'teamAScore',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition>
+      teamAScoreLessThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'teamAScore',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition> teamAScoreBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'teamAScore',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition>
+      teamAssignmentsJsonIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'teamAssignmentsJson',
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition>
+      teamAssignmentsJsonIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'teamAssignmentsJson',
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition>
+      teamAssignmentsJsonEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'teamAssignmentsJson',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition>
+      teamAssignmentsJsonGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'teamAssignmentsJson',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition>
+      teamAssignmentsJsonLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'teamAssignmentsJson',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition>
+      teamAssignmentsJsonBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'teamAssignmentsJson',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition>
+      teamAssignmentsJsonStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'teamAssignmentsJson',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition>
+      teamAssignmentsJsonEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'teamAssignmentsJson',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition>
+      teamAssignmentsJsonContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'teamAssignmentsJson',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition>
+      teamAssignmentsJsonMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'teamAssignmentsJson',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition>
+      teamAssignmentsJsonIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'teamAssignmentsJson',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition>
+      teamAssignmentsJsonIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'teamAssignmentsJson',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition>
+      teamBNameIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'teamBName',
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition>
+      teamBNameIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'teamBName',
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition> teamBNameEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'teamBName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition>
+      teamBNameGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'teamBName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition> teamBNameLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'teamBName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition> teamBNameBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'teamBName',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition>
+      teamBNameStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'teamBName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition> teamBNameEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'teamBName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition> teamBNameContains(
+      String value,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'teamBName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition> teamBNameMatches(
+      String pattern,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'teamBName',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition>
+      teamBNameIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'teamBName',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition>
+      teamBNameIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'teamBName',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition> teamBScoreEqualTo(
+      int value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'teamBScore',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition>
+      teamBScoreGreaterThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'teamBScore',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition>
+      teamBScoreLessThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'teamBScore',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterFilterCondition> teamBScoreBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'teamBScore',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
   QueryBuilder<Tournament, Tournament, QAfterFilterCondition> typeEqualTo(
     TournamentType value, {
     bool caseSensitive = true,
@@ -1136,6 +1834,80 @@ extension TournamentQuerySortBy
     });
   }
 
+  QueryBuilder<Tournament, Tournament, QAfterSortBy> sortByTargetScore() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'targetScore', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterSortBy> sortByTargetScoreDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'targetScore', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterSortBy> sortByTeamAName() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'teamAName', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterSortBy> sortByTeamANameDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'teamAName', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterSortBy> sortByTeamAScore() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'teamAScore', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterSortBy> sortByTeamAScoreDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'teamAScore', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterSortBy>
+      sortByTeamAssignmentsJson() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'teamAssignmentsJson', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterSortBy>
+      sortByTeamAssignmentsJsonDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'teamAssignmentsJson', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterSortBy> sortByTeamBName() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'teamBName', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterSortBy> sortByTeamBNameDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'teamBName', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterSortBy> sortByTeamBScore() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'teamBScore', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterSortBy> sortByTeamBScoreDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'teamBScore', Sort.desc);
+    });
+  }
+
   QueryBuilder<Tournament, Tournament, QAfterSortBy> sortByType() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'type', Sort.asc);
@@ -1224,6 +1996,80 @@ extension TournamentQuerySortThenBy
     });
   }
 
+  QueryBuilder<Tournament, Tournament, QAfterSortBy> thenByTargetScore() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'targetScore', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterSortBy> thenByTargetScoreDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'targetScore', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterSortBy> thenByTeamAName() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'teamAName', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterSortBy> thenByTeamANameDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'teamAName', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterSortBy> thenByTeamAScore() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'teamAScore', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterSortBy> thenByTeamAScoreDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'teamAScore', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterSortBy>
+      thenByTeamAssignmentsJson() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'teamAssignmentsJson', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterSortBy>
+      thenByTeamAssignmentsJsonDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'teamAssignmentsJson', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterSortBy> thenByTeamBName() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'teamBName', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterSortBy> thenByTeamBNameDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'teamBName', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterSortBy> thenByTeamBScore() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'teamBScore', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QAfterSortBy> thenByTeamBScoreDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'teamBScore', Sort.desc);
+    });
+  }
+
   QueryBuilder<Tournament, Tournament, QAfterSortBy> thenByType() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'type', Sort.asc);
@@ -1273,6 +2119,46 @@ extension TournamentQueryWhereDistinct
     });
   }
 
+  QueryBuilder<Tournament, Tournament, QDistinct> distinctByTargetScore() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'targetScore');
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QDistinct> distinctByTeamAName(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'teamAName', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QDistinct> distinctByTeamAScore() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'teamAScore');
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QDistinct> distinctByTeamAssignmentsJson(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'teamAssignmentsJson',
+          caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QDistinct> distinctByTeamBName(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'teamBName', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<Tournament, Tournament, QDistinct> distinctByTeamBScore() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'teamBScore');
+    });
+  }
+
   QueryBuilder<Tournament, Tournament, QDistinct> distinctByType(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -1317,6 +2203,43 @@ extension TournamentQueryProperty
       statusProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'status');
+    });
+  }
+
+  QueryBuilder<Tournament, int, QQueryOperations> targetScoreProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'targetScore');
+    });
+  }
+
+  QueryBuilder<Tournament, String?, QQueryOperations> teamANameProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'teamAName');
+    });
+  }
+
+  QueryBuilder<Tournament, int, QQueryOperations> teamAScoreProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'teamAScore');
+    });
+  }
+
+  QueryBuilder<Tournament, String?, QQueryOperations>
+      teamAssignmentsJsonProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'teamAssignmentsJson');
+    });
+  }
+
+  QueryBuilder<Tournament, String?, QQueryOperations> teamBNameProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'teamBName');
+    });
+  }
+
+  QueryBuilder<Tournament, int, QQueryOperations> teamBScoreProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'teamBScore');
     });
   }
 

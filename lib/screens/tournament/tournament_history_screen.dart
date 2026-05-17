@@ -150,6 +150,8 @@ class _TournamentHistoryCard extends ConsumerWidget {
         return 'TINY';
       case TournamentType.mysteryRace:
         return 'MYSTERY';
+      case TournamentType.teamBattle:
+        return 'TEAM';
     }
   }
 
@@ -166,6 +168,8 @@ class _TournamentHistoryCard extends ConsumerWidget {
       case TournamentType.tinyTournament:
         return AppTheme.winnerColor;
       case TournamentType.mysteryRace:
+        return AppTheme.secondaryColor;
+      case TournamentType.teamBattle:
         return AppTheme.secondaryColor;
     }
   }

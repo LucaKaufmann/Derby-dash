@@ -83,6 +83,13 @@ class HomeScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 24),
                           _MenuButton(
+                            icon: Icons.groups,
+                            label: 'TEAM BATTLE',
+                            color: AppTheme.secondaryColor,
+                            onTap: () => context.push('/team-battle/setup'),
+                          ),
+                          const SizedBox(height: 24),
+                          _MenuButton(
                             icon: Icons.history,
                             label: 'HISTORY',
                             color: AppTheme.surfaceColor,

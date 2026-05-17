@@ -26,6 +26,8 @@ class TournamentDashboardScreen extends ConsumerWidget {
         return 'TINY TOURNAMENT';
       case TournamentType.mysteryRace:
         return 'MYSTERY RACE';
+      case TournamentType.teamBattle:
+        return 'TEAM BATTLE';
     }
   }
 
