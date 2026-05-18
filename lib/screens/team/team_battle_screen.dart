@@ -22,17 +22,27 @@ class _TeamBattleScreenState extends ConsumerState<TeamBattleScreen> {
   int? _selectedWinnerId;
   bool _isSaving = false;
 
-  Future<void> _confirmWinner(Match match, Car winner) async {
+  void _selectWinner(Car winner) {
     if (_isSaving) return;
 
     setState(() {
-      _selectedWinnerId = winner.id;
+      if (_selectedWinnerId == winner.id) {
+        _selectedWinnerId = null;
+      } else {
+        _selectedWinnerId = winner.id;
+      }
+    });
+  }
+
+  Future<void> _confirmWinner(Match match) async {
+    final winnerId = _selectedWinnerId;
+    if (winnerId == null || _isSaving) return;
+
+    setState(() {
       _isSaving = true;
     });
 
-    await ref
-        .read(tournamentServiceProvider)
-        .completeMatch(match.id, winner.id);
+    await ref.read(tournamentServiceProvider).completeMatch(match.id, winnerId);
 
     ref.invalidate(tournamentProvider(widget.tournamentId));
     ref.invalidate(tournamentRoundsProvider(widget.tournamentId));
@@ -40,7 +50,7 @@ class _TeamBattleScreenState extends ConsumerState<TeamBattleScreen> {
     ref.invalidate(roundMatchesProvider(match.round.value?.id ?? -1));
     ref.invalidate(completedTournamentsProvider);
     ref.invalidate(activeTournamentsProvider);
-    ref.invalidate(carStatsProvider(winner.id));
+    ref.invalidate(carStatsProvider(winnerId));
     ref.invalidate(sortedCarsProvider);
 
     if (!mounted) return;
@@ -50,76 +60,106 @@ class _TeamBattleScreenState extends ConsumerState<TeamBattleScreen> {
     });
   }
 
+  void _clearSelection() {
+    if (_isSaving) return;
+    setState(() {
+      _selectedWinnerId = null;
+    });
+  }
+
+  void _goBack() {
+    if (_isSaving) return;
+    context.go('/play');
+  }
+
   @override
   Widget build(BuildContext context) {
     final tournamentAsync = ref.watch(tournamentProvider(widget.tournamentId));
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('TEAM BATTLE'),
-        leading: IconButton(
-          icon: const Icon(Icons.home),
-          onPressed: () => context.go('/'),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _goBack();
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('TEAM BATTLE'),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: _isSaving ? null : _goBack,
+          ),
+          actions: [
+            if (_selectedWinnerId != null && !_isSaving)
+              TextButton.icon(
+                onPressed: _clearSelection,
+                icon: const Icon(Icons.close),
+                label: const Text('CLEAR'),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppTheme.textSecondary,
+                ),
+              ),
+          ],
         ),
-      ),
-      body: tournamentAsync.when(
-        data: (tournament) {
-          if (tournament == null) {
-            return const Center(child: Text('Team Battle not found'));
-          }
+        body: tournamentAsync.when(
+          data: (tournament) {
+            if (tournament == null) {
+              return const Center(child: Text('Team Battle not found'));
+            }
 
-          if (tournament.status == TournamentStatus.completed) {
-            return _TeamVictoryView(tournament: tournament);
-          }
+            if (tournament.status == TournamentStatus.completed) {
+              return _TeamVictoryView(tournament: tournament);
+            }
 
-          final roundAsync = ref.watch(
-            currentRoundProvider(widget.tournamentId),
-          );
-          return roundAsync.when(
-            data: (round) {
-              if (round == null) {
-                return const Center(child: CircularProgressIndicator());
-              }
+            final roundAsync = ref.watch(
+              currentRoundProvider(widget.tournamentId),
+            );
+            return roundAsync.when(
+              data: (round) {
+                if (round == null) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-              final matchesAsync = ref.watch(roundMatchesProvider(round.id));
-              return matchesAsync.when(
-                data: (matches) {
-                  if (matches.isEmpty) {
-                    return const Center(child: Text('No race ready'));
-                  }
+                final matchesAsync = ref.watch(roundMatchesProvider(round.id));
+                return matchesAsync.when(
+                  data: (matches) {
+                    if (matches.isEmpty) {
+                      return const Center(child: Text('No race ready'));
+                    }
 
-                  final matchAsync = ref.watch(
-                    matchDetailsProvider(matches.first.id),
-                  );
-                  return matchAsync.when(
-                    data: (match) {
-                      if (match == null) {
-                        return const Center(child: Text('Race not found'));
-                      }
-                      return _BattleRaceView(
-                        tournament: tournament,
-                        match: match,
-                        selectedWinnerId: _selectedWinnerId,
-                        isSaving: _isSaving,
-                        onWinnerSelected: (winner) =>
-                            _confirmWinner(match, winner),
-                      );
-                    },
-                    loading: () =>
-                        const Center(child: CircularProgressIndicator()),
-                    error: (error, _) => Center(child: Text('Error: $error')),
-                  );
-                },
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (error, _) => Center(child: Text('Error: $error')),
-              );
-            },
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (error, _) => Center(child: Text('Error: $error')),
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(child: Text('Error: $error')),
+                    final matchAsync = ref.watch(
+                      matchDetailsProvider(matches.first.id),
+                    );
+                    return matchAsync.when(
+                      data: (match) {
+                        if (match == null) {
+                          return const Center(child: Text('Race not found'));
+                        }
+                        return _BattleRaceView(
+                          tournament: tournament,
+                          match: match,
+                          selectedWinnerId: _selectedWinnerId,
+                          isSaving: _isSaving,
+                          onWinnerSelected: _selectWinner,
+                          onConfirmWinner: () => _confirmWinner(match),
+                        );
+                      },
+                      loading: () =>
+                          const Center(child: CircularProgressIndicator()),
+                      error: (error, _) => Center(child: Text('Error: $error')),
+                    );
+                  },
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
+                  error: (error, _) => Center(child: Text('Error: $error')),
+                );
+              },
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (error, _) => Center(child: Text('Error: $error')),
+            );
+          },
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error, _) => Center(child: Text('Error: $error')),
+        ),
       ),
     );
   }
@@ -131,6 +171,7 @@ class _BattleRaceView extends StatelessWidget {
   final int? selectedWinnerId;
   final bool isSaving;
   final ValueChanged<Car> onWinnerSelected;
+  final VoidCallback onConfirmWinner;
 
   const _BattleRaceView({
     required this.tournament,
@@ -138,6 +179,7 @@ class _BattleRaceView extends StatelessWidget {
     required this.selectedWinnerId,
     required this.isSaving,
     required this.onWinnerSelected,
+    required this.onConfirmWinner,
   });
 
   @override
@@ -175,21 +217,62 @@ class _BattleRaceView extends StatelessWidget {
               onTap: () => onWinnerSelected(carA),
             ),
           ),
-          Container(
-            margin: const EdgeInsets.symmetric(vertical: 8),
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-            decoration: BoxDecoration(
-              color: AppTheme.surfaceColor,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: AppTheme.textSecondary, width: 2),
+          SizedBox(
+            height: 100,
+            width: double.infinity,
+            child: Center(
+              child: selectedWinnerId != null
+                  ? ElevatedButton.icon(
+                      onPressed: isSaving ? null : onConfirmWinner,
+                      icon: isSaving
+                          ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(Icons.check, size: 32),
+                      label: Text(
+                        isSaving ? 'SAVING...' : 'CONFIRM WINNER',
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.successColor,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 32,
+                          vertical: 16,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                      ),
+                    )
+                  : Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 32,
+                        vertical: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppTheme.surfaceColor,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: AppTheme.textSecondary,
+                          width: 3,
+                        ),
+                      ),
+                      child: Text(
+                        'VS',
+                        style: Theme.of(context).textTheme.headlineLarge,
+                      ),
+                    ),
             ),
-            child: isSaving
-                ? const SizedBox(
-                    width: 28,
-                    height: 28,
-                    child: CircularProgressIndicator(strokeWidth: 3),
-                  )
-                : Text('VS', style: Theme.of(context).textTheme.headlineMedium),
           ),
           Expanded(
             child: _TeamRaceCarButton(
@@ -316,15 +399,18 @@ class _TeamRaceCarButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isSelected = selectedWinnerId == car.id;
-    final isDisabled = isSaving && !isSelected;
+    final isLoser = selectedWinnerId != null && selectedWinnerId != car.id;
+    final cardColor = isSelected
+        ? AppTheme.successColor.withValues(alpha: 0.25)
+        : isLoser
+        ? AppTheme.surfaceColor.withValues(alpha: 0.3)
+        : teamColor.withValues(alpha: 0.2);
 
     return AnimatedOpacity(
       duration: const Duration(milliseconds: 180),
-      opacity: isDisabled ? 0.45 : 1,
+      opacity: isLoser ? 0.45 : 1,
       child: Material(
-        color: isSelected
-            ? AppTheme.successColor.withValues(alpha: 0.25)
-            : teamColor.withValues(alpha: 0.2),
+        color: cardColor,
         borderRadius: BorderRadius.circular(24),
         child: InkWell(
           onTap: isSaving ? null : onTap,
@@ -336,8 +422,12 @@ class _TeamRaceCarButton extends StatelessWidget {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(24),
               border: Border.all(
-                color: isSelected ? AppTheme.successColor : teamColor,
-                width: isSelected ? 6 : 4,
+                color: isSelected
+                    ? AppTheme.successColor
+                    : isLoser
+                    ? AppTheme.textSecondary.withValues(alpha: 0.3)
+                    : teamColor,
+                width: isSelected ? 6 : 3,
               ),
             ),
             child: Column(
@@ -361,18 +451,53 @@ class _TeamRaceCarButton extends StatelessWidget {
                     imagePadding: 10,
                     imageFit: BoxFit.contain,
                     iconSize: 90,
+                    backgroundColor: Colors.transparent,
                   ),
                 ),
                 const SizedBox(height: 12),
-                Text(
-                  car.name,
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (isSelected)
+                      const Padding(
+                        padding: EdgeInsets.only(right: 8),
+                        child: Icon(
+                          Icons.emoji_events,
+                          color: AppTheme.winnerColor,
+                          size: 32,
+                        ),
+                      ),
+                    Flexible(
+                      child: Text(
+                        car.name,
+                        style: Theme.of(context).textTheme.headlineSmall
+                            ?.copyWith(
+                              color: isSelected
+                                  ? AppTheme.winnerColor
+                                  : isLoser
+                                  ? AppTheme.textSecondary
+                                  : null,
+                              fontWeight: FontWeight.bold,
+                            ),
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
                 ),
+                if (!isSelected && !isLoser)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10),
+                    child: Text(
+                      'TAP TO SELECT',
+                      style: TextStyle(
+                        color: teamColor,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 2,
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
