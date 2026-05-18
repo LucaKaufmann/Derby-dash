@@ -285,44 +285,52 @@ class _MysteryCarButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: color.withValues(alpha: enabled ? 0.22 : 0.08),
-      borderRadius: BorderRadius.circular(24),
-      child: InkWell(
-        onTap: enabled ? onTap : null,
+    return AnimatedOpacity(
+      duration: const Duration(milliseconds: 180),
+      opacity: enabled ? 1 : 0.45,
+      child: Material(
+        color: Colors.transparent,
         borderRadius: BorderRadius.circular(24),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: color, width: 4),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Expanded(
-                child: CarPhotoFrame(
-                  photoPath: car.photoPath,
-                  width: double.infinity,
-                  height: double.infinity,
-                  borderRadius: BorderRadius.circular(18),
-                  imagePadding: 10,
-                  imageFit: BoxFit.contain,
-                  iconSize: 90,
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: enabled ? onTap : null,
+          borderRadius: BorderRadius.circular(24),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: enabled ? 0.22 : 0.08),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: color, width: 4),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: CarPhotoFrame(
+                    photoPath: car.photoPath,
+                    width: double.infinity,
+                    height: double.infinity,
+                    borderRadius: BorderRadius.circular(18),
+                    imagePadding: 10,
+                    imageFit: BoxFit.contain,
+                    iconSize: 90,
+                    backgroundColor: Colors.transparent,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                car.name,
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
+                const SizedBox(height: 16),
+                Text(
+                  car.name,
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
