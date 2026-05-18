@@ -23,6 +23,11 @@ class _TeamBattleSetupScreenState extends ConsumerState<TeamBattleSetupScreen> {
 
   bool get _canStart => _redTeamIds.isNotEmpty && _blueTeamIds.isNotEmpty;
 
+  void _goBack() {
+    if (_isCreating) return;
+    context.go('/play');
+  }
+
   void _toggleCar(Car car) {
     setState(() {
       if (_redTeamIds.remove(car.id)) {
@@ -69,116 +74,127 @@ class _TeamBattleSetupScreenState extends ConsumerState<TeamBattleSetupScreen> {
   Widget build(BuildContext context) {
     final carsAsync = ref.watch(carsProvider);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('TEAM BATTLE'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.pop(),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _goBack();
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('TEAM BATTLE'),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: _isCreating ? null : _goBack,
+          ),
         ),
-      ),
-      body: carsAsync.when(
-        data: (cars) {
-          if (cars.length < 2) {
-            return _NotEnoughCars(onGarageTap: () => context.push('/garage'));
-          }
+        body: carsAsync.when(
+          data: (cars) {
+            if (cars.length < 2) {
+              return _NotEnoughCars(onGarageTap: () => context.push('/garage'));
+            }
 
-          return Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _TeamCounter(
-                            label: 'RED TEAM',
-                            count: _redTeamIds.length,
-                            color: AppTheme.errorColor,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _TeamCounter(
-                            label: 'BLUE TEAM',
-                            count: _blueTeamIds.length,
-                            color: AppTheme.secondaryColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    SegmentedButton<int>(
-                      segments: const [
-                        ButtonSegment(value: 3, label: Text('3')),
-                        ButtonSegment(value: 5, label: Text('5')),
-                        ButtonSegment(value: 7, label: Text('7')),
-                      ],
-                      selected: {_targetScore},
-                      onSelectionChanged: (selection) {
-                        setState(() {
-                          _targetScore = selection.first;
-                        });
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: GridView.builder(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                    maxCrossAxisExtent: 220,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                    childAspectRatio: 0.75,
-                  ),
-                  itemCount: cars.length,
-                  itemBuilder: (context, index) {
-                    final car = cars[index];
-                    final team = _redTeamIds.contains(car.id)
-                        ? _Team.red
-                        : _blueTeamIds.contains(car.id)
-                        ? _Team.blue
-                        : null;
-                    return _TeamCarCard(
-                      car: car,
-                      team: team,
-                      onTap: () => _toggleCar(car),
-                    );
-                  },
-                ),
-              ),
-              SafeArea(
-                child: Padding(
+            return Column(
+              children: [
+                Padding(
                   padding: const EdgeInsets.all(16),
-                  child: ElevatedButton.icon(
-                    onPressed: _canStart && !_isCreating ? _startBattle : null,
-                    icon: _isCreating
-                        ? const SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 3,
-                              color: Colors.white,
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _TeamCounter(
+                              label: 'RED TEAM',
+                              count: _redTeamIds.length,
+                              color: AppTheme.errorColor,
                             ),
-                          )
-                        : const Icon(Icons.groups),
-                    label: Text(
-                      _canStart ? 'FIRST TO $_targetScore' : 'PICK BOTH TEAMS',
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 18),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _TeamCounter(
+                              label: 'BLUE TEAM',
+                              count: _blueTeamIds.length,
+                              color: AppTheme.secondaryColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      SegmentedButton<int>(
+                        segments: const [
+                          ButtonSegment(value: 3, label: Text('3')),
+                          ButtonSegment(value: 5, label: Text('5')),
+                          ButtonSegment(value: 7, label: Text('7')),
+                        ],
+                        selected: {_targetScore},
+                        onSelectionChanged: (selection) {
+                          setState(() {
+                            _targetScore = selection.first;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: GridView.builder(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    gridDelegate:
+                        const SliverGridDelegateWithMaxCrossAxisExtent(
+                          maxCrossAxisExtent: 220,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 12,
+                          childAspectRatio: 0.75,
+                        ),
+                    itemCount: cars.length,
+                    itemBuilder: (context, index) {
+                      final car = cars[index];
+                      final team = _redTeamIds.contains(car.id)
+                          ? _Team.red
+                          : _blueTeamIds.contains(car.id)
+                          ? _Team.blue
+                          : null;
+                      return _TeamCarCard(
+                        car: car,
+                        team: team,
+                        onTap: () => _toggleCar(car),
+                      );
+                    },
+                  ),
+                ),
+                SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: ElevatedButton.icon(
+                      onPressed: _canStart && !_isCreating
+                          ? _startBattle
+                          : null,
+                      icon: _isCreating
+                          ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 3,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(Icons.groups),
+                      label: Text(
+                        _canStart
+                            ? 'FIRST TO $_targetScore'
+                            : 'PICK BOTH TEAMS',
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 18),
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(child: Text('Error: $error')),
+              ],
+            );
+          },
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error, _) => Center(child: Text('Error: $error')),
+        ),
       ),
     );
   }
