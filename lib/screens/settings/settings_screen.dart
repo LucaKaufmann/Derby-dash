@@ -40,7 +40,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           text: 'Derby Dash backup',
         ),
       );
-    } catch (error) {
+    } catch (error, stackTrace) {
+      debugPrint('Backup export failed: $error\n$stackTrace');
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
@@ -109,7 +110,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
         ),
       );
-    } catch (error) {
+    } catch (error, stackTrace) {
+      debugPrint('Backup import failed: $error\n$stackTrace');
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
