@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 
@@ -15,6 +16,8 @@ class CarPhotoFrame extends StatelessWidget {
   final double iconSize;
   final Color? iconColor;
   final Color? backgroundColor;
+  final int? cacheWidth;
+  final int? cacheHeight;
 
   const CarPhotoFrame({
     super.key,
@@ -30,16 +33,23 @@ class CarPhotoFrame extends StatelessWidget {
     this.iconSize = 24,
     this.iconColor,
     this.backgroundColor,
+    this.cacheWidth,
+    this.cacheHeight,
   });
-
-  bool get _hasPhoto {
-    final path = photoPath;
-    return path != null && path.isNotEmpty && File(path).existsSync();
-  }
 
   @override
   Widget build(BuildContext context) {
     final bgColor = backgroundColor ?? AppTheme.backgroundColor;
+    final path = photoPath;
+    final hasPhotoPath = path != null && path.isNotEmpty;
+
+    final placeholder = Center(
+      child: Icon(
+        Icons.directions_car,
+        size: iconSize,
+        color: iconColor ?? AppTheme.textSecondary,
+      ),
+    );
 
     return Container(
       width: width,
@@ -53,23 +63,22 @@ class CarPhotoFrame extends StatelessWidget {
       ),
       child: ColoredBox(
         color: bgColor,
-        child: _hasPhoto
+        child: hasPhotoPath
             ? Padding(
                 padding: EdgeInsets.all(imagePadding),
                 child: Image.file(
-                  File(photoPath!),
+                  File(path),
                   fit: imageFit,
                   width: double.infinity,
                   height: double.infinity,
+                  cacheWidth: cacheWidth,
+                  cacheHeight: cacheHeight,
+                  filterQuality: FilterQuality.low,
+                  gaplessPlayback: true,
+                  errorBuilder: (_, __, ___) => placeholder,
                 ),
               )
-            : Center(
-                child: Icon(
-                  Icons.directions_car,
-                  size: iconSize,
-                  color: iconColor ?? AppTheme.textSecondary,
-                ),
-              ),
+            : placeholder,
       ),
     );
   }

@@ -41,24 +41,13 @@ Future<List<CarWithStats>> sortedCars(SortedCarsRef ref) async {
   final sortOption = ref.watch(garageSortProvider);
   final repository = ref.watch(carRepositoryProvider);
 
-  // Fetch stats for all cars
-  final carsWithStats = await Future.wait(
-    cars.map((car) async {
-      final wins = await repository.getWinCount(car.id);
-      final losses = await repository.getLossCount(car.id);
-      final matches = await repository.getMatchCount(car.id);
-      final tournamentWins = await repository.getTournamentWinCount(car.id);
-      return CarWithStats(
-        car: car,
-        stats: CarStats(
-          wins: wins,
-          losses: losses,
-          totalMatches: matches,
-          tournamentWins: tournamentWins,
-        ),
-      );
-    }),
+  final statsByCarId = await repository.getStatsForCars(
+    cars.map((car) => car.id),
   );
+  final carsWithStats = [
+    for (final car in cars)
+      CarWithStats(car: car, stats: CarStats.fromData(statsByCarId[car.id]!)),
+  ];
 
   // Sort based on selected option
   switch (sortOption) {
@@ -70,10 +59,12 @@ Future<List<CarWithStats>> sortedCars(SortedCarsRef ref) async {
       carsWithStats.sort((a, b) => b.stats.winRate.compareTo(a.stats.winRate));
     case GarageSortOption.tournamentWins:
       carsWithStats.sort(
-          (a, b) => b.stats.tournamentWins.compareTo(a.stats.tournamentWins));
+        (a, b) => b.stats.tournamentWins.compareTo(a.stats.tournamentWins),
+      );
     case GarageSortOption.name:
       carsWithStats.sort(
-          (a, b) => a.car.name.toLowerCase().compareTo(b.car.name.toLowerCase()));
+        (a, b) => a.car.name.toLowerCase().compareTo(b.car.name.toLowerCase()),
+      );
     case GarageSortOption.newest:
       carsWithStats.sort((a, b) => b.car.createdAt.compareTo(a.car.createdAt));
     case GarageSortOption.oldest:
@@ -97,10 +88,7 @@ class Cars extends _$Cars {
     return await repository.getAllCars();
   }
 
-  Future<void> addCar({
-    required String name,
-    String? tempPhotoPath,
-  }) async {
+  Future<void> addCar({required String name, String? tempPhotoPath}) async {
     final repository = ref.read(carRepositoryProvider);
 
     // Copy photo to permanent storage if provided
@@ -172,17 +160,8 @@ class Cars extends _$Cars {
 @Riverpod(keepAlive: true)
 Future<CarStats> carStats(CarStatsRef ref, int carId) async {
   final repository = ref.watch(carRepositoryProvider);
-  final wins = await repository.getWinCount(carId);
-  final losses = await repository.getLossCount(carId);
-  final matches = await repository.getMatchCount(carId);
-  final tournamentWins = await repository.getTournamentWinCount(carId);
-
-  return CarStats(
-    wins: wins,
-    losses: losses,
-    totalMatches: matches,
-    tournamentWins: tournamentWins,
-  );
+  final stats = await repository.getStatsForCar(carId);
+  return CarStats.fromData(stats);
 }
 
 class CarStats {
@@ -197,6 +176,15 @@ class CarStats {
     required this.totalMatches,
     this.tournamentWins = 0,
   });
+
+  factory CarStats.fromData(CarStatsData data) {
+    return CarStats(
+      wins: data.wins,
+      losses: data.losses,
+      totalMatches: data.totalMatches,
+      tournamentWins: data.tournamentWins,
+    );
+  }
 
   double get winRate => totalMatches > 0 ? wins / totalMatches : 0.0;
 }

@@ -3,6 +3,26 @@ import '../models/car.dart';
 import '../models/match.dart';
 import '../models/tournament.dart';
 
+typedef CarStatsData = ({
+  int wins,
+  int losses,
+  int totalMatches,
+  int tournamentWins,
+});
+
+class _MutableCarStats {
+  int wins = 0;
+  int totalMatches = 0;
+  int tournamentWins = 0;
+
+  CarStatsData toData() => (
+    wins: wins,
+    losses: totalMatches - wins,
+    totalMatches: totalMatches,
+    tournamentWins: tournamentWins,
+  );
+}
+
 class CarRepository {
   final Isar _isar;
 
@@ -141,6 +161,123 @@ class CarRepository {
     }
 
     return tournamentWins;
+  }
+
+  Future<CarStatsData> getStatsForCar(Id carId) async {
+    final wins = await getWinCount(carId);
+    final matches = await getMatchCount(carId);
+    final tournamentWins = await getTournamentWinCount(carId);
+
+    return (
+      wins: wins,
+      losses: matches - wins,
+      totalMatches: matches,
+      tournamentWins: tournamentWins,
+    );
+  }
+
+  Future<Map<Id, CarStatsData>> getStatsForCars(Iterable<Id> carIds) async {
+    final targetIds = carIds.toSet();
+    final mutableStatsById = {
+      for (final id in targetIds) id: _MutableCarStats(),
+    };
+
+    if (targetIds.isEmpty) {
+      return const {};
+    }
+
+    final completedMatches = await _isar.matchs
+        .filter()
+        .winner((q) => q.idGreaterThan(0))
+        .findAll();
+
+    for (final match in completedMatches) {
+      await Future.wait([
+        match.carA.load(),
+        match.carB.load(),
+        match.winner.load(),
+      ]);
+
+      final carAId = match.carA.value?.id;
+      final carBId = match.carB.value?.id;
+      final winnerId = match.winner.value?.id;
+
+      if (carAId != null && targetIds.contains(carAId)) {
+        mutableStatsById[carAId]!.totalMatches++;
+      }
+      if (carBId != null && targetIds.contains(carBId)) {
+        mutableStatsById[carBId]!.totalMatches++;
+      }
+      if (winnerId != null && targetIds.contains(winnerId)) {
+        mutableStatsById[winnerId]!.wins++;
+      }
+    }
+
+    final tournamentWinCounts = await _getTournamentWinCountsForCars(targetIds);
+    for (final entry in tournamentWinCounts.entries) {
+      mutableStatsById[entry.key]!.tournamentWins = entry.value;
+    }
+
+    return {
+      for (final entry in mutableStatsById.entries)
+        entry.key: entry.value.toData(),
+    };
+  }
+
+  Future<Map<Id, int>> _getTournamentWinCountsForCars(Set<Id> carIds) async {
+    final tournamentWinCounts = {for (final id in carIds) id: 0};
+
+    final completedTournaments = await _isar.tournaments
+        .filter()
+        .statusEqualTo(TournamentStatus.completed)
+        .findAll();
+
+    for (final tournament in completedTournaments) {
+      await tournament.rounds.load();
+      final rounds = tournament.rounds.toList();
+      if (rounds.isEmpty) continue;
+
+      rounds.sort((a, b) => a.roundNumber.compareTo(b.roundNumber));
+
+      if (tournament.type == TournamentType.knockout ||
+          tournament.type == TournamentType.doubleElimination ||
+          tournament.type == TournamentType.groupKnockout) {
+        final finalRound = rounds.last;
+        await finalRound.matches.load();
+        final matches = finalRound.matches.toList();
+        if (matches.isEmpty) continue;
+
+        final finalMatch = matches.first;
+        await finalMatch.winner.load();
+        final winnerId = finalMatch.winner.value?.id;
+        if (winnerId != null && carIds.contains(winnerId)) {
+          tournamentWinCounts[winnerId] = tournamentWinCounts[winnerId]! + 1;
+        }
+      } else {
+        final winCounts = <Id, int>{};
+        for (final round in rounds) {
+          await round.matches.load();
+          for (final match in round.matches) {
+            await match.winner.load();
+            final winnerId = match.winner.value?.id;
+            if (winnerId != null) {
+              winCounts[winnerId] = (winCounts[winnerId] ?? 0) + 1;
+            }
+          }
+        }
+
+        if (winCounts.isNotEmpty) {
+          final sortedEntries = winCounts.entries.toList()
+            ..sort((a, b) => b.value.compareTo(a.value));
+          final winnerId = sortedEntries.first.key;
+          if (carIds.contains(winnerId)) {
+            tournamentWinCounts[winnerId] = tournamentWinCounts[winnerId]! + 1;
+          }
+        }
+      }
+    }
+
+    return tournamentWinCounts;
   }
 
   // Watch cars stream for real-time updates
