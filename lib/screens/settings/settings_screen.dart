@@ -79,12 +79,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     if (shouldImport != true) return;
 
     final pickedFile = await file_selector.openFile(
-      acceptedTypeGroups: const [
-        file_selector.XTypeGroup(
-          label: 'Derby Dash Backup',
-          extensions: ['derbydash', 'zip'],
-        ),
-      ],
+      acceptedTypeGroups: Platform.isAndroid
+          ? const [file_selector.XTypeGroup(label: 'All files')]
+          : const [
+              file_selector.XTypeGroup(
+                label: 'Derby Dash Backup',
+                extensions: ['derbydash', 'zip'],
+              ),
+            ],
       confirmButtonText: 'Import',
     );
     final path = pickedFile?.path;
