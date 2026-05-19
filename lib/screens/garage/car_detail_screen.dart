@@ -8,6 +8,9 @@ import '../../data/models/car.dart';
 import '../../providers/car_provider.dart';
 import '../../theme/app_theme.dart';
 
+const _carPhotoMaxDimension = 1400.0;
+const _carPhotoPickerQuality = 88;
+
 class CarDetailScreen extends ConsumerStatefulWidget {
   final int carId;
 
@@ -29,9 +32,7 @@ class _CarDetailScreenState extends ConsumerState<CarDetailScreen> {
           controller: controller,
           autofocus: true,
           textCapitalization: TextCapitalization.words,
-          decoration: const InputDecoration(
-            hintText: 'Enter car name',
-          ),
+          decoration: const InputDecoration(hintText: 'Enter car name'),
           onSubmitted: (value) => Navigator.pop(context, value.trim()),
         ),
         actions: [
@@ -48,10 +49,9 @@ class _CarDetailScreenState extends ConsumerState<CarDetailScreen> {
     );
 
     if (newName != null && newName.isNotEmpty && newName != car.name) {
-      await ref.read(carsProvider.notifier).updateCarDetails(
-            carId: widget.carId,
-            name: newName,
-          );
+      await ref
+          .read(carsProvider.notifier)
+          .updateCarDetails(carId: widget.carId, name: newName);
     }
   }
 
@@ -85,6 +85,9 @@ class _CarDetailScreenState extends ConsumerState<CarDetailScreen> {
       final XFile? image = await picker.pickImage(
         source: source,
         preferredCameraDevice: CameraDevice.rear,
+        maxWidth: _carPhotoMaxDimension,
+        maxHeight: _carPhotoMaxDimension,
+        imageQuality: _carPhotoPickerQuality,
       );
 
       if (image == null) return;
@@ -114,16 +117,18 @@ class _CarDetailScreenState extends ConsumerState<CarDetailScreen> {
       );
 
       if (croppedFile != null) {
-        await ref.read(carsProvider.notifier).updateCarDetails(
+        await ref
+            .read(carsProvider.notifier)
+            .updateCarDetails(
               carId: widget.carId,
               tempPhotoPath: croppedFile.path,
             );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error updating photo: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error updating photo: $e')));
       }
     }
   }
@@ -141,9 +146,7 @@ class _CarDetailScreenState extends ConsumerState<CarDetailScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(
-              foregroundColor: AppTheme.errorColor,
-            ),
+            style: TextButton.styleFrom(foregroundColor: AppTheme.errorColor),
             child: const Text('DELETE'),
           ),
         ],
@@ -207,10 +210,7 @@ class _CarDetailScreenState extends ConsumerState<CarDetailScreen> {
                 fit: StackFit.expand,
                 children: [
                   car.photoPath.isNotEmpty && File(car.photoPath).existsSync()
-                      ? Image.file(
-                          File(car.photoPath),
-                          fit: BoxFit.cover,
-                        )
+                      ? Image.file(File(car.photoPath), fit: BoxFit.cover)
                       : Container(
                           color: AppTheme.surfaceColor,
                           child: const Center(
@@ -255,17 +255,13 @@ class _CarDetailScreenState extends ConsumerState<CarDetailScreen> {
                     child: Text(
                       car.name,
                       style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                        fontWeight: FontWeight.bold,
+                      ),
                       textAlign: TextAlign.center,
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Icon(
-                    Icons.edit,
-                    color: AppTheme.textSecondary,
-                    size: 24,
-                  ),
+                  Icon(Icons.edit, color: AppTheme.textSecondary, size: 24),
                 ],
               ),
             ),
@@ -327,25 +323,21 @@ class _CarDetailScreenState extends ConsumerState<CarDetailScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(
-                  Icons.emoji_events,
-                  size: 32,
-                  color: goldColor,
-                ),
+                const Icon(Icons.emoji_events, size: 32, color: goldColor),
                 const SizedBox(width: 12),
                 Text(
                   '${stats.tournamentWins}',
                   style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: goldColor,
-                      ),
+                    fontWeight: FontWeight.bold,
+                    color: goldColor,
+                  ),
                 ),
                 const SizedBox(width: 8),
                 Text(
                   stats.tournamentWins == 1 ? 'CHAMPIONSHIP' : 'CHAMPIONSHIPS',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: AppTheme.textSecondary,
-                      ),
+                    color: AppTheme.textSecondary,
+                  ),
                 ),
               ],
             ),
@@ -366,18 +358,18 @@ class _CarDetailScreenState extends ConsumerState<CarDetailScreen> {
                 Text(
                   'WIN RATE',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: AppTheme.textSecondary,
-                      ),
+                    color: AppTheme.textSecondary,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   '${(stats.winRate * 100).toStringAsFixed(0)}%',
                   style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: stats.winRate >= 0.5
-                            ? AppTheme.successColor
-                            : AppTheme.errorColor,
-                      ),
+                    fontWeight: FontWeight.bold,
+                    color: stats.winRate >= 0.5
+                        ? AppTheme.successColor
+                        : AppTheme.errorColor,
+                  ),
                 ),
               ],
             ),
@@ -412,16 +404,16 @@ class _StatCard extends StatelessWidget {
           Text(
             value,
             style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: color,
-                ),
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
           ),
           const SizedBox(height: 4),
           Text(
             label,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppTheme.textSecondary,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: AppTheme.textSecondary),
           ),
         ],
       ),

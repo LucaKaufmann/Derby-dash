@@ -7,6 +7,9 @@ import 'package:image_cropper/image_cropper.dart';
 import '../../providers/car_provider.dart';
 import '../../theme/app_theme.dart';
 
+const _carPhotoMaxDimension = 1400.0;
+const _carPhotoPickerQuality = 88;
+
 class AddCarScreen extends ConsumerStatefulWidget {
   const AddCarScreen({super.key});
 
@@ -32,6 +35,9 @@ class _AddCarScreenState extends ConsumerState<AddCarScreen> {
       final XFile? image = await picker.pickImage(
         source: ImageSource.camera,
         preferredCameraDevice: CameraDevice.rear,
+        maxWidth: _carPhotoMaxDimension,
+        maxHeight: _carPhotoMaxDimension,
+        imageQuality: _carPhotoPickerQuality,
       );
 
       if (image == null) return;
@@ -68,9 +74,9 @@ class _AddCarScreenState extends ConsumerState<AddCarScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error taking photo: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error taking photo: $e')));
       }
     }
   }
@@ -88,19 +94,18 @@ class _AddCarScreenState extends ConsumerState<AddCarScreen> {
     });
 
     try {
-      await ref.read(carsProvider.notifier).addCar(
-            name: _nameController.text.trim(),
-            tempPhotoPath: _photoPath,
-          );
+      await ref
+          .read(carsProvider.notifier)
+          .addCar(name: _nameController.text.trim(), tempPhotoPath: _photoPath);
 
       if (mounted) {
         context.pop();
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error saving car: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error saving car: $e')));
         setState(() {
           _isLoading = false;
         });
@@ -151,8 +156,9 @@ class _AddCarScreenState extends ConsumerState<AddCarScreen> {
                                     border: Border.all(
                                       color: _photoPath != null
                                           ? AppTheme.primaryColor
-                                          : AppTheme.textSecondary
-                                              .withValues(alpha: 0.3),
+                                          : AppTheme.textSecondary.withValues(
+                                              alpha: 0.3,
+                                            ),
                                       width: 3,
                                     ),
                                   ),
