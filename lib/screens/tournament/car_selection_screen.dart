@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -40,6 +41,12 @@ class _CarSelectionScreenState extends ConsumerState<CarSelectionScreen> {
     switch (widget.tournamentType) {
       case TournamentType.doubleElimination:
         return 4;
+      case TournamentType.tinyTournament:
+        return 4;
+      case TournamentType.mysteryRace:
+        return 2;
+      case TournamentType.teamBattle:
+        return 2;
       case TournamentType.groupKnockout:
         return 8;
       default:
@@ -56,6 +63,9 @@ class _CarSelectionScreenState extends ConsumerState<CarSelectionScreen> {
   bool get _isValidCarCount {
     final count = _selectedCarIds.length;
     if (count < _minCarsRequired) return false;
+    if (widget.tournamentType == TournamentType.tinyTournament) {
+      return count == 4;
+    }
     // Require power of 2 for knockout/double elimination (4, 8, 16, 32, etc.)
     if (widget.tournamentType == TournamentType.knockout ||
         widget.tournamentType == TournamentType.doubleElimination) {
@@ -88,6 +98,12 @@ class _CarSelectionScreenState extends ConsumerState<CarSelectionScreen> {
         return 'Requires at least 2 cars';
       case TournamentType.groupKnockout:
         return 'Requires exactly 8, 16, or 32 cars';
+      case TournamentType.tinyTournament:
+        return 'Pick exactly 4 cars';
+      case TournamentType.mysteryRace:
+        return 'Mystery Race picks cars for you';
+      case TournamentType.teamBattle:
+        return 'Use Team Battle setup';
     }
   }
 
@@ -95,10 +111,16 @@ class _CarSelectionScreenState extends ConsumerState<CarSelectionScreen> {
     final count = _selectedCarIds.length;
     if (count == 0) return null;
     if (count < _minCarsRequired) {
+      if (widget.tournamentType == TournamentType.tinyTournament) {
+        return 'Need ${4 - count} more cars';
+      }
       if (widget.tournamentType == TournamentType.groupKnockout) {
         return 'Need ${8 - count} more cars (8, 16, or 32 required)';
       }
       return 'Need ${_minCarsRequired - count} more cars';
+    }
+    if (widget.tournamentType == TournamentType.tinyTournament && count > 4) {
+      return 'Pick only 4 cars for Tiny Tournament';
     }
     if ((widget.tournamentType == TournamentType.knockout ||
             widget.tournamentType == TournamentType.doubleElimination) &&
@@ -135,15 +157,19 @@ class _CarSelectionScreenState extends ConsumerState<CarSelectionScreen> {
         return 'Round Robin';
       case TournamentType.groupKnockout:
         return 'Group + Knockout';
+      case TournamentType.tinyTournament:
+        return 'Tiny Tournament';
+      case TournamentType.mysteryRace:
+        return 'Mystery Race';
+      case TournamentType.teamBattle:
+        return 'Team Battle';
     }
   }
 
   Future<void> _startTournament() async {
     if (!_isValidCarCount) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(_validationMessage ?? 'Invalid car selection'),
-        ),
+        SnackBar(content: Text(_validationMessage ?? 'Invalid car selection')),
       );
       return;
     }
@@ -153,7 +179,9 @@ class _CarSelectionScreenState extends ConsumerState<CarSelectionScreen> {
     });
 
     try {
-      final tournamentId = await ref.read(tournamentServiceProvider).createTournament(
+      final tournamentId = await ref
+          .read(tournamentServiceProvider)
+          .createTournament(
             carIds: _selectedCarIds.toList(),
             type: widget.tournamentType,
             knockoutFormat: widget.knockoutFormat,
@@ -165,9 +193,9 @@ class _CarSelectionScreenState extends ConsumerState<CarSelectionScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
         setState(() {
           _isCreating = false;
         });
@@ -177,7 +205,22 @@ class _CarSelectionScreenState extends ConsumerState<CarSelectionScreen> {
 
   void _selectAll(List<Car> cars) {
     setState(() {
-      _selectedCarIds.addAll(cars.map((c) => c.id));
+      if (widget.tournamentType == TournamentType.tinyTournament) {
+        _selectedCarIds
+          ..clear()
+          ..addAll(cars.take(4).map((c) => c.id));
+      } else {
+        _selectedCarIds.addAll(cars.map((c) => c.id));
+      }
+    });
+  }
+
+  void _surpriseMe(List<Car> cars) {
+    final shuffledCars = [...cars]..shuffle(Random());
+    setState(() {
+      _selectedCarIds
+        ..clear()
+        ..addAll(shuffledCars.take(4).map((c) => c.id));
     });
   }
 
@@ -242,8 +285,9 @@ class _CarSelectionScreenState extends ConsumerState<CarSelectionScreen> {
                                 _requirementText,
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: AppTheme.textSecondary
-                                      .withValues(alpha: 0.8),
+                                  color: AppTheme.textSecondary.withValues(
+                                    alpha: 0.8,
+                                  ),
                                 ),
                               ),
                             ],
@@ -294,7 +338,9 @@ class _CarSelectionScreenState extends ConsumerState<CarSelectionScreen> {
                   // Selection count and actions (hidden when searching)
                   if (_searchQuery.isEmpty) ...[
                     Padding(
-                      padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: horizontalPadding,
+                      ),
                       child: Row(
                         children: [
                           Container(
@@ -306,8 +352,8 @@ class _CarSelectionScreenState extends ConsumerState<CarSelectionScreen> {
                               color: _isValidCarCount
                                   ? AppTheme.successColor
                                   : _selectedCarIds.isNotEmpty
-                                      ? Colors.orange
-                                      : AppTheme.surfaceColor,
+                                  ? Colors.orange
+                                  : AppTheme.surfaceColor,
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Row(
@@ -342,18 +388,30 @@ class _CarSelectionScreenState extends ConsumerState<CarSelectionScreen> {
                               return Row(
                                 children: [
                                   TextButton(
-                                    onPressed:
-                                        _selectedCarIds.isEmpty ? null : _deselectAll,
+                                    onPressed: _selectedCarIds.isEmpty
+                                        ? null
+                                        : _deselectAll,
                                     child: const Text('Clear'),
                                   ),
                                   const SizedBox(width: 8),
-                                  TextButton(
-                                    onPressed: filteredCars.length ==
-                                            _selectedCarIds.length
-                                        ? null
-                                        : () => _selectAll(filteredCars),
-                                    child: const Text('Select All'),
-                                  ),
+                                  if (widget.tournamentType ==
+                                      TournamentType.tinyTournament)
+                                    TextButton.icon(
+                                      onPressed: filteredCars.length >= 4
+                                          ? () => _surpriseMe(filteredCars)
+                                          : null,
+                                      icon: const Icon(Icons.shuffle),
+                                      label: const Text('Surprise Me'),
+                                    )
+                                  else
+                                    TextButton(
+                                      onPressed:
+                                          filteredCars.length ==
+                                              _selectedCarIds.length
+                                          ? null
+                                          : () => _selectAll(filteredCars),
+                                      child: const Text('Select All'),
+                                    ),
                                 ],
                               );
                             },
@@ -384,8 +442,9 @@ class _CarSelectionScreenState extends ConsumerState<CarSelectionScreen> {
                                 const SizedBox(height: 16),
                                 Text(
                                   'No cars in garage!',
-                                  style:
-                                      Theme.of(context).textTheme.headlineMedium,
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.headlineMedium,
                                 ),
                                 const SizedBox(height: 16),
                                 Padding(
@@ -415,12 +474,8 @@ class _CarSelectionScreenState extends ConsumerState<CarSelectionScreen> {
                                 const SizedBox(height: 16),
                                 Text(
                                   'No cars match "$_searchQuery"',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodyLarge
-                                      ?.copyWith(
-                                        color: AppTheme.textSecondary,
-                                      ),
+                                  style: Theme.of(context).textTheme.bodyLarge
+                                      ?.copyWith(color: AppTheme.textSecondary),
                                 ),
                               ],
                             ),
@@ -431,11 +486,11 @@ class _CarSelectionScreenState extends ConsumerState<CarSelectionScreen> {
                           padding: EdgeInsets.all(horizontalPadding),
                           gridDelegate:
                               const SliverGridDelegateWithMaxCrossAxisExtent(
-                            maxCrossAxisExtent: 220,
-                            crossAxisSpacing: 12,
-                            mainAxisSpacing: 12,
-                            childAspectRatio: 0.75,
-                          ),
+                                maxCrossAxisExtent: 220,
+                                crossAxisSpacing: 12,
+                                mainAxisSpacing: 12,
+                                childAspectRatio: 0.75,
+                              ),
                           itemCount: filteredCars.length,
                           itemBuilder: (context, index) {
                             final car = filteredCars[index];
@@ -449,6 +504,11 @@ class _CarSelectionScreenState extends ConsumerState<CarSelectionScreen> {
                                   if (isSelected) {
                                     _selectedCarIds.remove(car.id);
                                   } else {
+                                    if (widget.tournamentType ==
+                                            TournamentType.tinyTournament &&
+                                        _selectedCarIds.length >= 4) {
+                                      return;
+                                    }
                                     _selectedCarIds.add(car.id);
                                   }
                                 });
@@ -514,7 +574,12 @@ class _CarSelectionScreenState extends ConsumerState<CarSelectionScreen> {
                                     color: Colors.white,
                                   ),
                                 )
-                              : const Text('START TOURNAMENT'),
+                              : Text(
+                                  widget.tournamentType ==
+                                          TournamentType.tinyTournament
+                                      ? 'START TINY TOURNAMENT'
+                                      : 'START TOURNAMENT',
+                                ),
                         ),
                       ),
                     ),
@@ -530,7 +595,9 @@ class _CarSelectionScreenState extends ConsumerState<CarSelectionScreen> {
 
   List<Car> _filterCars(List<Car> cars) {
     if (_searchQuery.isEmpty) return cars;
-    return cars.where((car) => car.name.toLowerCase().contains(_searchQuery)).toList();
+    return cars
+        .where((car) => car.name.toLowerCase().contains(_searchQuery))
+        .toList();
   }
 
   IconData _getTypeIcon() {
@@ -543,6 +610,12 @@ class _CarSelectionScreenState extends ConsumerState<CarSelectionScreen> {
         return Icons.loop;
       case TournamentType.groupKnockout:
         return Icons.view_module;
+      case TournamentType.tinyTournament:
+        return Icons.flash_on;
+      case TournamentType.mysteryRace:
+        return Icons.shuffle;
+      case TournamentType.teamBattle:
+        return Icons.groups;
     }
   }
 }
@@ -581,7 +654,9 @@ class _SelectableCarCard extends StatelessWidget {
                 children: [
                   Expanded(
                     flex: 3,
-                    child: car.photoPath.isNotEmpty && File(car.photoPath).existsSync()
+                    child:
+                        car.photoPath.isNotEmpty &&
+                            File(car.photoPath).existsSync()
                         ? Image.file(
                             File(car.photoPath),
                             fit: BoxFit.cover,

@@ -3,23 +3,19 @@ import 'round.dart';
 
 part 'tournament.g.dart';
 
-enum TournamentStatus {
-  setup,
-  active,
-  completed,
-}
+enum TournamentStatus { setup, active, completed }
 
 enum TournamentType {
   knockout,
   roundRobin,
   doubleElimination,
   groupKnockout,
+  tinyTournament,
+  mysteryRace,
+  teamBattle,
 }
 
-enum TournamentPhase {
-  group,
-  knockout,
-}
+enum TournamentPhase { group, knockout }
 
 @collection
 class Tournament {
@@ -43,6 +39,14 @@ class Tournament {
   /// Best-of format for knockout rounds as JSON
   /// Example: {"ro16": 1, "qf": 3, "sf": 5, "gf": 7}
   String? knockoutFormat;
+
+  /// For teamBattle: display names, scores, target, and team car IDs.
+  String? teamAName;
+  String? teamBName;
+  int teamAScore = 0;
+  int teamBScore = 0;
+  int targetScore = 3;
+  String? teamAssignmentsJson;
 
   final rounds = IsarLinks<Round>();
 }

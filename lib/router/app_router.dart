@@ -11,10 +11,14 @@ import '../screens/tournament/tournament_history_screen.dart';
 import '../screens/tournament/champion_screen.dart';
 import '../screens/tournament/standings_screen.dart';
 import '../screens/match/match_screen.dart';
+import '../screens/mystery/mystery_race_screen.dart';
 import '../screens/home_screen.dart';
+import '../screens/play/play_mode_screen.dart';
 import '../screens/tournament/bracket_screen.dart';
 import '../screens/tournament/best_of_config_screen.dart';
 import '../screens/settings/settings_screen.dart';
+import '../screens/team/team_battle_screen.dart';
+import '../screens/team/team_battle_setup_screen.dart';
 
 GoRouter buildAppRouter({String initialLocation = '/'}) {
   return GoRouter(
@@ -29,6 +33,29 @@ GoRouter buildAppRouter({String initialLocation = '/'}) {
         path: '/settings',
         name: 'settings',
         builder: (context, state) => const SettingsScreen(),
+      ),
+      GoRoute(
+        path: '/play',
+        name: 'play',
+        builder: (context, state) => const PlayModeScreen(),
+      ),
+      GoRoute(
+        path: '/mystery-race',
+        name: 'mysteryRace',
+        builder: (context, state) => const MysteryRaceScreen(),
+      ),
+      GoRoute(
+        path: '/team-battle/setup',
+        name: 'teamBattleSetup',
+        builder: (context, state) => const TeamBattleSetupScreen(),
+      ),
+      GoRoute(
+        path: '/team-battle/:id',
+        name: 'teamBattle',
+        builder: (context, state) {
+          final id = int.parse(state.pathParameters['id']!);
+          return TeamBattleScreen(tournamentId: id);
+        },
       ),
       GoRoute(
         path: '/garage',

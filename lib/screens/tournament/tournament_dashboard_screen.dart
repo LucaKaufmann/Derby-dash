@@ -22,6 +22,12 @@ class TournamentDashboardScreen extends ConsumerWidget {
         return 'ROUND ROBIN';
       case TournamentType.groupKnockout:
         return 'GROUP + KNOCKOUT';
+      case TournamentType.tinyTournament:
+        return 'TINY TOURNAMENT';
+      case TournamentType.mysteryRace:
+        return 'MYSTERY RACE';
+      case TournamentType.teamBattle:
+        return 'TEAM BATTLE';
     }
   }
 
@@ -43,6 +49,7 @@ class TournamentDashboardScreen extends ConsumerWidget {
           tournamentAsync.maybeWhen(
             data: (tournament) {
               if (tournament?.type == TournamentType.knockout ||
+                  tournament?.type == TournamentType.tinyTournament ||
                   tournament?.type == TournamentType.doubleElimination) {
                 return IconButton(
                   icon: const Icon(Icons.account_tree),
@@ -176,6 +183,10 @@ class _RoundCard extends ConsumerWidget {
 
   String _getRoundName() {
     if (tournamentType == TournamentType.roundRobin) return 'All Matches';
+
+    if (tournamentType == TournamentType.tinyTournament) {
+      return round.roundNumber == 1 ? 'Tiny Semifinals' : 'Tiny Final';
+    }
 
     // For double elimination, show bracket type
     if (tournamentType == TournamentType.doubleElimination) {

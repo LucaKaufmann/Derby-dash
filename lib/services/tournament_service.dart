@@ -7,7 +7,8 @@ class TournamentService {
   final Isar _isar;
   final Random _random;
 
-  TournamentService(this._isar, {Random? random}) : _random = random ?? Random();
+  TournamentService(this._isar, {Random? random})
+    : _random = random ?? Random();
 
   /// Check if a number is a power of 2 (2, 4, 8, 16, 32, 64, etc.)
   bool _isPowerOfTwo(int n) => n > 0 && (n & (n - 1)) == 0;
@@ -17,12 +18,7 @@ class TournamentService {
 
   /// Get default knockout format based on car count
   Map<String, int> _defaultKnockoutFormat(int carCount) {
-    return {
-      'ro16': 1,
-      'qf': 3,
-      'sf': 5,
-      'gf': 7,
-    };
+    return {'ro16': 1, 'qf': 3, 'sf': 5, 'gf': 7};
   }
 
   /// Create a new tournament with the given cars
@@ -32,12 +28,20 @@ class TournamentService {
     Map<String, int>? knockoutFormat,
   }) async {
     // Validate car count
-    if (type == TournamentType.knockout || type == TournamentType.doubleElimination) {
+    if (type == TournamentType.tinyTournament && carIds.length != 4) {
+      throw ArgumentError('Tiny Tournament requires exactly 4 cars');
+    }
+
+    if (type == TournamentType.knockout ||
+        type == TournamentType.doubleElimination ||
+        type == TournamentType.tinyTournament) {
       if (carIds.length < 2) {
         throw ArgumentError('Tournament requires at least 2 cars');
       }
       if (!_isPowerOfTwo(carIds.length)) {
-        throw ArgumentError('Knockout and double elimination tournaments require a power of 2 cars (4, 8, 16, 32, etc.)');
+        throw ArgumentError(
+          'Knockout tournaments require a power of 2 cars (4, 8, 16, 32, etc.)',
+        );
       }
       if (type == TournamentType.doubleElimination && carIds.length < 4) {
         throw ArgumentError('Double elimination requires at least 4 cars');
@@ -47,7 +51,9 @@ class TournamentService {
     // Validate groupKnockout car count
     if (type == TournamentType.groupKnockout) {
       if (!_isValidGroupKnockoutCount(carIds.length)) {
-        throw ArgumentError('Group + Knockout requires exactly 8, 16, or 32 cars');
+        throw ArgumentError(
+          'Group + Knockout requires exactly 8, 16, or 32 cars',
+        );
       }
     }
 
@@ -72,7 +78,9 @@ class TournamentService {
       tournament
         ..phase = TournamentPhase.group
         ..groupCount = cars.length ~/ 4
-        ..knockoutFormat = jsonEncode(knockoutFormat ?? _defaultKnockoutFormat(cars.length));
+        ..knockoutFormat = jsonEncode(
+          knockoutFormat ?? _defaultKnockoutFormat(cars.length),
+        );
     }
 
     await _isar.writeTxn(() async {
@@ -80,7 +88,8 @@ class TournamentService {
     });
 
     // Create first round based on type
-    if (type == TournamentType.knockout) {
+    if (type == TournamentType.knockout ||
+        type == TournamentType.tinyTournament) {
       await _createKnockoutRound(tournament, cars, 1);
     } else if (type == TournamentType.doubleElimination) {
       await _createDoubleEliminationBrackets(tournament, cars);
@@ -91,6 +100,152 @@ class TournamentService {
     }
 
     return tournament.id;
+  }
+
+  /// Create one persisted random race for Mystery Race mode.
+  Future<Match> createMysteryRace({
+    int? previousCarAId,
+    int? previousCarBId,
+  }) async {
+    final cars = await _isar.cars.filter().isDeletedEqualTo(false).findAll();
+    if (cars.length < 2) {
+      throw StateError('Mystery Race requires at least 2 cars');
+    }
+
+    final previousPair = {
+      if (previousCarAId != null) previousCarAId,
+      if (previousCarBId != null) previousCarBId,
+    };
+
+    List<Car> racers;
+    var attempts = 0;
+    do {
+      racers = [...cars]..shuffle(_random);
+      racers = racers.take(2).toList();
+      attempts++;
+    } while (previousPair.length == 2 &&
+        cars.length > 2 &&
+        attempts < 8 &&
+        racers.map((car) => car.id).toSet().containsAll(previousPair));
+
+    final tournament = Tournament()
+      ..date = DateTime.now()
+      ..type = TournamentType.mysteryRace
+      ..status = TournamentStatus.active;
+
+    final round = Round()
+      ..roundNumber = 1
+      ..isCompleted = false;
+
+    final match = Match()..matchPosition = 0;
+    match.carA.value = racers[0];
+    match.carB.value = racers[1];
+
+    await _isar.writeTxn(() async {
+      await _isar.tournaments.put(tournament);
+      await _isar.rounds.put(round);
+      tournament.rounds.add(round);
+      await tournament.rounds.save();
+
+      await _isar.matchs.put(match);
+      await match.carA.save();
+      await match.carB.save();
+      round.matches.add(match);
+      await round.matches.save();
+    });
+
+    return (await getMatch(match.id))!;
+  }
+
+  /// Create a team battle where each completed race scores one team point.
+  Future<int> createTeamBattle({
+    required List<int> teamACarIds,
+    required List<int> teamBCarIds,
+    int targetScore = 3,
+  }) async {
+    if (teamACarIds.isEmpty || teamBCarIds.isEmpty) {
+      throw ArgumentError('Each team needs at least one car');
+    }
+    final overlap = teamACarIds.toSet().intersection(teamBCarIds.toSet());
+    if (overlap.isNotEmpty) {
+      throw ArgumentError('A car can only be on one team');
+    }
+    if (targetScore != 3 && targetScore != 5 && targetScore != 7) {
+      throw ArgumentError('Team Battle target score must be 3, 5, or 7');
+    }
+
+    final tournament = Tournament()
+      ..date = DateTime.now()
+      ..type = TournamentType.teamBattle
+      ..status = TournamentStatus.active
+      ..teamAName = 'Red Team'
+      ..teamBName = 'Blue Team'
+      ..teamAScore = 0
+      ..teamBScore = 0
+      ..targetScore = targetScore
+      ..teamAssignmentsJson = jsonEncode({
+        'teamA': teamACarIds,
+        'teamB': teamBCarIds,
+      });
+
+    await _isar.writeTxn(() async {
+      await _isar.tournaments.put(tournament);
+    });
+
+    await _createTeamBattleRound(tournament);
+    return tournament.id;
+  }
+
+  Future<void> _createTeamBattleRound(Tournament tournament) async {
+    final assignments =
+        jsonDecode(tournament.teamAssignmentsJson ?? '{}')
+            as Map<String, dynamic>;
+    final teamAIds = (assignments['teamA'] as List<dynamic>? ?? [])
+        .whereType<int>()
+        .toList();
+    final teamBIds = (assignments['teamB'] as List<dynamic>? ?? [])
+        .whereType<int>()
+        .toList();
+
+    if (teamAIds.isEmpty || teamBIds.isEmpty) return;
+
+    final teamACars = <Car>[];
+    for (final id in teamAIds) {
+      final car = await _isar.cars.get(id);
+      if (car != null && !car.isDeleted) teamACars.add(car);
+    }
+
+    final teamBCars = <Car>[];
+    for (final id in teamBIds) {
+      final car = await _isar.cars.get(id);
+      if (car != null && !car.isDeleted) teamBCars.add(car);
+    }
+
+    if (teamACars.isEmpty || teamBCars.isEmpty) return;
+
+    teamACars.shuffle(_random);
+    teamBCars.shuffle(_random);
+
+    await tournament.rounds.load();
+    final round = Round()
+      ..roundNumber = tournament.rounds.length + 1
+      ..isCompleted = false;
+
+    final match = Match()..matchPosition = 0;
+    match.carA.value = teamACars.first;
+    match.carB.value = teamBCars.first;
+
+    await _isar.writeTxn(() async {
+      await _isar.rounds.put(round);
+      tournament.rounds.add(round);
+      await tournament.rounds.save();
+
+      await _isar.matchs.put(match);
+      await match.carA.save();
+      await match.carB.save();
+      round.matches.add(match);
+      await round.matches.save();
+    });
   }
 
   /// Create all brackets for a double elimination tournament
@@ -199,7 +354,8 @@ class TournamentService {
     int groupIndex,
   ) async {
     // Determine bracket type based on group index
-    final bracketType = BracketType.values[BracketType.groupA.index + groupIndex];
+    final bracketType =
+        BracketType.values[BracketType.groupA.index + groupIndex];
 
     // Create round for this group (single round with all 6 matches)
     final round = Round()
@@ -375,18 +531,68 @@ class TournamentService {
     if (tournament == null) return;
 
     // Handle based on tournament type
-    if (tournament.type == TournamentType.knockout) {
+    if (tournament.type == TournamentType.knockout ||
+        tournament.type == TournamentType.tinyTournament) {
       await _handleKnockoutRoundComplete(tournament, round, allMatches);
     } else if (tournament.type == TournamentType.doubleElimination) {
-      await _handleDoubleEliminationRoundComplete(tournament, round, allMatches);
+      await _handleDoubleEliminationRoundComplete(
+        tournament,
+        round,
+        allMatches,
+      );
     } else if (tournament.type == TournamentType.groupKnockout) {
       await _handleGroupKnockoutRoundComplete(tournament, round, allMatches);
+    } else if (tournament.type == TournamentType.mysteryRace) {
+      await _isar.writeTxn(() async {
+        tournament.status = TournamentStatus.completed;
+        await _isar.tournaments.put(tournament);
+      });
+    } else if (tournament.type == TournamentType.teamBattle) {
+      await _handleTeamBattleRoundComplete(tournament, allMatches);
     } else {
       // Round robin - tournament complete when all matches done
       await _isar.writeTxn(() async {
         tournament.status = TournamentStatus.completed;
         await _isar.tournaments.put(tournament);
       });
+    }
+  }
+
+  Future<void> _handleTeamBattleRoundComplete(
+    Tournament tournament,
+    List<Match> allMatches,
+  ) async {
+    if (allMatches.isEmpty) return;
+
+    final match = allMatches.first;
+    await match.winner.load();
+    await match.carA.load();
+    await match.carB.load();
+
+    final winner = match.winner.value;
+    final carA = match.carA.value;
+    final carB = match.carB.value;
+    if (winner == null || carA == null || carB == null) return;
+
+    final teamAWon = winner.id == carA.id;
+
+    await _isar.writeTxn(() async {
+      if (teamAWon) {
+        tournament.teamAScore += 1;
+      } else {
+        tournament.teamBScore += 1;
+      }
+
+      if (tournament.teamAScore >= tournament.targetScore ||
+          tournament.teamBScore >= tournament.targetScore) {
+        tournament.status = TournamentStatus.completed;
+      }
+
+      await _isar.tournaments.put(tournament);
+    });
+
+    if (tournament.status != TournamentStatus.completed) {
+      await _createTeamBattleRound(tournament);
     }
   }
 
@@ -431,8 +637,11 @@ class TournamentService {
     }
 
     // Create next knockout round
-    final nextRoundName = _getNextKnockoutRound(round.knockoutRoundName ?? 'qf');
-    final format = jsonDecode(tournament.knockoutFormat ?? '{}') as Map<String, dynamic>;
+    final nextRoundName = _getNextKnockoutRound(
+      round.knockoutRoundName ?? 'qf',
+    );
+    final format =
+        jsonDecode(tournament.knockoutFormat ?? '{}') as Map<String, dynamic>;
     final seriesLength = (format[nextRoundName] as int?) ?? 1;
 
     final nextRound = Round()
@@ -533,7 +742,12 @@ class TournamentService {
     }
 
     if (round.bracketType == BracketType.winners) {
-      await _handleWinnersBracketRoundComplete(tournament, round, winners, losers);
+      await _handleWinnersBracketRoundComplete(
+        tournament,
+        round,
+        winners,
+        losers,
+      );
     } else if (round.bracketType == BracketType.losers) {
       await _handleLosersBracketRoundComplete(tournament, round, winners);
     } else if (round.bracketType == BracketType.grandFinals) {
@@ -555,10 +769,14 @@ class TournamentService {
     await match.carB.load();
 
     final winner = match.winner.value;
-    final winnersBracketChampion = match.carA.value; // Always carA in grand finals
-    final losersBracketChampion = match.carB.value; // Always carB in grand finals
+    final winnersBracketChampion =
+        match.carA.value; // Always carA in grand finals
+    final losersBracketChampion =
+        match.carB.value; // Always carB in grand finals
 
-    if (winner == null || winnersBracketChampion == null || losersBracketChampion == null) {
+    if (winner == null ||
+        winnersBracketChampion == null ||
+        losersBracketChampion == null) {
       return;
     }
 
@@ -566,7 +784,11 @@ class TournamentService {
     if (round.roundNumber == 1 && winner.id == losersBracketChampion.id) {
       // Losers bracket champion won round 1 - bracket reset!
       // Create round 2 of grand finals (same matchup)
-      await _createGrandFinalsRound2(tournament, winnersBracketChampion, losersBracketChampion);
+      await _createGrandFinalsRound2(
+        tournament,
+        winnersBracketChampion,
+        losersBracketChampion,
+      );
     } else {
       // Either winners bracket champion won, or this is round 2
       // Tournament is complete
@@ -630,10 +852,11 @@ class TournamentService {
   /// Initialize the losers bracket with WR1 losers after winners bracket completes
   Future<void> _initializeLosersBracket(Tournament tournament) async {
     await tournament.rounds.load();
-    final winnersRounds = tournament.rounds
-        .where((r) => r.bracketType == BracketType.winners)
-        .toList()
-      ..sort((a, b) => a.roundNumber.compareTo(b.roundNumber));
+    final winnersRounds =
+        tournament.rounds
+            .where((r) => r.bracketType == BracketType.winners)
+            .toList()
+          ..sort((a, b) => a.roundNumber.compareTo(b.roundNumber));
 
     if (winnersRounds.isEmpty) return;
 
@@ -710,10 +933,11 @@ class TournamentService {
   Future<List<Car>> _getNextPendingWinnersLosers(Tournament tournament) async {
     await tournament.rounds.load();
 
-    final winnersRounds = tournament.rounds
-        .where((r) => r.bracketType == BracketType.winners)
-        .toList()
-      ..sort((a, b) => a.roundNumber.compareTo(b.roundNumber));
+    final winnersRounds =
+        tournament.rounds
+            .where((r) => r.bracketType == BracketType.winners)
+            .toList()
+          ..sort((a, b) => a.roundNumber.compareTo(b.roundNumber));
 
     final losersRounds = tournament.rounds
         .where((r) => r.bracketType == BracketType.losers)
@@ -757,7 +981,9 @@ class TournamentService {
       }
 
       // Check if any of these losers are already in LB
-      final anyInLB = wrLosers.any((loser) => carsInLosersBracket.contains(loser.id));
+      final anyInLB = wrLosers.any(
+        (loser) => carsInLosersBracket.contains(loser.id),
+      );
       if (!anyInLB && wrLosers.isNotEmpty) {
         return wrLosers; // First pending batch
       }
@@ -778,16 +1004,14 @@ class TournamentService {
     if (grandFinalsRounds.isNotEmpty) return; // Already created
 
     // Get winner's bracket rounds
-    final winnersRounds = allRounds
-        .where((r) => r.bracketType == BracketType.winners)
-        .toList()
-      ..sort((a, b) => a.roundNumber.compareTo(b.roundNumber));
+    final winnersRounds =
+        allRounds.where((r) => r.bracketType == BracketType.winners).toList()
+          ..sort((a, b) => a.roundNumber.compareTo(b.roundNumber));
 
     // Get loser's bracket rounds
-    final losersRounds = allRounds
-        .where((r) => r.bracketType == BracketType.losers)
-        .toList()
-      ..sort((a, b) => a.roundNumber.compareTo(b.roundNumber));
+    final losersRounds =
+        allRounds.where((r) => r.bracketType == BracketType.losers).toList()
+          ..sort((a, b) => a.roundNumber.compareTo(b.roundNumber));
 
     if (winnersRounds.isEmpty || losersRounds.isEmpty) return;
 
@@ -833,10 +1057,9 @@ class TournamentService {
     if (tournament == null) return [];
 
     await tournament.rounds.load();
-    final rounds = tournament.rounds
-        .where((r) => r.bracketType == bracketType)
-        .toList()
-      ..sort((a, b) => a.roundNumber.compareTo(b.roundNumber));
+    final rounds =
+        tournament.rounds.where((r) => r.bracketType == bracketType).toList()
+          ..sort((a, b) => a.roundNumber.compareTo(b.roundNumber));
     return rounds;
   }
 
@@ -860,8 +1083,9 @@ class TournamentService {
         tournament.type == TournamentType.groupKnockout) {
       rounds.sort((a, b) {
         // First sort by bracket type
-        final bracketOrder = _bracketTypeOrder(a.bracketType)
-            .compareTo(_bracketTypeOrder(b.bracketType));
+        final bracketOrder = _bracketTypeOrder(
+          a.bracketType,
+        ).compareTo(_bracketTypeOrder(b.bracketType));
         if (bracketOrder != 0) return bracketOrder;
         // Then by round number within the bracket
         return a.roundNumber.compareTo(b.roundNumber);
@@ -953,12 +1177,14 @@ class TournamentService {
   /// Get tournament winner
   Future<Car?> getTournamentWinner(int tournamentId) async {
     final tournament = await getTournament(tournamentId);
-    if (tournament == null ||
-        tournament.status != TournamentStatus.completed) {
+    if (tournament == null || tournament.status != TournamentStatus.completed) {
       return null;
     }
 
     if (tournament.type == TournamentType.knockout ||
+        tournament.type == TournamentType.tinyTournament ||
+        tournament.type == TournamentType.mysteryRace ||
+        tournament.type == TournamentType.teamBattle ||
         tournament.type == TournamentType.doubleElimination ||
         tournament.type == TournamentType.groupKnockout) {
       // Winner is the winner of the final match
@@ -1092,14 +1318,8 @@ class TournamentService {
       if (carA == null || carB == null) continue;
 
       // Initialize stats if not present
-      carStats.putIfAbsent(
-        carA.id,
-        () => _GroupCarStats(car: carA),
-      );
-      carStats.putIfAbsent(
-        carB.id,
-        () => _GroupCarStats(car: carB),
-      );
+      carStats.putIfAbsent(carA.id, () => _GroupCarStats(car: carA));
+      carStats.putIfAbsent(carB.id, () => _GroupCarStats(car: carB));
 
       // Record result if match is complete
       if (winner != null) {
@@ -1199,11 +1419,15 @@ class TournamentService {
       if (i + 1 < groupCount) {
         // Find 1st from group i and 2nd from group i+1
         final g1First = qualifiers.firstWhere((q) => q.$2 == 1 && q.$3 == i);
-        final g2Second = qualifiers.firstWhere((q) => q.$2 == 2 && q.$3 == i + 1);
+        final g2Second = qualifiers.firstWhere(
+          (q) => q.$2 == 2 && q.$3 == i + 1,
+        );
         pairings.add((g1First.$1, g2Second.$1));
 
         // Find 1st from group i+1 and 2nd from group i
-        final g2First = qualifiers.firstWhere((q) => q.$2 == 1 && q.$3 == i + 1);
+        final g2First = qualifiers.firstWhere(
+          (q) => q.$2 == 1 && q.$3 == i + 1,
+        );
         final g1Second = qualifiers.firstWhere((q) => q.$2 == 2 && q.$3 == i);
         pairings.add((g2First.$1, g1Second.$1));
       }
@@ -1221,7 +1445,8 @@ class TournamentService {
     }
 
     // Get series length from format
-    final format = jsonDecode(tournament.knockoutFormat ?? '{}') as Map<String, dynamic>;
+    final format =
+        jsonDecode(tournament.knockoutFormat ?? '{}') as Map<String, dynamic>;
     final seriesLength = (format[roundName] as int?) ?? 1;
 
     // Create knockout round
@@ -1308,20 +1533,27 @@ class TournamentService {
           }
 
           // Track knockout placement
-          final isKnockoutTournament = tournament?.type == TournamentType.knockout ||
+          final isKnockoutTournament =
+              tournament?.type == TournamentType.knockout ||
+              tournament?.type == TournamentType.tinyTournament ||
               tournament?.type == TournamentType.groupKnockout;
 
           if (isKnockoutTournament) {
             // Grand finals
             if (round.knockoutRoundName == 'gf' ||
                 round.bracketType == BracketType.grandFinals ||
-                (tournament?.type == TournamentType.knockout && round.roundNumber == rounds.length)) {
+                ((tournament?.type == TournamentType.knockout ||
+                        tournament?.type == TournamentType.tinyTournament) &&
+                    round.roundNumber == rounds.length)) {
               grandFinalsWinnerId = winner.id;
               grandFinalsLoserId = winner.id == carA.id ? carB.id : carA.id;
             }
             // Semifinals
             else if (round.knockoutRoundName == 'sf' ||
-                (tournament?.type == TournamentType.knockout && round.roundNumber == rounds.length - 1 && rounds.length > 1)) {
+                ((tournament?.type == TournamentType.knockout ||
+                        tournament?.type == TournamentType.tinyTournament) &&
+                    round.roundNumber == rounds.length - 1 &&
+                    rounds.length > 1)) {
               final loserId = winner.id == carA.id ? carB.id : carA.id;
               if (!semiFinalsLoserIds.contains(loserId)) {
                 semiFinalsLoserIds.add(loserId);
@@ -1343,35 +1575,44 @@ class TournamentService {
       });
 
     // For knockout tournaments, apply placement ordering
-    final isKnockoutTournament = tournament?.type == TournamentType.knockout ||
+    final isKnockoutTournament =
+        tournament?.type == TournamentType.knockout ||
+        tournament?.type == TournamentType.tinyTournament ||
         tournament?.type == TournamentType.groupKnockout;
 
     if (isKnockoutTournament && grandFinalsWinnerId != null) {
       final result = <TournamentCarStats>[];
 
       // 1st: Grand finals winner
-      final gfWinner = statsList.firstWhere((s) => s.car.id == grandFinalsWinnerId);
+      final gfWinner = statsList.firstWhere(
+        (s) => s.car.id == grandFinalsWinnerId,
+      );
       result.add(gfWinner);
 
       // 2nd: Grand finals loser
       if (grandFinalsLoserId != null) {
-        final gfLoser = statsList.firstWhere((s) => s.car.id == grandFinalsLoserId);
+        final gfLoser = statsList.firstWhere(
+          (s) => s.car.id == grandFinalsLoserId,
+        );
         result.add(gfLoser);
       }
 
       // 3rd/4th: Semi-finals losers, ordered by wins then alphabetically
-      final sfLosers = statsList
-          .where((s) => semiFinalsLoserIds.contains(s.car.id))
-          .toList()
-        ..sort((a, b) {
-          final winCompare = b.wins.compareTo(a.wins);
-          if (winCompare != 0) return winCompare;
-          return a.car.name.compareTo(b.car.name);
-        });
+      final sfLosers =
+          statsList.where((s) => semiFinalsLoserIds.contains(s.car.id)).toList()
+            ..sort((a, b) {
+              final winCompare = b.wins.compareTo(a.wins);
+              if (winCompare != 0) return winCompare;
+              return a.car.name.compareTo(b.car.name);
+            });
       result.addAll(sfLosers);
 
       // Rest: ordered by wins, then losses, then name
-      final usedIds = {grandFinalsWinnerId, grandFinalsLoserId, ...semiFinalsLoserIds};
+      final usedIds = {
+        grandFinalsWinnerId,
+        grandFinalsLoserId,
+        ...semiFinalsLoserIds,
+      };
       final rest = statsList.where((s) => !usedIds.contains(s.car.id));
       result.addAll(rest);
 
@@ -1394,11 +1635,7 @@ class TournamentCarStats {
     required this.losses,
   });
 
-  TournamentCarStats copyWith({
-    Car? car,
-    int? wins,
-    int? losses,
-  }) {
+  TournamentCarStats copyWith({Car? car, int? wins, int? losses}) {
     return TournamentCarStats(
       car: car ?? this.car,
       wins: wins ?? this.wins,

@@ -78,29 +78,42 @@ class TournamentTypeScreen extends ConsumerWidget {
                       Text(
                         'SELECT FORMAT',
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 1,
-                            ),
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1,
+                        ),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 8),
                       Text(
                         'Choose how your tournament will be played',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: AppTheme.textSecondary,
-                            ),
+                          color: AppTheme.textSecondary,
+                        ),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 48),
                       Expanded(
                         child: Column(
                           children: [
+                            SizedBox(
+                              height: advancedMode ? 150 : 180,
+                              child: _TypeCard(
+                                label: 'TINY TOURNAMENT',
+                                subtitle: 'Pick 4 cars',
+                                description: 'Three quick races to a champion',
+                                icon: Icons.flash_on,
+                                color: AppTheme.winnerColor,
+                                onTap: () => _selectType(
+                                  context,
+                                  TournamentType.tinyTournament,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
                             // Basic tournament types (always visible)
                             // Use fixed height when not in advanced mode, expand when in advanced mode
                             if (advancedMode)
-                              Expanded(
-                                child: _buildBasicTypeRow(context),
-                              )
+                              Expanded(child: _buildBasicTypeRow(context))
                             else
                               SizedBox(
                                 height: 240,
@@ -116,7 +129,8 @@ class TournamentTypeScreen extends ConsumerWidget {
                                       child: _TypeCard(
                                         label: 'ROUND ROBIN',
                                         subtitle: 'Everyone plays everyone',
-                                        description: 'Most wins takes the crown',
+                                        description:
+                                            'Most wins takes the crown',
                                         icon: Icons.loop,
                                         color: AppTheme.secondaryColor,
                                         onTap: () => _selectType(
@@ -189,10 +203,7 @@ class _TypeCard extends StatelessWidget {
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: color.withValues(alpha: 0.3),
-              width: 2,
-            ),
+            border: Border.all(color: color.withValues(alpha: 0.3), width: 2),
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -203,11 +214,7 @@ class _TypeCard extends StatelessWidget {
                   color: color.withValues(alpha: 0.2),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
-                  icon,
-                  size: 40,
-                  color: color,
-                ),
+                child: Icon(icon, size: 40, color: color),
               ),
               const SizedBox(height: 16),
               Text(

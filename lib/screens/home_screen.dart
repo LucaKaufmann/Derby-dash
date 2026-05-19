@@ -14,8 +14,9 @@ class HomeScreen extends StatelessWidget {
             // Main content
             LayoutBuilder(
               builder: (context, constraints) {
-                final maxWidth =
-                    constraints.maxWidth >= 900 ? 720.0 : double.infinity;
+                final maxWidth = constraints.maxWidth >= 900
+                    ? 720.0
+                    : double.infinity;
 
                 return Align(
                   alignment: Alignment.topCenter,
@@ -32,9 +33,7 @@ class HomeScreen extends StatelessWidget {
                           // App Title
                           Text(
                             'DERBY DASH',
-                            style: Theme.of(context)
-                                .textTheme
-                                .displayLarge
+                            style: Theme.of(context).textTheme.displayLarge
                                 ?.copyWith(
                                   color: AppTheme.primaryColor,
                                   letterSpacing: 4,
@@ -44,27 +43,25 @@ class HomeScreen extends StatelessWidget {
                           const SizedBox(height: 8),
                           Text(
                             'Hot Wheels Tournament',
-                            style:
-                                Theme.of(context).textTheme.titleLarge?.copyWith(
-                                      color: AppTheme.textSecondary,
-                                    ),
+                            style: Theme.of(context).textTheme.titleLarge
+                                ?.copyWith(color: AppTheme.textSecondary),
                             textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: 64),
 
                           // Main Menu Buttons
                           _MenuButton(
+                            icon: Icons.play_arrow,
+                            label: 'PLAY',
+                            color: AppTheme.primaryColor,
+                            onTap: () => context.push('/play'),
+                          ),
+                          const SizedBox(height: 24),
+                          _MenuButton(
                             icon: Icons.garage,
                             label: 'GARAGE',
                             color: AppTheme.secondaryColor,
                             onTap: () => context.push('/garage'),
-                          ),
-                          const SizedBox(height: 24),
-                          _MenuButton(
-                            icon: Icons.emoji_events,
-                            label: 'NEW TOURNAMENT',
-                            color: AppTheme.primaryColor,
-                            onTap: () => context.push('/tournament/setup'),
                           ),
                           const SizedBox(height: 24),
                           _MenuButton(
@@ -125,11 +122,7 @@ class _MenuButton extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                icon,
-                size: 40,
-                color: Colors.white,
-              ),
+              Icon(icon, size: 40, color: Colors.white),
               const SizedBox(width: 12),
               Flexible(
                 child: Text(
