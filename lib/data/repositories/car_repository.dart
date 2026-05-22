@@ -115,6 +115,8 @@ class CarRepository {
     int tournamentWins = 0;
 
     for (final tournament in completedTournaments) {
+      if (tournament.type == TournamentType.mysteryRace) continue;
+
       await tournament.rounds.load();
       final rounds = tournament.rounds.toList();
       if (rounds.isEmpty) continue;
@@ -234,6 +236,8 @@ class CarRepository {
         .findAll();
 
     for (final tournament in completedTournaments) {
+      if (tournament.type == TournamentType.mysteryRace) continue;
+
       await tournament.rounds.load();
       final rounds = tournament.rounds.toList();
       if (rounds.isEmpty) continue;
