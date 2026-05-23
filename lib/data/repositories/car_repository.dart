@@ -1,4 +1,4 @@
-import 'package:isar/isar.dart';
+import 'package:isar_community/isar.dart';
 import '../models/car.dart';
 import '../models/match.dart';
 import '../models/tournament.dart';

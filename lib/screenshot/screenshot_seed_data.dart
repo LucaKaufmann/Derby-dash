@@ -1,5 +1,5 @@
 import 'dart:math';
-import 'package:isar/isar.dart';
+import 'package:isar_community/isar.dart';
 import '../data/models/models.dart';
 import '../services/database_service.dart';
 import '../services/tournament_service.dart';

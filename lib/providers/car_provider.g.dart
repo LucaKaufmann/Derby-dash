@@ -6,212 +6,252 @@ part of 'car_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$sortedCarsHash() => r'69e038327b86af1ed5d09a68911eb414d36e98b8';
+// GENERATED CODE - DO NOT MODIFY BY HAND
+// ignore_for_file: type=lint, type=warning
 
-/// See also [sortedCars].
-@ProviderFor(sortedCars)
-final sortedCarsProvider =
-    AutoDisposeFutureProvider<List<CarWithStats>>.internal(
-  sortedCars,
-  name: r'sortedCarsProvider',
-  debugGetCreateSourceHash:
-      const bool.fromEnvironment('dart.vm.product') ? null : _$sortedCarsHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
+@ProviderFor(GarageSort)
+final garageSortProvider = GarageSortProvider._();
 
-typedef SortedCarsRef = AutoDisposeFutureProviderRef<List<CarWithStats>>;
-String _$carRepositoryHash() => r'1316fc29febc14503547fd526391805203d4d462';
-
-/// See also [carRepository].
-@ProviderFor(carRepository)
-final carRepositoryProvider = Provider<CarRepository>.internal(
-  carRepository,
-  name: r'carRepositoryProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$carRepositoryHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
-
-typedef CarRepositoryRef = ProviderRef<CarRepository>;
-String _$carStatsHash() => r'dff24a8fe37d6ff19b7e2b5c4d2a71c0d49fb2b6';
-
-/// Copied from Dart SDK
-class _SystemHash {
-  _SystemHash._();
-
-  static int combine(int hash, int value) {
-    // ignore: parameter_assignments
-    hash = 0x1fffffff & (hash + value);
-    // ignore: parameter_assignments
-    hash = 0x1fffffff & (hash + ((0x0007ffff & hash) << 10));
-    return hash ^ (hash >> 6);
-  }
-
-  static int finish(int hash) {
-    // ignore: parameter_assignments
-    hash = 0x1fffffff & (hash + ((0x03ffffff & hash) << 3));
-    // ignore: parameter_assignments
-    hash = hash ^ (hash >> 11);
-    return 0x1fffffff & (hash + ((0x00003fff & hash) << 15));
-  }
-}
-
-/// See also [carStats].
-@ProviderFor(carStats)
-const carStatsProvider = CarStatsFamily();
-
-/// See also [carStats].
-class CarStatsFamily extends Family<AsyncValue<CarStats>> {
-  /// See also [carStats].
-  const CarStatsFamily();
-
-  /// See also [carStats].
-  CarStatsProvider call(
-    int carId,
-  ) {
-    return CarStatsProvider(
-      carId,
-    );
-  }
-
-  @override
-  CarStatsProvider getProviderOverride(
-    covariant CarStatsProvider provider,
-  ) {
-    return call(
-      provider.carId,
-    );
-  }
-
-  static const Iterable<ProviderOrFamily>? _dependencies = null;
-
-  @override
-  Iterable<ProviderOrFamily>? get dependencies => _dependencies;
-
-  static const Iterable<ProviderOrFamily>? _allTransitiveDependencies = null;
-
-  @override
-  Iterable<ProviderOrFamily>? get allTransitiveDependencies =>
-      _allTransitiveDependencies;
-
-  @override
-  String? get name => r'carStatsProvider';
-}
-
-/// See also [carStats].
-class CarStatsProvider extends FutureProvider<CarStats> {
-  /// See also [carStats].
-  CarStatsProvider(
-    int carId,
-  ) : this._internal(
-          (ref) => carStats(
-            ref as CarStatsRef,
-            carId,
-          ),
-          from: carStatsProvider,
-          name: r'carStatsProvider',
-          debugGetCreateSourceHash:
-              const bool.fromEnvironment('dart.vm.product')
-                  ? null
-                  : _$carStatsHash,
-          dependencies: CarStatsFamily._dependencies,
-          allTransitiveDependencies: CarStatsFamily._allTransitiveDependencies,
-          carId: carId,
-        );
-
-  CarStatsProvider._internal(
-    super._createNotifier, {
-    required super.name,
-    required super.dependencies,
-    required super.allTransitiveDependencies,
-    required super.debugGetCreateSourceHash,
-    required super.from,
-    required this.carId,
-  }) : super.internal();
-
-  final int carId;
-
-  @override
-  Override overrideWith(
-    FutureOr<CarStats> Function(CarStatsRef provider) create,
-  ) {
-    return ProviderOverride(
-      origin: this,
-      override: CarStatsProvider._internal(
-        (ref) => create(ref as CarStatsRef),
-        from: from,
-        name: null,
+final class GarageSortProvider
+    extends $NotifierProvider<GarageSort, GarageSortOption> {
+  GarageSortProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'garageSortProvider',
+        isAutoDispose: false,
         dependencies: null,
-        allTransitiveDependencies: null,
-        debugGetCreateSourceHash: null,
-        carId: carId,
-      ),
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$garageSortHash();
+
+  @$internal
+  @override
+  GarageSort create() => GarageSort();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(GarageSortOption value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<GarageSortOption>(value),
     );
   }
-
-  @override
-  FutureProviderElement<CarStats> createElement() {
-    return _CarStatsProviderElement(this);
-  }
-
-  @override
-  bool operator ==(Object other) {
-    return other is CarStatsProvider && other.carId == carId;
-  }
-
-  @override
-  int get hashCode {
-    var hash = _SystemHash.combine(0, runtimeType.hashCode);
-    hash = _SystemHash.combine(hash, carId.hashCode);
-
-    return _SystemHash.finish(hash);
-  }
-}
-
-mixin CarStatsRef on FutureProviderRef<CarStats> {
-  /// The parameter `carId` of this provider.
-  int get carId;
-}
-
-class _CarStatsProviderElement extends FutureProviderElement<CarStats>
-    with CarStatsRef {
-  _CarStatsProviderElement(super.provider);
-
-  @override
-  int get carId => (origin as CarStatsProvider).carId;
 }
 
 String _$garageSortHash() => r'c7b3c21533721784c8d25ef1bb84fdb29c1c9046';
 
-/// See also [GarageSort].
-@ProviderFor(GarageSort)
-final garageSortProvider =
-    NotifierProvider<GarageSort, GarageSortOption>.internal(
-  GarageSort.new,
-  name: r'garageSortProvider',
-  debugGetCreateSourceHash:
-      const bool.fromEnvironment('dart.vm.product') ? null : _$garageSortHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
+abstract class _$GarageSort extends $Notifier<GarageSortOption> {
+  GarageSortOption build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref = this.ref as $Ref<GarageSortOption, GarageSortOption>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<GarageSortOption, GarageSortOption>,
+              GarageSortOption,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, build);
+  }
+}
 
-typedef _$GarageSort = Notifier<GarageSortOption>;
+@ProviderFor(sortedCars)
+final sortedCarsProvider = SortedCarsProvider._();
+
+final class SortedCarsProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<CarWithStats>>,
+          List<CarWithStats>,
+          FutureOr<List<CarWithStats>>
+        >
+    with
+        $FutureModifier<List<CarWithStats>>,
+        $FutureProvider<List<CarWithStats>> {
+  SortedCarsProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'sortedCarsProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$sortedCarsHash();
+
+  @$internal
+  @override
+  $FutureProviderElement<List<CarWithStats>> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<List<CarWithStats>> create(Ref ref) {
+    return sortedCars(ref);
+  }
+}
+
+String _$sortedCarsHash() => r'541dda2ba378613e9a83caffe50eabb8fef932c5';
+
+@ProviderFor(carRepository)
+final carRepositoryProvider = CarRepositoryProvider._();
+
+final class CarRepositoryProvider
+    extends $FunctionalProvider<CarRepository, CarRepository, CarRepository>
+    with $Provider<CarRepository> {
+  CarRepositoryProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'carRepositoryProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$carRepositoryHash();
+
+  @$internal
+  @override
+  $ProviderElement<CarRepository> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  CarRepository create(Ref ref) {
+    return carRepository(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(CarRepository value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<CarRepository>(value),
+    );
+  }
+}
+
+String _$carRepositoryHash() => r'6c8979dea6c0056b31a5d8cf888c78b731e726b7';
+
+@ProviderFor(Cars)
+final carsProvider = CarsProvider._();
+
+final class CarsProvider extends $AsyncNotifierProvider<Cars, List<Car>> {
+  CarsProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'carsProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$carsHash();
+
+  @$internal
+  @override
+  Cars create() => Cars();
+}
+
 String _$carsHash() => r'1a0bb41e3038adf3ec502e2512f2c0530216ab1d';
 
-/// See also [Cars].
-@ProviderFor(Cars)
-final carsProvider = AutoDisposeAsyncNotifierProvider<Cars, List<Car>>.internal(
-  Cars.new,
-  name: r'carsProvider',
-  debugGetCreateSourceHash:
-      const bool.fromEnvironment('dart.vm.product') ? null : _$carsHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
+abstract class _$Cars extends $AsyncNotifier<List<Car>> {
+  FutureOr<List<Car>> build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref = this.ref as $Ref<AsyncValue<List<Car>>, List<Car>>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<AsyncValue<List<Car>>, List<Car>>,
+              AsyncValue<List<Car>>,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, build);
+  }
+}
 
-typedef _$Cars = AutoDisposeAsyncNotifier<List<Car>>;
-// ignore_for_file: type=lint
-// ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member
+@ProviderFor(carStats)
+final carStatsProvider = CarStatsFamily._();
+
+final class CarStatsProvider
+    extends
+        $FunctionalProvider<AsyncValue<CarStats>, CarStats, FutureOr<CarStats>>
+    with $FutureModifier<CarStats>, $FutureProvider<CarStats> {
+  CarStatsProvider._({
+    required CarStatsFamily super.from,
+    required int super.argument,
+  }) : super(
+         retry: null,
+         name: r'carStatsProvider',
+         isAutoDispose: false,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$carStatsHash();
+
+  @override
+  String toString() {
+    return r'carStatsProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<CarStats> $createElement($ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<CarStats> create(Ref ref) {
+    final argument = this.argument as int;
+    return carStats(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is CarStatsProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$carStatsHash() => r'f7be3eff3e57e87fc22fe762f530449d7b49d2ab';
+
+final class CarStatsFamily extends $Family
+    with $FunctionalFamilyOverride<FutureOr<CarStats>, int> {
+  CarStatsFamily._()
+    : super(
+        retry: null,
+        name: r'carStatsProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: false,
+      );
+
+  CarStatsProvider call(int carId) =>
+      CarStatsProvider._(argument: carId, from: this);
+
+  @override
+  String toString() => r'carStatsProvider';
+}

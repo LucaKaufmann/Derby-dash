@@ -36,7 +36,7 @@ class CarWithStats {
 }
 
 @riverpod
-Future<List<CarWithStats>> sortedCars(SortedCarsRef ref) async {
+Future<List<CarWithStats>> sortedCars(Ref ref) async {
   final cars = await ref.watch(carsProvider.future);
   final sortOption = ref.watch(garageSortProvider);
   final repository = ref.watch(carRepositoryProvider);
@@ -75,7 +75,7 @@ Future<List<CarWithStats>> sortedCars(SortedCarsRef ref) async {
 }
 
 @Riverpod(keepAlive: true)
-CarRepository carRepository(CarRepositoryRef ref) {
+CarRepository carRepository(Ref ref) {
   final isar = ref.watch(databaseProvider).requireValue;
   return CarRepository(isar);
 }
@@ -158,7 +158,7 @@ class Cars extends _$Cars {
 }
 
 @Riverpod(keepAlive: true)
-Future<CarStats> carStats(CarStatsRef ref, int carId) async {
+Future<CarStats> carStats(Ref ref, int carId) async {
   final repository = ref.watch(carRepositoryProvider);
   final stats = await repository.getStatsForCar(carId);
   return CarStats.fromData(stats);
