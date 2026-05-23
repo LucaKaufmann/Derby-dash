@@ -2,6 +2,8 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
+import '../services/recurring_backup_service.dart';
+
 part 'settings_provider.g.dart';
 
 const _keepScreenOnKey = 'keep_screen_on';
@@ -15,6 +17,7 @@ class Settings extends _$Settings {
     final prefs = await SharedPreferences.getInstance();
     final keepScreenOn = prefs.getBool(_keepScreenOnKey) ?? false;
     final advancedMode = prefs.getBool(_advancedModeKey) ?? false;
+    final recurringBackupStatus = await RecurringBackupService.readStatus();
     final hiddenMysteryCarIds =
         prefs
             .getStringList(_hiddenMysteryCarIdsKey)
@@ -31,6 +34,9 @@ class Settings extends _$Settings {
     return SettingsState(
       keepScreenOn: keepScreenOn,
       advancedMode: advancedMode,
+      recurringBackupsEnabled: recurringBackupStatus.enabled,
+      lastAutomaticBackupAt: recurringBackupStatus.lastBackupAt,
+      lastAutomaticBackupPath: recurringBackupStatus.lastBackupPath,
       hiddenMysteryCarIds: hiddenMysteryCarIds,
     );
   }
@@ -59,6 +65,29 @@ class Settings extends _$Settings {
     final current = state.value;
     if (current != null) {
       state = AsyncData(current.copyWith(advancedMode: value));
+    }
+  }
+
+  Future<void> setRecurringBackupsEnabled(bool value) async {
+    await RecurringBackupService.setEnabled(value);
+
+    final current = state.value;
+    if (current != null) {
+      state = AsyncData(current.copyWith(recurringBackupsEnabled: value));
+    }
+  }
+
+  Future<void> refreshRecurringBackupStatus() async {
+    final backupStatus = await RecurringBackupService.readStatus();
+    final current = state.value;
+    if (current != null) {
+      state = AsyncData(
+        current.copyWith(
+          recurringBackupsEnabled: backupStatus.enabled,
+          lastAutomaticBackupAt: backupStatus.lastBackupAt,
+          lastAutomaticBackupPath: backupStatus.lastBackupPath,
+        ),
+      );
     }
   }
 
@@ -100,22 +129,37 @@ class Settings extends _$Settings {
 class SettingsState {
   final bool keepScreenOn;
   final bool advancedMode;
+  final bool recurringBackupsEnabled;
+  final DateTime? lastAutomaticBackupAt;
+  final String? lastAutomaticBackupPath;
   final Set<int> hiddenMysteryCarIds;
 
   SettingsState({
     required this.keepScreenOn,
     required this.advancedMode,
+    required this.recurringBackupsEnabled,
+    required this.lastAutomaticBackupAt,
+    required this.lastAutomaticBackupPath,
     required this.hiddenMysteryCarIds,
   });
 
   SettingsState copyWith({
     bool? keepScreenOn,
     bool? advancedMode,
+    bool? recurringBackupsEnabled,
+    DateTime? lastAutomaticBackupAt,
+    String? lastAutomaticBackupPath,
     Set<int>? hiddenMysteryCarIds,
   }) {
     return SettingsState(
       keepScreenOn: keepScreenOn ?? this.keepScreenOn,
       advancedMode: advancedMode ?? this.advancedMode,
+      recurringBackupsEnabled:
+          recurringBackupsEnabled ?? this.recurringBackupsEnabled,
+      lastAutomaticBackupAt:
+          lastAutomaticBackupAt ?? this.lastAutomaticBackupAt,
+      lastAutomaticBackupPath:
+          lastAutomaticBackupPath ?? this.lastAutomaticBackupPath,
       hiddenMysteryCarIds: hiddenMysteryCarIds ?? this.hiddenMysteryCarIds,
     );
   }

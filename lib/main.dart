@@ -8,6 +8,7 @@ import 'router/app_router.dart';
 import 'theme/app_theme.dart';
 import 'services/database_service.dart';
 import 'services/migration_bridge_service.dart';
+import 'services/recurring_backup_service.dart';
 import 'providers/settings_provider.dart';
 
 void main() async {
@@ -43,10 +44,10 @@ void main() async {
   );
 
   runApp(const ProviderScope(child: DerbyDashApp()));
-  Timer(const Duration(seconds: 2), () => _startMigrationBridgeBackup(isar));
+  Timer(const Duration(seconds: 2), () => _startStartupBackups(isar));
 }
 
-void _startMigrationBridgeBackup(Isar isar) {
+void _startStartupBackups(Isar isar) {
   unawaited(() async {
     try {
       debugPrint('Migration bridge starting.');
@@ -60,6 +61,19 @@ void _startMigrationBridgeBackup(Isar isar) {
       );
     } catch (error, stackTrace) {
       debugPrint('Migration bridge backup failed: $error');
+      debugPrintStack(stackTrace: stackTrace);
+    }
+
+    try {
+      final result = await RecurringBackupService.runIfDue(
+        isar,
+      ).timeout(const Duration(minutes: 3));
+      debugPrint(
+        'Recurring backup ${result.didWrite ? 'wrote' : 'skipped'}: '
+        '${result.backupFile?.path ?? result.reason}',
+      );
+    } catch (error, stackTrace) {
+      debugPrint('Recurring backup failed: $error');
       debugPrintStack(stackTrace: stackTrace);
     }
   }());

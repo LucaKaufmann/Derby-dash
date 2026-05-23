@@ -10,6 +10,7 @@ import '../../providers/database_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/tournament_provider.dart';
 import '../../services/backup_service.dart';
+import '../../services/recurring_backup_service.dart';
 import '../../theme/app_theme.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -22,6 +23,7 @@ class SettingsScreen extends ConsumerStatefulWidget {
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _isExporting = false;
   bool _isImporting = false;
+  bool _isAutomaticBackupRunning = false;
 
   Future<void> _exportBackup() async {
     if (_isExporting || _isImporting) return;
@@ -125,6 +127,57 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
   }
 
+  Future<void> _setRecurringBackupsEnabled(bool value) async {
+    if (_isExporting || _isImporting || _isAutomaticBackupRunning) return;
+
+    setState(() {
+      _isAutomaticBackupRunning = true;
+    });
+
+    try {
+      await ref
+          .read(settingsProvider.notifier)
+          .setRecurringBackupsEnabled(value);
+
+      RecurringBackupResult? result;
+      if (value) {
+        final isar = ref.read(databaseProvider).requireValue;
+        result = await RecurringBackupService.runIfDue(
+          isar,
+          ignoreEnabled: true,
+        );
+        await ref
+            .read(settingsProvider.notifier)
+            .refreshRecurringBackupStatus();
+      }
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            value
+                ? (result?.didWrite ?? false
+                      ? 'Automatic backups are on. Today’s backup was created.'
+                      : 'Automatic backups are on. ${result?.reason ?? ''}')
+                : 'Automatic backups are off.',
+          ),
+        ),
+      );
+    } catch (error, stackTrace) {
+      debugPrint('Automatic backup setting failed: $error\n$stackTrace');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Automatic backup failed: $error')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isAutomaticBackupRunning = false;
+        });
+      }
+    }
+  }
+
   void _refreshImportedData() {
     ref.invalidate(carsProvider);
     ref.invalidate(sortedCarsProvider);
@@ -214,6 +267,31 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             _SettingsSection(
               title: 'Backup',
               children: [
+                SwitchListTile(
+                  title: const Text('Automatic Daily Backups'),
+                  subtitle: Text(_automaticBackupSubtitle(settings)),
+                  value: settings.recurringBackupsEnabled,
+                  onChanged:
+                      _isExporting || _isImporting || _isAutomaticBackupRunning
+                      ? null
+                      : _setRecurringBackupsEnabled,
+                  activeThumbColor: AppTheme.primaryColor,
+                  secondary: _isAutomaticBackupRunning
+                      ? const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Icon(
+                          settings.recurringBackupsEnabled
+                              ? Icons.backup
+                              : Icons.backup_outlined,
+                          color: settings.recurringBackupsEnabled
+                              ? AppTheme.primaryColor
+                              : AppTheme.textSecondary,
+                        ),
+                ),
+                const Divider(height: 1),
                 ListTile(
                   leading: const Icon(
                     Icons.ios_share,
@@ -261,6 +339,29 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         error: (error, stack) => Center(child: Text('Error: $error')),
       ),
     );
+  }
+
+  String _automaticBackupSubtitle(SettingsState settings) {
+    if (_isAutomaticBackupRunning) {
+      return 'Creating today’s backup...';
+    }
+    if (!settings.recurringBackupsEnabled) {
+      return 'Create one backup per day on this phone';
+    }
+    final lastBackupAt = settings.lastAutomaticBackupAt;
+    if (lastBackupAt == null) {
+      return 'On. Today’s backup will be created when due.';
+    }
+    return 'On. Last backup: ${_formatDateTime(lastBackupAt)}';
+  }
+
+  String _formatDateTime(DateTime dateTime) {
+    final local = dateTime.toLocal();
+    final month = local.month.toString().padLeft(2, '0');
+    final day = local.day.toString().padLeft(2, '0');
+    final hour = local.hour.toString().padLeft(2, '0');
+    final minute = local.minute.toString().padLeft(2, '0');
+    return '${local.year}-$month-$day $hour:$minute';
   }
 }
 

@@ -380,6 +380,8 @@ class BackupSummary {
     };
   }
 
+  String toJsonString() => jsonEncode(toJson());
+
   static BackupSummary? fromJson(Object? value) {
     if (value is! Map<String, dynamic>) return null;
     return BackupSummary(
@@ -388,6 +390,15 @@ class BackupSummary {
       rounds: value['rounds'] as int? ?? 0,
       matches: value['matches'] as int? ?? 0,
     );
+  }
+
+  static BackupSummary? fromJsonString(String? value) {
+    if (value == null) return null;
+    try {
+      return fromJson(jsonDecode(value));
+    } catch (_) {
+      return null;
+    }
   }
 }
 
