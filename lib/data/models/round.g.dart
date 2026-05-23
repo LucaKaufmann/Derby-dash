@@ -42,9 +42,8 @@ const RoundSchema = CollectionSchema(
       id: 4,
       name: r'roundNumber',
       type: IsarType.long,
-    ),
+    )
   },
-
   estimateSize: _roundEstimateSize,
   serialize: _roundSerialize,
   deserialize: _roundDeserialize,
@@ -64,14 +63,13 @@ const RoundSchema = CollectionSchema(
       target: r'Tournament',
       single: true,
       linkName: r'rounds',
-    ),
+    )
   },
   embeddedSchemas: {},
-
   getId: _roundGetId,
   getLinks: _roundGetLinks,
   attach: _roundAttach,
-  version: '3.3.2',
+  version: '3.1.0+1',
 );
 
 int _roundEstimateSize(
@@ -112,7 +110,7 @@ Round _roundDeserialize(
   final object = Round();
   object.bracketType =
       _RoundbracketTypeValueEnumMap[reader.readStringOrNull(offsets[0])] ??
-      BracketType.winners;
+          BracketType.winners;
   object.groupIndex = reader.readLongOrNull(offsets[1]);
   object.id = id;
   object.isCompleted = reader.readBool(offsets[2]);
@@ -130,8 +128,7 @@ P _roundDeserializeProp<P>(
   switch (propertyId) {
     case 0:
       return (_RoundbracketTypeValueEnumMap[reader.readStringOrNull(offset)] ??
-              BracketType.winners)
-          as P;
+          BracketType.winners) as P;
     case 1:
       return (reader.readLongOrNull(offset)) as P;
     case 2:
@@ -185,12 +182,8 @@ List<IsarLinkBase<dynamic>> _roundGetLinks(Round object) {
 void _roundAttach(IsarCollection<dynamic> col, Id id, Round object) {
   object.id = id;
   object.matches.attach(col, col.isar.collection<Match>(), r'matches', id);
-  object.tournament.attach(
-    col,
-    col.isar.collection<Tournament>(),
-    r'tournament',
-    id,
-  );
+  object.tournament
+      .attach(col, col.isar.collection<Tournament>(), r'tournament', id);
 }
 
 extension RoundQueryWhereSort on QueryBuilder<Round, Round, QWhere> {
@@ -204,7 +197,10 @@ extension RoundQueryWhereSort on QueryBuilder<Round, Round, QWhere> {
 extension RoundQueryWhere on QueryBuilder<Round, Round, QWhereClause> {
   QueryBuilder<Round, Round, QAfterWhereClause> idEqualTo(Id id) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(IdWhereClause.between(lower: id, upper: id));
+      return query.addWhereClause(IdWhereClause.between(
+        lower: id,
+        upper: id,
+      ));
     });
   }
 
@@ -230,10 +226,8 @@ extension RoundQueryWhere on QueryBuilder<Round, Round, QWhereClause> {
     });
   }
 
-  QueryBuilder<Round, Round, QAfterWhereClause> idGreaterThan(
-    Id id, {
-    bool include = false,
-  }) {
+  QueryBuilder<Round, Round, QAfterWhereClause> idGreaterThan(Id id,
+      {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
         IdWhereClause.greaterThan(lower: id, includeLower: include),
@@ -241,10 +235,8 @@ extension RoundQueryWhere on QueryBuilder<Round, Round, QWhereClause> {
     });
   }
 
-  QueryBuilder<Round, Round, QAfterWhereClause> idLessThan(
-    Id id, {
-    bool include = false,
-  }) {
+  QueryBuilder<Round, Round, QAfterWhereClause> idLessThan(Id id,
+      {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
         IdWhereClause.lessThan(upper: id, includeUpper: include),
@@ -259,14 +251,12 @@ extension RoundQueryWhere on QueryBuilder<Round, Round, QWhereClause> {
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(
-        IdWhereClause.between(
-          lower: lowerId,
-          includeLower: includeLower,
-          upper: upperId,
-          includeUpper: includeUpper,
-        ),
-      );
+      return query.addWhereClause(IdWhereClause.between(
+        lower: lowerId,
+        includeLower: includeLower,
+        upper: upperId,
+        includeUpper: includeUpper,
+      ));
     });
   }
 }
@@ -277,13 +267,11 @@ extension RoundQueryFilter on QueryBuilder<Round, Round, QFilterCondition> {
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.equalTo(
-          property: r'bracketType',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'bracketType',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
@@ -293,14 +281,12 @@ extension RoundQueryFilter on QueryBuilder<Round, Round, QFilterCondition> {
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.greaterThan(
-          include: include,
-          property: r'bracketType',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'bracketType',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
@@ -310,14 +296,12 @@ extension RoundQueryFilter on QueryBuilder<Round, Round, QFilterCondition> {
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.lessThan(
-          include: include,
-          property: r'bracketType',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'bracketType',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
@@ -329,16 +313,14 @@ extension RoundQueryFilter on QueryBuilder<Round, Round, QFilterCondition> {
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.between(
-          property: r'bracketType',
-          lower: lower,
-          includeLower: includeLower,
-          upper: upper,
-          includeUpper: includeUpper,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'bracketType',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
@@ -347,13 +329,11 @@ extension RoundQueryFilter on QueryBuilder<Round, Round, QFilterCondition> {
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.startsWith(
-          property: r'bracketType',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'bracketType',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
@@ -362,85 +342,79 @@ extension RoundQueryFilter on QueryBuilder<Round, Round, QFilterCondition> {
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.endsWith(
-          property: r'bracketType',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'bracketType',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<Round, Round, QAfterFilterCondition> bracketTypeContains(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+      String value,
+      {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.contains(
-          property: r'bracketType',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'bracketType',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<Round, Round, QAfterFilterCondition> bracketTypeMatches(
-    String pattern, {
-    bool caseSensitive = true,
-  }) {
+      String pattern,
+      {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.matches(
-          property: r'bracketType',
-          wildcard: pattern,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'bracketType',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<Round, Round, QAfterFilterCondition> bracketTypeIsEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.equalTo(property: r'bracketType', value: ''),
-      );
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'bracketType',
+        value: '',
+      ));
     });
   }
 
   QueryBuilder<Round, Round, QAfterFilterCondition> bracketTypeIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.greaterThan(property: r'bracketType', value: ''),
-      );
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'bracketType',
+        value: '',
+      ));
     });
   }
 
   QueryBuilder<Round, Round, QAfterFilterCondition> groupIndexIsNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        const FilterCondition.isNull(property: r'groupIndex'),
-      );
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'groupIndex',
+      ));
     });
   }
 
   QueryBuilder<Round, Round, QAfterFilterCondition> groupIndexIsNotNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        const FilterCondition.isNotNull(property: r'groupIndex'),
-      );
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'groupIndex',
+      ));
     });
   }
 
   QueryBuilder<Round, Round, QAfterFilterCondition> groupIndexEqualTo(
-    int? value,
-  ) {
+      int? value) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.equalTo(property: r'groupIndex', value: value),
-      );
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'groupIndex',
+        value: value,
+      ));
     });
   }
 
@@ -449,13 +423,11 @@ extension RoundQueryFilter on QueryBuilder<Round, Round, QFilterCondition> {
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.greaterThan(
-          include: include,
-          property: r'groupIndex',
-          value: value,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'groupIndex',
+        value: value,
+      ));
     });
   }
 
@@ -464,13 +436,11 @@ extension RoundQueryFilter on QueryBuilder<Round, Round, QFilterCondition> {
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.lessThan(
-          include: include,
-          property: r'groupIndex',
-          value: value,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'groupIndex',
+        value: value,
+      ));
     });
   }
 
@@ -481,23 +451,22 @@ extension RoundQueryFilter on QueryBuilder<Round, Round, QFilterCondition> {
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.between(
-          property: r'groupIndex',
-          lower: lower,
-          includeLower: includeLower,
-          upper: upper,
-          includeUpper: includeUpper,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'groupIndex',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
     });
   }
 
   QueryBuilder<Round, Round, QAfterFilterCondition> idEqualTo(Id value) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.equalTo(property: r'id', value: value),
-      );
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'id',
+        value: value,
+      ));
     });
   }
 
@@ -506,13 +475,11 @@ extension RoundQueryFilter on QueryBuilder<Round, Round, QFilterCondition> {
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.greaterThan(
-          include: include,
-          property: r'id',
-          value: value,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'id',
+        value: value,
+      ));
     });
   }
 
@@ -521,13 +488,11 @@ extension RoundQueryFilter on QueryBuilder<Round, Round, QFilterCondition> {
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.lessThan(
-          include: include,
-          property: r'id',
-          value: value,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'id',
+        value: value,
+      ));
     });
   }
 
@@ -538,42 +503,40 @@ extension RoundQueryFilter on QueryBuilder<Round, Round, QFilterCondition> {
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.between(
-          property: r'id',
-          lower: lower,
-          includeLower: includeLower,
-          upper: upper,
-          includeUpper: includeUpper,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'id',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
     });
   }
 
   QueryBuilder<Round, Round, QAfterFilterCondition> isCompletedEqualTo(
-    bool value,
-  ) {
+      bool value) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.equalTo(property: r'isCompleted', value: value),
-      );
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'isCompleted',
+        value: value,
+      ));
     });
   }
 
   QueryBuilder<Round, Round, QAfterFilterCondition> knockoutRoundNameIsNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        const FilterCondition.isNull(property: r'knockoutRoundName'),
-      );
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'knockoutRoundName',
+      ));
     });
   }
 
   QueryBuilder<Round, Round, QAfterFilterCondition>
-  knockoutRoundNameIsNotNull() {
+      knockoutRoundNameIsNotNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        const FilterCondition.isNotNull(property: r'knockoutRoundName'),
-      );
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'knockoutRoundName',
+      ));
     });
   }
 
@@ -582,31 +545,27 @@ extension RoundQueryFilter on QueryBuilder<Round, Round, QFilterCondition> {
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.equalTo(
-          property: r'knockoutRoundName',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'knockoutRoundName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<Round, Round, QAfterFilterCondition>
-  knockoutRoundNameGreaterThan(
+      knockoutRoundNameGreaterThan(
     String? value, {
     bool include = false,
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.greaterThan(
-          include: include,
-          property: r'knockoutRoundName',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'knockoutRoundName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
@@ -616,14 +575,12 @@ extension RoundQueryFilter on QueryBuilder<Round, Round, QFilterCondition> {
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.lessThan(
-          include: include,
-          property: r'knockoutRoundName',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'knockoutRoundName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
@@ -635,16 +592,14 @@ extension RoundQueryFilter on QueryBuilder<Round, Round, QFilterCondition> {
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.between(
-          property: r'knockoutRoundName',
-          lower: lower,
-          includeLower: includeLower,
-          upper: upper,
-          includeUpper: includeUpper,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'knockoutRoundName',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
@@ -653,13 +608,11 @@ extension RoundQueryFilter on QueryBuilder<Round, Round, QFilterCondition> {
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.startsWith(
-          property: r'knockoutRoundName',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'knockoutRoundName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
@@ -668,70 +621,64 @@ extension RoundQueryFilter on QueryBuilder<Round, Round, QFilterCondition> {
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.endsWith(
-          property: r'knockoutRoundName',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'knockoutRoundName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<Round, Round, QAfterFilterCondition> knockoutRoundNameContains(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+      String value,
+      {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.contains(
-          property: r'knockoutRoundName',
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'knockoutRoundName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<Round, Round, QAfterFilterCondition> knockoutRoundNameMatches(
-    String pattern, {
-    bool caseSensitive = true,
-  }) {
+      String pattern,
+      {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.matches(
-          property: r'knockoutRoundName',
-          wildcard: pattern,
-          caseSensitive: caseSensitive,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'knockoutRoundName',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
     });
   }
 
   QueryBuilder<Round, Round, QAfterFilterCondition> knockoutRoundNameIsEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.equalTo(property: r'knockoutRoundName', value: ''),
-      );
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'knockoutRoundName',
+        value: '',
+      ));
     });
   }
 
   QueryBuilder<Round, Round, QAfterFilterCondition>
-  knockoutRoundNameIsNotEmpty() {
+      knockoutRoundNameIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.greaterThan(property: r'knockoutRoundName', value: ''),
-      );
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'knockoutRoundName',
+        value: '',
+      ));
     });
   }
 
   QueryBuilder<Round, Round, QAfterFilterCondition> roundNumberEqualTo(
-    int value,
-  ) {
+      int value) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.equalTo(property: r'roundNumber', value: value),
-      );
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'roundNumber',
+        value: value,
+      ));
     });
   }
 
@@ -740,13 +687,11 @@ extension RoundQueryFilter on QueryBuilder<Round, Round, QFilterCondition> {
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.greaterThan(
-          include: include,
-          property: r'roundNumber',
-          value: value,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'roundNumber',
+        value: value,
+      ));
     });
   }
 
@@ -755,13 +700,11 @@ extension RoundQueryFilter on QueryBuilder<Round, Round, QFilterCondition> {
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.lessThan(
-          include: include,
-          property: r'roundNumber',
-          value: value,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'roundNumber',
+        value: value,
+      ));
     });
   }
 
@@ -772,15 +715,13 @@ extension RoundQueryFilter on QueryBuilder<Round, Round, QFilterCondition> {
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.between(
-          property: r'roundNumber',
-          lower: lower,
-          includeLower: includeLower,
-          upper: upper,
-          includeUpper: includeUpper,
-        ),
-      );
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'roundNumber',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
     });
   }
 }
@@ -789,16 +730,14 @@ extension RoundQueryObject on QueryBuilder<Round, Round, QFilterCondition> {}
 
 extension RoundQueryLinks on QueryBuilder<Round, Round, QFilterCondition> {
   QueryBuilder<Round, Round, QAfterFilterCondition> matches(
-    FilterQuery<Match> q,
-  ) {
+      FilterQuery<Match> q) {
     return QueryBuilder.apply(this, (query) {
       return query.link(q, r'matches');
     });
   }
 
   QueryBuilder<Round, Round, QAfterFilterCondition> matchesLengthEqualTo(
-    int length,
-  ) {
+      int length) {
     return QueryBuilder.apply(this, (query) {
       return query.linkLength(r'matches', length, true, length, true);
     });
@@ -842,18 +781,12 @@ extension RoundQueryLinks on QueryBuilder<Round, Round, QFilterCondition> {
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.linkLength(
-        r'matches',
-        lower,
-        includeLower,
-        upper,
-        includeUpper,
-      );
+          r'matches', lower, includeLower, upper, includeUpper);
     });
   }
 
   QueryBuilder<Round, Round, QAfterFilterCondition> tournament(
-    FilterQuery<Tournament> q,
-  ) {
+      FilterQuery<Tournament> q) {
     return QueryBuilder.apply(this, (query) {
       return query.link(q, r'tournament');
     });
@@ -1003,9 +936,8 @@ extension RoundQuerySortThenBy on QueryBuilder<Round, Round, QSortThenBy> {
 }
 
 extension RoundQueryWhereDistinct on QueryBuilder<Round, Round, QDistinct> {
-  QueryBuilder<Round, Round, QDistinct> distinctByBracketType({
-    bool caseSensitive = true,
-  }) {
+  QueryBuilder<Round, Round, QDistinct> distinctByBracketType(
+      {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'bracketType', caseSensitive: caseSensitive);
     });
@@ -1023,14 +955,11 @@ extension RoundQueryWhereDistinct on QueryBuilder<Round, Round, QDistinct> {
     });
   }
 
-  QueryBuilder<Round, Round, QDistinct> distinctByKnockoutRoundName({
-    bool caseSensitive = true,
-  }) {
+  QueryBuilder<Round, Round, QDistinct> distinctByKnockoutRoundName(
+      {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(
-        r'knockoutRoundName',
-        caseSensitive: caseSensitive,
-      );
+      return query.addDistinctBy(r'knockoutRoundName',
+          caseSensitive: caseSensitive);
     });
   }
 

@@ -51,7 +51,7 @@ class TournamentTypeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settingsAsync = ref.watch(settingsProvider);
-    final advancedMode = settingsAsync.value?.advancedMode ?? false;
+    final advancedMode = settingsAsync.valueOrNull?.advancedMode ?? false;
     return Scaffold(
       appBar: AppBar(
         title: const Text('NEW TOURNAMENT'),
