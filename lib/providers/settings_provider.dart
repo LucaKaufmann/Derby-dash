@@ -6,6 +6,7 @@ part 'settings_provider.g.dart';
 
 const _keepScreenOnKey = 'keep_screen_on';
 const _advancedModeKey = 'advanced_mode';
+const _hiddenMysteryCarIdsKey = 'hidden_mystery_car_ids';
 
 @Riverpod(keepAlive: true)
 class Settings extends _$Settings {
@@ -14,6 +15,13 @@ class Settings extends _$Settings {
     final prefs = await SharedPreferences.getInstance();
     final keepScreenOn = prefs.getBool(_keepScreenOnKey) ?? false;
     final advancedMode = prefs.getBool(_advancedModeKey) ?? false;
+    final hiddenMysteryCarIds =
+        prefs
+            .getStringList(_hiddenMysteryCarIdsKey)
+            ?.map(int.tryParse)
+            .whereType<int>()
+            .toSet() ??
+        <int>{};
 
     // Apply wakelock on startup if enabled
     if (keepScreenOn) {
@@ -23,6 +31,7 @@ class Settings extends _$Settings {
     return SettingsState(
       keepScreenOn: keepScreenOn,
       advancedMode: advancedMode,
+      hiddenMysteryCarIds: hiddenMysteryCarIds,
     );
   }
 
@@ -52,24 +61,62 @@ class Settings extends _$Settings {
       state = AsyncData(current.copyWith(advancedMode: value));
     }
   }
+
+  Future<void> setMysteryCarHidden(int carId, bool hidden) async {
+    final current = state.value;
+    if (current == null) return;
+
+    final hiddenMysteryCarIds = {...current.hiddenMysteryCarIds};
+    if (hidden) {
+      hiddenMysteryCarIds.add(carId);
+    } else {
+      hiddenMysteryCarIds.remove(carId);
+    }
+
+    await _saveHiddenMysteryCarIds(hiddenMysteryCarIds);
+    state = AsyncData(
+      current.copyWith(hiddenMysteryCarIds: hiddenMysteryCarIds),
+    );
+  }
+
+  Future<void> showAllMysteryCars() async {
+    final current = state.value;
+    if (current == null || current.hiddenMysteryCarIds.isEmpty) return;
+
+    await _saveHiddenMysteryCarIds({});
+    state = AsyncData(current.copyWith(hiddenMysteryCarIds: {}));
+  }
+
+  Future<void> _saveHiddenMysteryCarIds(Set<int> hiddenMysteryCarIds) async {
+    final prefs = await SharedPreferences.getInstance();
+    final sortedIds = hiddenMysteryCarIds.toList()..sort();
+    await prefs.setStringList(
+      _hiddenMysteryCarIdsKey,
+      sortedIds.map((id) => id.toString()).toList(),
+    );
+  }
 }
 
 class SettingsState {
   final bool keepScreenOn;
   final bool advancedMode;
+  final Set<int> hiddenMysteryCarIds;
 
   SettingsState({
     required this.keepScreenOn,
     required this.advancedMode,
+    required this.hiddenMysteryCarIds,
   });
 
   SettingsState copyWith({
     bool? keepScreenOn,
     bool? advancedMode,
+    Set<int>? hiddenMysteryCarIds,
   }) {
     return SettingsState(
       keepScreenOn: keepScreenOn ?? this.keepScreenOn,
       advancedMode: advancedMode ?? this.advancedMode,
+      hiddenMysteryCarIds: hiddenMysteryCarIds ?? this.hiddenMysteryCarIds,
     );
   }
 }

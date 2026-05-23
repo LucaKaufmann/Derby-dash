@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../data/models/car.dart';
 import '../../data/models/match.dart';
 import '../../providers/car_provider.dart';
+import '../../providers/settings_provider.dart';
 import '../../providers/tournament_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/car_photo_frame.dart';
@@ -20,11 +21,12 @@ class _MysteryRaceScreenState extends ConsumerState<MysteryRaceScreen> {
   Car? _winner;
   bool _isRevealing = false;
   bool _isSaving = false;
+  int? _skippingCarId;
   int? _previousCarAId;
   int? _previousCarBId;
 
   Future<void> _revealRace() async {
-    if (_isRevealing || _isSaving) return;
+    if (_isRevealing || _isSaving || _skippingCarId != null) return;
 
     setState(() {
       _isRevealing = true;
@@ -37,6 +39,9 @@ class _MysteryRaceScreenState extends ConsumerState<MysteryRaceScreen> {
           .createMysteryRace(
             previousCarAId: _previousCarAId,
             previousCarBId: _previousCarBId,
+            hiddenCarIds:
+                ref.read(settingsProvider).value?.hiddenMysteryCarIds ??
+                const <int>{},
           );
 
       if (!mounted) return;
@@ -59,7 +64,12 @@ class _MysteryRaceScreenState extends ConsumerState<MysteryRaceScreen> {
 
   Future<void> _selectWinner(Car car) async {
     final match = _match;
-    if (match == null || _winner != null || _isSaving) return;
+    if (match == null ||
+        _winner != null ||
+        _isSaving ||
+        _skippingCarId != null) {
+      return;
+    }
 
     setState(() {
       _isSaving = true;
@@ -78,9 +88,53 @@ class _MysteryRaceScreenState extends ConsumerState<MysteryRaceScreen> {
     });
   }
 
+  Future<void> _skipCar(Car car) async {
+    final match = _match;
+    if (match == null ||
+        _winner != null ||
+        _isSaving ||
+        _skippingCarId != null) {
+      return;
+    }
+
+    setState(() {
+      _skippingCarId = car.id;
+    });
+
+    try {
+      final updatedMatch = await ref
+          .read(tournamentServiceProvider)
+          .replaceMysteryRaceCar(
+            matchId: match.id,
+            skippedCarId: car.id,
+            hiddenCarIds:
+                ref.read(settingsProvider).value?.hiddenMysteryCarIds ??
+                const <int>{},
+          );
+
+      if (!mounted) return;
+      setState(() {
+        _match = updatedMatch;
+        _previousCarAId = updatedMatch.carA.value?.id;
+        _previousCarBId = updatedMatch.carB.value?.id;
+        _skippingCarId = null;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _skippingCarId = null;
+      });
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('$error')));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final carsAsync = ref.watch(carsProvider);
+    final hiddenMysteryCarIds =
+        ref.watch(settingsProvider).value?.hiddenMysteryCarIds ?? const <int>{};
 
     return Scaffold(
       appBar: AppBar(
@@ -92,8 +146,15 @@ class _MysteryRaceScreenState extends ConsumerState<MysteryRaceScreen> {
       ),
       body: carsAsync.when(
         data: (cars) {
-          if (cars.length < 2) {
-            return _NotEnoughCars(onGarageTap: () => context.push('/garage'));
+          final availableCars = cars
+              .where((car) => !hiddenMysteryCarIds.contains(car.id))
+              .toList();
+          if (availableCars.length < 2) {
+            return _NotEnoughCars(
+              onGarageTap: () => context.push('/garage'),
+              onSettingsTap: () => context.push('/settings/mystery-race'),
+              hiddenCarsCount: hiddenMysteryCarIds.length,
+            );
           }
 
           return SafeArea(
@@ -122,7 +183,10 @@ class _MysteryRaceScreenState extends ConsumerState<MysteryRaceScreen> {
                                 key: ValueKey('match-${_match!.id}'),
                                 match: _match!,
                                 isSaving: _isSaving,
+                                skippingCarId: _skippingCarId,
+                                canSkip: availableCars.length > 2,
                                 onWinnerSelected: _selectWinner,
+                                onCarSkipped: _skipCar,
                               )
                             : _RevealView(
                                 key: const ValueKey('reveal'),
@@ -203,13 +267,19 @@ class _RevealView extends StatelessWidget {
 class _RaceView extends StatelessWidget {
   final Match match;
   final bool isSaving;
+  final int? skippingCarId;
+  final bool canSkip;
   final ValueChanged<Car> onWinnerSelected;
+  final ValueChanged<Car> onCarSkipped;
 
   const _RaceView({
     super.key,
     required this.match,
     required this.isSaving,
+    required this.skippingCarId,
+    required this.canSkip,
     required this.onWinnerSelected,
+    required this.onCarSkipped,
   });
 
   @override
@@ -237,8 +307,11 @@ class _RaceView extends StatelessWidget {
           child: _MysteryCarButton(
             car: carA,
             color: AppTheme.primaryColor,
-            enabled: !isSaving,
+            enabled: !isSaving && skippingCarId == null,
+            canSkip: canSkip,
+            isSkipping: skippingCarId == carA.id,
             onTap: () => onWinnerSelected(carA),
+            onSkip: () => onCarSkipped(carA),
           ),
         ),
         Container(
@@ -261,8 +334,11 @@ class _RaceView extends StatelessWidget {
           child: _MysteryCarButton(
             car: carB,
             color: AppTheme.secondaryColor,
-            enabled: !isSaving,
+            enabled: !isSaving && skippingCarId == null,
+            canSkip: canSkip,
+            isSkipping: skippingCarId == carB.id,
             onTap: () => onWinnerSelected(carB),
+            onSkip: () => onCarSkipped(carB),
           ),
         ),
       ],
@@ -274,13 +350,19 @@ class _MysteryCarButton extends StatelessWidget {
   final Car car;
   final Color color;
   final bool enabled;
+  final bool canSkip;
+  final bool isSkipping;
   final VoidCallback onTap;
+  final VoidCallback onSkip;
 
   const _MysteryCarButton({
     required this.car,
     required this.color,
     required this.enabled,
+    required this.canSkip,
+    required this.isSkipping,
     required this.onTap,
+    required this.onSkip,
   });
 
   @override
@@ -328,6 +410,27 @@ class _MysteryCarButton extends StatelessWidget {
                   textAlign: TextAlign.center,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  onPressed: enabled && canSkip ? onSkip : null,
+                  icon: isSkipping
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(strokeWidth: 3),
+                        )
+                      : const Icon(Icons.skip_next),
+                  label: Text(isSkipping ? 'SKIPPING...' : 'SKIP CAR'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: color,
+                    side: BorderSide(color: color, width: 2),
+                    minimumSize: const Size(double.infinity, 54),
+                    textStyle: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -411,8 +514,14 @@ class _WinnerView extends StatelessWidget {
 
 class _NotEnoughCars extends StatelessWidget {
   final VoidCallback onGarageTap;
+  final VoidCallback onSettingsTap;
+  final int hiddenCarsCount;
 
-  const _NotEnoughCars({required this.onGarageTap});
+  const _NotEnoughCars({
+    required this.onGarageTap,
+    required this.onSettingsTap,
+    required this.hiddenCarsCount,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -435,13 +544,23 @@ class _NotEnoughCars extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Text(
-              'Add more cars to start a Mystery Race.',
+              hiddenCarsCount > 0
+                  ? 'Show more cars in Mystery Race settings or add more cars to race.'
+                  : 'Add more cars to start a Mystery Race.',
               style: Theme.of(
                 context,
               ).textTheme.bodyLarge?.copyWith(color: AppTheme.textSecondary),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 32),
+            if (hiddenCarsCount > 0) ...[
+              ElevatedButton.icon(
+                onPressed: onSettingsTap,
+                icon: const Icon(Icons.visibility),
+                label: const Text('MYSTERY SETTINGS'),
+              ),
+              const SizedBox(height: 12),
+            ],
             ElevatedButton.icon(
               onPressed: onGarageTap,
               icon: const Icon(Icons.garage),

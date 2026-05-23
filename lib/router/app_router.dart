@@ -17,6 +17,7 @@ import '../screens/play/play_mode_screen.dart';
 import '../screens/tournament/bracket_screen.dart';
 import '../screens/tournament/best_of_config_screen.dart';
 import '../screens/settings/settings_screen.dart';
+import '../screens/settings/mystery_race_settings_screen.dart';
 import '../screens/team/team_battle_screen.dart';
 import '../screens/team/team_battle_setup_screen.dart';
 
@@ -33,6 +34,13 @@ GoRouter buildAppRouter({String initialLocation = '/'}) {
         path: '/settings',
         name: 'settings',
         builder: (context, state) => const SettingsScreen(),
+        routes: [
+          GoRoute(
+            path: 'mystery-race',
+            name: 'mysteryRaceSettings',
+            builder: (context, state) => const MysteryRaceSettingsScreen(),
+          ),
+        ],
       ),
       GoRoute(
         path: '/play',

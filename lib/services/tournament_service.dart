@@ -106,8 +106,11 @@ class TournamentService {
   Future<Match> createMysteryRace({
     int? previousCarAId,
     int? previousCarBId,
+    Set<int> hiddenCarIds = const {},
   }) async {
-    final cars = await _isar.cars.filter().isDeletedEqualTo(false).findAll();
+    final cars = (await _isar.cars.filter().isDeletedEqualTo(false).findAll())
+        .where((car) => !hiddenCarIds.contains(car.id))
+        .toList();
     if (cars.length < 2) {
       throw StateError('Mystery Race requires at least 2 cars');
     }
@@ -152,6 +155,70 @@ class TournamentService {
       await match.carB.save();
       round.matches.add(match);
       await round.matches.save();
+    });
+
+    return (await getMatch(match.id))!;
+  }
+
+  /// Replace one car in an unresolved Mystery Race match.
+  Future<Match> replaceMysteryRaceCar({
+    required int matchId,
+    required int skippedCarId,
+    Set<int> hiddenCarIds = const {},
+  }) async {
+    final match = await _isar.matchs.get(matchId);
+    if (match == null) {
+      throw StateError('Mystery Race not found');
+    }
+
+    await match.carA.load();
+    await match.carB.load();
+    await match.winner.load();
+    await match.round.load();
+
+    if (match.winner.value != null) {
+      throw StateError('This race already has a winner');
+    }
+
+    final carA = match.carA.value;
+    final carB = match.carB.value;
+    if (carA == null || carB == null) {
+      throw StateError('Mystery Race cars are missing');
+    }
+
+    final skippedIsCarA = carA.id == skippedCarId;
+    final skippedIsCarB = carB.id == skippedCarId;
+    if (!skippedIsCarA && !skippedIsCarB) {
+      throw StateError('Skipped car is not in this race');
+    }
+
+    final keptCarId = skippedIsCarA ? carB.id : carA.id;
+    final candidates =
+        (await _isar.cars.filter().isDeletedEqualTo(false).findAll())
+            .where(
+              (car) =>
+                  car.id != skippedCarId &&
+                  car.id != keptCarId &&
+                  !hiddenCarIds.contains(car.id),
+            )
+            .toList()
+          ..shuffle(_random);
+
+    if (candidates.isEmpty) {
+      throw StateError('No other mystery cars are available');
+    }
+
+    final replacement = candidates.first;
+
+    await _isar.writeTxn(() async {
+      if (skippedIsCarA) {
+        match.carA.value = replacement;
+        await match.carA.save();
+      } else {
+        match.carB.value = replacement;
+        await match.carB.save();
+      }
+      await _isar.matchs.put(match);
     });
 
     return (await getMatch(match.id))!;

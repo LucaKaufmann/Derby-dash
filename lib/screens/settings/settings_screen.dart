@@ -160,7 +160,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   onChanged: (value) {
                     ref.read(settingsProvider.notifier).setKeepScreenOn(value);
                   },
-                  activeColor: AppTheme.primaryColor,
+                  activeThumbColor: AppTheme.primaryColor,
                   secondary: Icon(
                     settings.keepScreenOn
                         ? Icons.brightness_high
@@ -184,7 +184,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   onChanged: (value) {
                     ref.read(settingsProvider.notifier).setAdvancedMode(value);
                   },
-                  activeColor: AppTheme.primaryColor,
+                  activeThumbColor: AppTheme.primaryColor,
                   secondary: Icon(
                     settings.advancedMode
                         ? Icons.science
@@ -193,6 +193,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         ? AppTheme.primaryColor
                         : AppTheme.textSecondary,
                   ),
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(
+                    Icons.visibility_off,
+                    color: AppTheme.secondaryColor,
+                  ),
+                  title: const Text('Mystery Race Cars'),
+                  subtitle: Text(
+                    settings.hiddenMysteryCarIds.isEmpty
+                        ? 'All garage cars can be picked'
+                        : '${settings.hiddenMysteryCarIds.length} hidden from Mystery Race',
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => context.push('/settings/mystery-race'),
                 ),
               ],
             ),
