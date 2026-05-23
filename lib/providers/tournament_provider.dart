@@ -1,77 +1,73 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../data/models/models.dart';
 import '../services/tournament_service.dart';
-export '../services/tournament_service.dart'
-    show TournamentCarStats, GroupStanding;
+export '../services/tournament_service.dart' show TournamentCarStats, GroupStanding;
 import 'database_provider.dart';
 
 part 'tournament_provider.g.dart';
 
 @Riverpod(keepAlive: true)
-TournamentService tournamentService(Ref ref) {
+TournamentService tournamentService(TournamentServiceRef ref) {
   final isar = ref.watch(databaseProvider).requireValue;
   return TournamentService(isar);
 }
 
 @riverpod
-Future<Tournament?> tournament(Ref ref, int id) async {
+Future<Tournament?> tournament(TournamentRef ref, int id) async {
   final service = ref.watch(tournamentServiceProvider);
   return await service.getTournament(id);
 }
 
 @riverpod
-Future<List<Round>> tournamentRounds(Ref ref, int tournamentId) async {
+Future<List<Round>> tournamentRounds(TournamentRoundsRef ref, int tournamentId) async {
   final service = ref.watch(tournamentServiceProvider);
   return await service.getRounds(tournamentId);
 }
 
 @riverpod
-Future<List<Match>> roundMatches(Ref ref, int roundId) async {
+Future<List<Match>> roundMatches(RoundMatchesRef ref, int roundId) async {
   final service = ref.watch(tournamentServiceProvider);
   return await service.getMatches(roundId);
 }
 
 @riverpod
-Future<Round?> currentRound(Ref ref, int tournamentId) async {
+Future<Round?> currentRound(CurrentRoundRef ref, int tournamentId) async {
   final service = ref.watch(tournamentServiceProvider);
   return await service.getCurrentRound(tournamentId);
 }
 
 @riverpod
-Future<Match?> matchDetails(Ref ref, int matchId) async {
+Future<Match?> matchDetails(MatchDetailsRef ref, int matchId) async {
   final service = ref.watch(tournamentServiceProvider);
   return await service.getMatch(matchId);
 }
 
 @riverpod
-Future<Car?> tournamentWinner(Ref ref, int tournamentId) async {
+Future<Car?> tournamentWinner(TournamentWinnerRef ref, int tournamentId) async {
   final service = ref.watch(tournamentServiceProvider);
   return await service.getTournamentWinner(tournamentId);
 }
 
 @riverpod
-Future<List<Tournament>> activeTournaments(Ref ref) async {
+Future<List<Tournament>> activeTournaments(ActiveTournamentsRef ref) async {
   final service = ref.watch(tournamentServiceProvider);
   return await service.getActiveTournaments();
 }
 
 @riverpod
-Future<List<Tournament>> completedTournaments(Ref ref) async {
+Future<List<Tournament>> completedTournaments(CompletedTournamentsRef ref) async {
   final service = ref.watch(tournamentServiceProvider);
   return await service.getCompletedTournaments();
 }
 
 @riverpod
-Future<int> tournamentParticipantCount(Ref ref, int tournamentId) async {
+Future<int> tournamentParticipantCount(TournamentParticipantCountRef ref, int tournamentId) async {
   final service = ref.watch(tournamentServiceProvider);
   return await service.getParticipantCount(tournamentId);
 }
 
 @riverpod
-Future<List<TournamentCarStats>> tournamentStats(
-  Ref ref,
-  int tournamentId,
-) async {
+Future<List<TournamentCarStats>> tournamentStats(TournamentStatsRef ref, int tournamentId) async {
   final service = ref.watch(tournamentServiceProvider);
   return await service.getTournamentStats(tournamentId);
 }
@@ -79,7 +75,7 @@ Future<List<TournamentCarStats>> tournamentStats(
 /// Get standings for a specific group in a groupKnockout tournament
 @riverpod
 Future<List<GroupStanding>> groupStandings(
-  Ref ref,
+  GroupStandingsRef ref,
   int tournamentId,
   int groupIndex,
 ) async {
@@ -89,7 +85,7 @@ Future<List<GroupStanding>> groupStandings(
 
 /// Get all group stage rounds for a groupKnockout tournament
 @riverpod
-Future<List<Round>> groupRounds(Ref ref, int tournamentId) async {
+Future<List<Round>> groupRounds(GroupRoundsRef ref, int tournamentId) async {
   final service = ref.watch(tournamentServiceProvider);
   final rounds = await service.getRounds(tournamentId);
   return rounds.where((r) => r.groupIndex != null).toList();
@@ -97,7 +93,7 @@ Future<List<Round>> groupRounds(Ref ref, int tournamentId) async {
 
 /// Get all knockout stage rounds for a groupKnockout tournament
 @riverpod
-Future<List<Round>> knockoutRounds(Ref ref, int tournamentId) async {
+Future<List<Round>> knockoutRounds(KnockoutRoundsRef ref, int tournamentId) async {
   final service = ref.watch(tournamentServiceProvider);
   final rounds = await service.getRounds(tournamentId);
   return rounds.where((r) => r.bracketType == BracketType.knockout).toList();
@@ -105,7 +101,7 @@ Future<List<Round>> knockoutRounds(Ref ref, int tournamentId) async {
 
 /// Check if the group stage is complete for a groupKnockout tournament
 @riverpod
-Future<bool> isGroupStageComplete(Ref ref, int tournamentId) async {
+Future<bool> isGroupStageComplete(IsGroupStageCompleteRef ref, int tournamentId) async {
   final service = ref.watch(tournamentServiceProvider);
   final tournament = await service.getTournament(tournamentId);
   if (tournament == null || tournament.type != TournamentType.groupKnockout) {
@@ -132,7 +128,7 @@ Future<bool> isGroupStageComplete(Ref ref, int tournamentId) async {
 /// Get all standings for all groups in a groupKnockout tournament
 @riverpod
 Future<Map<int, List<GroupStanding>>> allGroupStandings(
-  Ref ref,
+  AllGroupStandingsRef ref,
   int tournamentId,
 ) async {
   final service = ref.watch(tournamentServiceProvider);
