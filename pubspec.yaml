@@ -39,6 +39,7 @@ dependencies:
   wakelock_plus: ^1.4.0
   shared_preferences: ^2.5.4
   archive: ^4.0.9
+  crypto: ^3.0.7
   share_plus: ^13.1.0
   path: ^1.9.1
   file_selector: ^1.1.0
