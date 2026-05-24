@@ -153,39 +153,18 @@ class _AddCarScreenState extends ConsumerState<AddCarScreen> {
                                   decoration: BoxDecoration(
                                     color: AppTheme.surfaceColor,
                                     borderRadius: BorderRadius.circular(20),
-                                    border: Border.all(
-                                      color: _photoPath != null
-                                          ? AppTheme.primaryColor
-                                          : AppTheme.textSecondary.withValues(
-                                              alpha: 0.3,
-                                            ),
-                                      width: 3,
-                                    ),
                                   ),
                                   clipBehavior: Clip.antiAlias,
-                                  child: _photoPath != null
-                                      ? Stack(
-                                          fit: StackFit.expand,
-                                          children: [
-                                            Image.file(
-                                              File(_photoPath!),
-                                              fit: BoxFit.cover,
-                                            ),
-                                            Positioned(
-                                              bottom: 12,
-                                              right: 12,
-                                              child: FloatingActionButton.small(
-                                                onPressed: _takePhoto,
-                                                backgroundColor:
-                                                    AppTheme.surfaceColor,
-                                                child: const Icon(
-                                                  Icons.camera_alt,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
+                                  child: Stack(
+                                    fit: StackFit.expand,
+                                    children: [
+                                      if (_photoPath != null)
+                                        Image.file(
+                                          File(_photoPath!),
+                                          fit: BoxFit.cover,
                                         )
-                                      : Column(
+                                      else
+                                        Column(
                                           mainAxisAlignment:
                                               MainAxisAlignment.center,
                                           children: [
@@ -217,6 +196,39 @@ class _AddCarScreenState extends ConsumerState<AddCarScreen> {
                                             ),
                                           ],
                                         ),
+                                      if (_photoPath != null)
+                                        Positioned(
+                                          bottom: 12,
+                                          right: 12,
+                                          child: FloatingActionButton.small(
+                                            onPressed: _takePhoto,
+                                            backgroundColor:
+                                                AppTheme.surfaceColor,
+                                            child: const Icon(Icons.camera_alt),
+                                          ),
+                                        ),
+                                      // Border drawn on top of the clipped
+                                      // content so the rounded corners stay
+                                      // crisp regardless of border width.
+                                      Positioned.fill(
+                                        child: IgnorePointer(
+                                          child: DecoratedBox(
+                                            decoration: BoxDecoration(
+                                              borderRadius:
+                                                  BorderRadius.circular(20),
+                                              border: Border.all(
+                                                color: _photoPath != null
+                                                    ? AppTheme.primaryColor
+                                                    : AppTheme.textSecondary
+                                                        .withValues(alpha: 0.3),
+                                                width: 3,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),

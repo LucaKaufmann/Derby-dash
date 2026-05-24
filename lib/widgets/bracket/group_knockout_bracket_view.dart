@@ -1,9 +1,9 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/models.dart';
 import '../../providers/tournament_provider.dart';
 import '../../theme/app_theme.dart';
+import '../car_photo_frame.dart';
 import 'bracket_view.dart';
 
 /// Bracket view for Group + Knockout tournaments showing group summary and knockout bracket.
@@ -254,30 +254,18 @@ class _MiniCarRow extends StatelessWidget {
         const SizedBox(width: 6),
 
         // Car photo
-        Container(
+        CarPhotoFrame(
+          photoPath: car.photoPath,
           width: 24,
           height: 24,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(4),
-            border: Border.all(
-              color: isFirst ? AppTheme.winnerColor : AppTheme.textSecondary.withValues(alpha: 0.3),
-              width: 1,
-            ),
+          borderRadius: BorderRadius.circular(4),
+          imageFit: BoxFit.cover,
+          iconSize: 12,
+          backgroundColor: AppTheme.surfaceColor,
+          border: Border.all(
+            color: isFirst ? AppTheme.winnerColor : AppTheme.textSecondary.withValues(alpha: 0.3),
+            width: 1,
           ),
-          clipBehavior: Clip.antiAlias,
-          child: car.photoPath.isNotEmpty && File(car.photoPath).existsSync()
-              ? Image.file(
-                  File(car.photoPath),
-                  fit: BoxFit.cover,
-                )
-              : Container(
-                  color: AppTheme.surfaceColor,
-                  child: const Icon(
-                    Icons.directions_car,
-                    size: 12,
-                    color: AppTheme.textSecondary,
-                  ),
-                ),
         ),
         const SizedBox(width: 6),
 
