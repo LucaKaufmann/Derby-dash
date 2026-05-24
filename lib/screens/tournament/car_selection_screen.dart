@@ -637,7 +637,13 @@ class _SelectableCarCard extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
+        clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        // Border is painted on top of the clipped card so it stays flush with
+        // the rounded corners instead of poking out at the edges.
+        foregroundDecoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isSelected ? AppTheme.successColor : Colors.transparent,

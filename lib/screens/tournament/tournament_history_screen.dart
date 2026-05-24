@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -6,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../data/models/tournament.dart';
 import '../../providers/tournament_provider.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/car_photo_frame.dart';
 
 class TournamentHistoryScreen extends ConsumerWidget {
   const TournamentHistoryScreen({super.key});
@@ -224,41 +224,26 @@ class _TournamentHistoryCard extends ConsumerWidget {
                       ),
                       const SizedBox(width: 12),
                       // Winner photo
-                      Container(
+                      CarPhotoFrame(
+                        photoPath: winner.photoPath,
                         width: 56,
                         height: 56,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: AppTheme.winnerColor,
-                            width: 3,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppTheme.winnerColor.withValues(
-                                alpha: 0.3,
-                              ),
-                              blurRadius: 8,
-                              spreadRadius: 1,
-                            ),
-                          ],
+                        borderRadius: BorderRadius.circular(10),
+                        imageFit: BoxFit.cover,
+                        iconSize: 28,
+                        border: Border.all(
+                          color: AppTheme.winnerColor,
+                          width: 3,
                         ),
-                        clipBehavior: Clip.antiAlias,
-                        child:
-                            winner.photoPath.isNotEmpty &&
-                                File(winner.photoPath).existsSync()
-                            ? Image.file(
-                                File(winner.photoPath),
-                                fit: BoxFit.cover,
-                              )
-                            : Container(
-                                color: AppTheme.backgroundColor,
-                                child: const Icon(
-                                  Icons.directions_car,
-                                  size: 28,
-                                  color: AppTheme.textSecondary,
-                                ),
-                              ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppTheme.winnerColor.withValues(
+                              alpha: 0.3,
+                            ),
+                            blurRadius: 8,
+                            spreadRadius: 1,
+                          ),
+                        ],
                       ),
                       const SizedBox(width: 12),
                       // Winner info

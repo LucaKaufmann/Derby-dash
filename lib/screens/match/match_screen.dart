@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -8,6 +7,7 @@ import '../../data/models/round.dart';
 import '../../data/models/tournament.dart';
 import '../../providers/tournament_provider.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/car_photo_frame.dart';
 
 class MatchScreen extends ConsumerStatefulWidget {
   final int tournamentId;
@@ -372,33 +372,23 @@ class _CarPanel extends StatelessWidget {
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.all(24),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: isSelected
-                          ? [
-                              BoxShadow(
-                                color: AppTheme.successColor.withOpacity(0.5),
-                                blurRadius: 30,
-                                spreadRadius: 5,
-                              ),
-                            ]
-                          : null,
-                    ),
-                    clipBehavior: Clip.antiAlias,
-                    child: car.photoPath.isNotEmpty &&
-                            File(car.photoPath).existsSync()
-                        ? Image.file(
-                            File(car.photoPath),
-                            fit: BoxFit.contain,
-                          )
-                        : const Center(
-                            child: Icon(
-                              Icons.directions_car,
-                              size: 100,
-                              color: AppTheme.textSecondary,
+                  child: CarPhotoFrame(
+                    photoPath: car.photoPath,
+                    width: double.infinity,
+                    height: double.infinity,
+                    borderRadius: BorderRadius.circular(16),
+                    backgroundColor: Colors.transparent,
+                    imageFit: BoxFit.contain,
+                    iconSize: 100,
+                    boxShadow: isSelected
+                        ? [
+                            BoxShadow(
+                              color: AppTheme.successColor.withOpacity(0.5),
+                              blurRadius: 30,
+                              spreadRadius: 5,
                             ),
-                          ),
+                          ]
+                        : null,
                   ),
                 ),
               ),

@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:derby_dash/data/models/models.dart';
@@ -7,6 +6,7 @@ import 'package:derby_dash/theme/app_theme.dart';
 import 'package:derby_dash/widgets/bracket/bracket_view.dart';
 import 'package:derby_dash/widgets/bracket/double_bracket_view.dart';
 import 'package:derby_dash/widgets/bracket/group_knockout_bracket_view.dart';
+import 'package:derby_dash/widgets/car_photo_frame.dart';
 
 /// Screen displaying the tournament bracket visualization.
 class BracketScreen extends ConsumerWidget {
@@ -367,51 +367,34 @@ class _CarDisplay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final photoPath = car?.photoPath;
-    final hasPhoto = photoPath != null &&
-        photoPath.isNotEmpty &&
-        File(photoPath).existsSync();
-
     return Column(
       children: [
         // Photo
-        Container(
+        CarPhotoFrame(
+          photoPath: car?.photoPath,
           width: 80,
           height: 80,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: isWinner
-                  ? AppTheme.successColor
-                  : isLoser
-                      ? AppTheme.textSecondary.withValues(alpha: 0.3)
-                      : AppTheme.primaryColor,
-              width: isWinner ? 3 : 2,
-            ),
-            boxShadow: isWinner
-                ? [
-                    BoxShadow(
-                      color: AppTheme.successColor.withValues(alpha: 0.4),
-                      blurRadius: 12,
-                      spreadRadius: 2,
-                    ),
-                  ]
-                : null,
+          shape: BoxShape.circle,
+          imageFit: BoxFit.cover,
+          iconSize: 40,
+          iconColor: AppTheme.textSecondary.withValues(alpha: 0.5),
+          border: Border.all(
+            color: isWinner
+                ? AppTheme.successColor
+                : isLoser
+                    ? AppTheme.textSecondary.withValues(alpha: 0.3)
+                    : AppTheme.primaryColor,
+            width: isWinner ? 3 : 2,
           ),
-          clipBehavior: Clip.antiAlias,
-          child: hasPhoto
-              ? Image.file(
-                  File(photoPath),
-                  fit: BoxFit.cover,
-                )
-              : Container(
-                  color: AppTheme.backgroundColor,
-                  child: Icon(
-                    Icons.directions_car,
-                    size: 40,
-                    color: AppTheme.textSecondary.withValues(alpha: 0.5),
+          boxShadow: isWinner
+              ? [
+                  BoxShadow(
+                    color: AppTheme.successColor.withValues(alpha: 0.4),
+                    blurRadius: 12,
+                    spreadRadius: 2,
                   ),
-                ),
+                ]
+              : null,
         ),
         const SizedBox(height: 8),
 

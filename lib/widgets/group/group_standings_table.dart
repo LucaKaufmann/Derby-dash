@@ -1,7 +1,7 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../services/tournament_service.dart';
 import '../../theme/app_theme.dart';
+import '../car_photo_frame.dart';
 
 class GroupStandingsTable extends StatelessWidget {
   final int groupIndex;
@@ -130,45 +130,19 @@ class _StandingRow extends StatelessWidget {
           ),
 
           // Car photo
-          Container(
-            width: 40,
-            height: 40,
-            margin: const EdgeInsets.only(right: 12),
-            child: Stack(
-              children: [
-                // Photo or placeholder (clipped)
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: SizedBox(
-                    width: 40,
-                    height: 40,
-                    child: car.photoPath.isNotEmpty && File(car.photoPath).existsSync()
-                        ? Image.file(
-                            File(car.photoPath),
-                            fit: BoxFit.cover,
-                          )
-                        : Container(
-                            color: AppTheme.surfaceColor,
-                            child: const Icon(
-                              Icons.directions_car,
-                              size: 20,
-                              color: AppTheme.textSecondary,
-                            ),
-                          ),
-                  ),
-                ),
-                // Border overlay
-                Positioned.fill(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(8),
-                      border: isAdvancing
-                          ? Border.all(color: AppTheme.winnerColor, width: 2)
-                          : Border.all(color: AppTheme.surfaceColor, width: 1),
-                    ),
-                  ),
-                ),
-              ],
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: CarPhotoFrame(
+              photoPath: car.photoPath,
+              width: 40,
+              height: 40,
+              borderRadius: BorderRadius.circular(8),
+              imageFit: BoxFit.cover,
+              iconSize: 20,
+              backgroundColor: AppTheme.surfaceColor,
+              border: isAdvancing
+                  ? Border.all(color: AppTheme.winnerColor, width: 2)
+                  : Border.all(color: AppTheme.surfaceColor, width: 1),
             ),
           ),
 

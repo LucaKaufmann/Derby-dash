@@ -1,8 +1,8 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:derby_dash/data/models/match.dart';
 import 'package:derby_dash/data/models/car.dart';
 import 'package:derby_dash/theme/app_theme.dart';
+import 'package:derby_dash/widgets/car_photo_frame.dart';
 
 /// Compact match card for bracket display.
 /// Shows both cars with winner highlighted.
@@ -144,33 +144,17 @@ class _CarPhoto extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final photoPath = car?.photoPath;
-    final hasPhoto = photoPath != null &&
-        photoPath.isNotEmpty &&
-        File(photoPath).existsSync();
-
-    return Container(
+    return CarPhotoFrame(
+      photoPath: car?.photoPath,
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: AppTheme.backgroundColor,
-        border: Border.all(
-          color: AppTheme.textSecondary.withValues(alpha: 0.3),
-          width: 1,
-        ),
+      shape: BoxShape.circle,
+      imageFit: BoxFit.cover,
+      iconSize: size * 0.6,
+      border: Border.all(
+        color: AppTheme.textSecondary.withValues(alpha: 0.3),
+        width: 1,
       ),
-      clipBehavior: Clip.antiAlias,
-      child: hasPhoto
-          ? Image.file(
-              File(photoPath),
-              fit: BoxFit.cover,
-            )
-          : Icon(
-              Icons.directions_car,
-              size: size * 0.6,
-              color: AppTheme.textSecondary,
-            ),
     );
   }
 }
