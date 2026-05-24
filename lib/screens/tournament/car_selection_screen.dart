@@ -647,6 +647,12 @@ class _SelectableCarCard extends StatelessWidget {
         child: Card(
           margin: EdgeInsets.zero,
           clipBehavior: Clip.antiAlias,
+          // Inner radius must match the outer border's inner contour
+          // (outer radius 16 - border width 4) so the selection border
+          // lines up flush with the card corners.
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           child: Stack(
             fit: StackFit.expand,
             children: [
