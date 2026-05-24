@@ -8,6 +8,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'backup_service.dart';
+import 'file_replacement.dart';
 
 class MigrationBridgeService {
   static const version = 1;
@@ -27,6 +28,9 @@ class MigrationBridgeService {
     final rawSnapshotFile = File(
       p.join(migrationDir.path, _rawSnapshotFileName),
     );
+    await FileReplacement.recover(backupFile);
+    await FileReplacement.recover(manifestFile);
+    await FileReplacement.recover(rawSnapshotFile);
 
     final backupService = BackupService(isar);
     final currentSummary = await backupService.summarize();
@@ -90,7 +94,7 @@ class MigrationBridgeService {
         await tempRawSnapshotFile.delete();
       }
       await isar.copyToFile(tempRawSnapshotFile.path);
-      await _replaceFile(tempRawSnapshotFile, rawSnapshotFile);
+      await FileReplacement.replace(tempRawSnapshotFile, rawSnapshotFile);
     } catch (error) {
       rawSnapshotError = error.toString();
     }
@@ -119,8 +123,8 @@ class MigrationBridgeService {
       const JsonEncoder.withIndent('  ').convert(manifest),
       flush: true,
     );
-    await _replaceFile(tempBackupFile, backupFile);
-    await _replaceFile(tempManifestFile, manifestFile);
+    await FileReplacement.replace(tempBackupFile, backupFile);
+    await FileReplacement.replace(tempManifestFile, manifestFile);
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt('$_prefsPrefix.version', version);
@@ -168,13 +172,6 @@ class MigrationBridgeService {
     } catch (_) {
       return null;
     }
-  }
-
-  static Future<void> _replaceFile(File source, File destination) async {
-    if (await destination.exists()) {
-      await destination.delete();
-    }
-    await source.rename(destination.path);
   }
 }
 

@@ -147,8 +147,8 @@ class SettingsState {
     bool? keepScreenOn,
     bool? advancedMode,
     bool? recurringBackupsEnabled,
-    DateTime? lastAutomaticBackupAt,
-    String? lastAutomaticBackupPath,
+    Object? lastAutomaticBackupAt = _settingsStateUnset,
+    Object? lastAutomaticBackupPath = _settingsStateUnset,
     Set<int>? hiddenMysteryCarIds,
   }) {
     return SettingsState(
@@ -157,10 +157,16 @@ class SettingsState {
       recurringBackupsEnabled:
           recurringBackupsEnabled ?? this.recurringBackupsEnabled,
       lastAutomaticBackupAt:
-          lastAutomaticBackupAt ?? this.lastAutomaticBackupAt,
+          identical(lastAutomaticBackupAt, _settingsStateUnset)
+          ? this.lastAutomaticBackupAt
+          : lastAutomaticBackupAt as DateTime?,
       lastAutomaticBackupPath:
-          lastAutomaticBackupPath ?? this.lastAutomaticBackupPath,
+          identical(lastAutomaticBackupPath, _settingsStateUnset)
+          ? this.lastAutomaticBackupPath
+          : lastAutomaticBackupPath as String?,
       hiddenMysteryCarIds: hiddenMysteryCarIds ?? this.hiddenMysteryCarIds,
     );
   }
 }
+
+const _settingsStateUnset = Object();

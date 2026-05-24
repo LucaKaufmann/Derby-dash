@@ -6,6 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'backup_service.dart';
+import 'file_replacement.dart';
 
 class RecurringBackupService {
   static const retentionCount = 14;
@@ -71,12 +72,13 @@ class RecurringBackupService {
     final backupFile = File(
       p.join(backupDir.path, 'DerbyDash-auto-$backupDate.derbydash'),
     );
+    await FileReplacement.recover(backupFile);
     final tempBackupFile = File('${backupFile.path}.tmp');
 
     final exportedSummary = await backupService.exportBackupToFile(
       tempBackupFile,
     );
-    await _replaceFile(tempBackupFile, backupFile);
+    await FileReplacement.replace(tempBackupFile, backupFile);
     await _pruneOldBackups(backupDir);
 
     final backedUpAt = DateTime.now().toUtc().toIso8601String();
@@ -123,13 +125,6 @@ class RecurringBackupService {
         // Best-effort cleanup only.
       }
     }
-  }
-
-  static Future<void> _replaceFile(File source, File destination) async {
-    if (await destination.exists()) {
-      await destination.delete();
-    }
-    await source.rename(destination.path);
   }
 }
 
