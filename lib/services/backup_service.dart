@@ -16,7 +16,43 @@ class BackupService {
 
   BackupService(this._isar);
 
+  Future<BackupSummary> summarize() async {
+    final cars = await _isar.cars.where().count();
+    final tournaments = await _isar.tournaments.where().count();
+    final rounds = await _isar.rounds.where().count();
+    final matches = await _isar.matchs.where().count();
+    return BackupSummary(
+      cars: cars,
+      tournaments: tournaments,
+      rounds: rounds,
+      matches: matches,
+    );
+  }
+
   Future<File> exportBackup() async {
+    final timestamp = DateTime.now().toIso8601String().replaceAll(
+      RegExp(r'[:.]'),
+      '-',
+    );
+    final output = File(
+      p.join(
+        (await getTemporaryDirectory()).path,
+        'DerbyDash-backup-$timestamp.derbydash',
+      ),
+    );
+    await exportBackupToFile(output);
+    return output;
+  }
+
+  Future<BackupSummary> exportBackupToFile(File output) async {
+    final export = await _buildBackupArchive();
+    await output.parent.create(recursive: true);
+    await output.writeAsBytes(export.bytes, flush: true);
+    return export.summary;
+  }
+
+  Future<({List<int> bytes, BackupSummary summary})>
+  _buildBackupArchive() async {
     final archive = Archive();
     final cars = await _isar.cars.where().findAll();
     final tournaments = await _isar.tournaments.where().findAll();
@@ -113,18 +149,14 @@ class BackupService {
     );
 
     final bytes = ZipEncoder().encodeBytes(archive);
-    final timestamp = DateTime.now().toIso8601String().replaceAll(
-      RegExp(r'[:.]'),
-      '-',
+    final summary = BackupSummary(
+      cars: carRecords.length,
+      tournaments: tournamentRecords.length,
+      rounds: roundRecords.length,
+      matches: matchRecords.length,
     );
-    final output = File(
-      p.join(
-        (await getTemporaryDirectory()).path,
-        'DerbyDash-backup-$timestamp.derbydash',
-      ),
-    );
-    await output.writeAsBytes(bytes, flush: true);
-    return output;
+
+    return (bytes: bytes, summary: summary);
   }
 
   Future<ImportSummary> importBackup(File file) async {
@@ -320,6 +352,53 @@ class BackupService {
   int _int(Object? value) {
     if (value is int) return value;
     throw const FormatException('Backup file contains invalid IDs.');
+  }
+}
+
+class BackupSummary {
+  final int cars;
+  final int tournaments;
+  final int rounds;
+  final int matches;
+
+  const BackupSummary({
+    required this.cars,
+    required this.tournaments,
+    required this.rounds,
+    required this.matches,
+  });
+
+  int get score => cars + tournaments + rounds + matches;
+
+  Map<String, Object> toJson() {
+    return {
+      'cars': cars,
+      'tournaments': tournaments,
+      'rounds': rounds,
+      'matches': matches,
+      'score': score,
+    };
+  }
+
+  String toJsonString() => jsonEncode(toJson());
+
+  static BackupSummary? fromJson(Object? value) {
+    if (value is! Map<String, dynamic>) return null;
+    return BackupSummary(
+      cars: value['cars'] as int? ?? 0,
+      tournaments: value['tournaments'] as int? ?? 0,
+      rounds: value['rounds'] as int? ?? 0,
+      matches: value['matches'] as int? ?? 0,
+    );
+  }
+
+  static BackupSummary? fromJsonString(String? value) {
+    if (value == null) return null;
+    try {
+      return fromJson(jsonDecode(value));
+    } catch (_) {
+      return null;
+    }
   }
 }
 
