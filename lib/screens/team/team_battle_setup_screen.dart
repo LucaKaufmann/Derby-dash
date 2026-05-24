@@ -265,11 +265,18 @@ class _TeamCarCard extends StatelessWidget {
         duration: const Duration(milliseconds: 180),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color, width: team == null ? 2 : 4),
+          // Constant border width keeps the card from shifting when a team is
+          // assigned; selection is signalled via colour instead.
+          border: Border.all(color: color, width: 4),
         ),
         child: Card(
           margin: EdgeInsets.zero,
           clipBehavior: Clip.antiAlias,
+          // Inner radius matches the border's inner contour (16 - 4) so the
+          // border lines up flush with the card corners.
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           child: Stack(
             fit: StackFit.expand,
             children: [
